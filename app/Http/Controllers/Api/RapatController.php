@@ -44,6 +44,8 @@ class RapatController extends Controller
             // Dihapus: 'peserta_ids.*' => 'exists:users,id_user',
             'division_ids' => 'nullable|array', // Izinkan division_ids bernilai null atau array
             'division_ids.*' => 'nullable|exists:division,id_division', // Pastikan setiap ID ada di tabel divisions
+            // PERBAIKAN: Tambahkan validasi untuk id_user_pengaju yang dikirim dari form
+            'id_user_pengaju' => 'nullable|exists:users,id_user',
         ]);
 
         // 2. Ambil data user yang sedang login
@@ -51,7 +53,12 @@ class RapatController extends Controller
 
         // 3. Tambahkan id_user_pengaju dari user yang login
         $validatedData['id_user_pengaju'] = $user->id_user;
-
+        // PERBAIKAN: Gunakan id_user_pengaju dari request jika ada dan tidak kosong.
+        // Ini memungkinkan admin memilih PIC lain.
+        if ($request->has('id_user_pengaju') && ! empty($request->id_user_pengaju)) {
+            $validatedData['id_user_pengaju'] = $request->id_user_pengaju;
+        }
+        
         // 4. Terapkan logika untuk id_status berdasarkan role user
         if ($user->id_role == 1) { // Admin
             $validatedData['id_status'] = 1; // Langsung 'Diterima'
