@@ -14,6 +14,13 @@ class Room extends Model
 
     protected $primaryKey = 'id_room';
 
+    /**
+     * Indicates if the model should be timestamped.
+     *
+     * @var bool
+     */
+    public $timestamps = false;
+
     protected $fillable = [
         'room',
         'id_cabang',

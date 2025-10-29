@@ -48,5 +48,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
+// Route untuk mengambil data rapat berdasarkan PIC untuk web admin
+Route::get('/meetings/by-pic/{user}', [\App\Http\Controllers\Website\RapatController::class, 'getMeetingsByPic']);
+
 // // Tambahkan :id_cabang setelah {cabang}
 // Route::get('/cabang/{cabang:id}/room', [RoomController::class, 'getRoomsByCabang']);

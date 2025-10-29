@@ -24,6 +24,7 @@ class Rapat extends Model
         'waktu_end',
         'id_user_pengaju',
         'desc',
+        'id_user_pic',
     ];
 
     public function cabang()

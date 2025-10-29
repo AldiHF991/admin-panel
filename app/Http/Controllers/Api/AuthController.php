@@ -16,9 +16,7 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        // 🔒 LANGKAH KEAMANAN: Periksa apakah pengguna yang login adalah admin
-        // Jika bukan admin, kode akan berhenti di sini dan otomatis
-        // mengembalikan response 403 Forbidden.
+
         $this->authorize('admin-auth'); // Hanya Admin yang bisa menyetujui
 
         // Kode validasi Anda tetap sama

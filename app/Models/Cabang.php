@@ -12,6 +12,13 @@ class Cabang extends Model
     protected $table = 'cabang';
     protected $primaryKey = 'id';
 
+    /**
+     * Indicates if the model should be timestamped.
+     *
+     * @var bool
+     */
+    public $timestamps = false;
+
     protected $fillable = [
         'cabang',
         'alamat',

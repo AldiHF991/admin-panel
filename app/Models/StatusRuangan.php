@@ -1,36 +1,33 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-return new class extends Migration
+class StatusRuangan extends Model
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
-        Schema::create('status_ruangan', function (Blueprint $table) {
-            // Kolom ID unik untuk setiap status (Primary Key)
-            $table->id('id_ruangan');
-
-            // Kolom untuk menampung nama status, harus unik
-            $table->string('nama_status')->unique();
-        });
-    }
+    use HasFactory;
 
     /**
-     * Reverse the migrations.
+     * The table associated with the model.
+     *
+     * @var string
      */
-    public function down(): void
-    {
-        Schema::dropIfExists('status_ruangans');
-    }
+    protected $table = 'status_ruangan';
 
-    public function Room(): HasMany
+    /**
+     * The primary key associated with the table.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'id';
+
+    public $timestamps = false;
+
+    public function rooms(): HasMany
     {
-        return $this->hasMany(Room::class, 'status_ruangan');
+        return $this->hasMany(Room::class, 'status_ruangan_id', 'id');
     }
-};
+}
