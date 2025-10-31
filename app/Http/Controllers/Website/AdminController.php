@@ -87,6 +87,7 @@ class AdminController extends Controller
     // ACCOUNT MANAGEMENT FUNCTIONS START
 
     // Store User Account
+    // BUG, NEED FOR FIXED
     public function storeUserAccount(Request $request)
     {
         $validated = $request->validate([

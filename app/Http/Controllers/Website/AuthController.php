@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Website;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -46,6 +47,7 @@ class AuthController extends Controller
         return view('dashboard');
     }
 
+    // BUG, NEED FOR FIXED
     public function logout(Request $request)
     {
         Auth::logout();
