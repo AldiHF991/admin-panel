@@ -90,7 +90,7 @@ class RapatController extends Controller
         ], 201);
     }
 
-    // GET: /api/rapat/{id}
+    // GET:     
     public function show($id)
     {
         // PERBAIKAN: Memuat semua relasi yang dibutuhkan frontend, terutama 'cabang' dan 'divisions'.

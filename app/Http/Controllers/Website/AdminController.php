@@ -7,6 +7,7 @@ use App\Models\Cabang;
 use App\Models\Division;
 use App\Models\Rapat;
 use App\Models\Role;
+use App\Models\StatusRapat;
 use App\Models\Room;
 use App\Models\StatusRuangan;
 use App\Models\User;
@@ -63,23 +64,23 @@ class AdminController extends Controller
 
     public function showMeetings(Request $request)
     {
-        $pics = User::where('id_role', 2)->get(); // Assuming PIC is a role
+        $cabangs = Cabang::all();
+        $rooms = Room::all();
+        $divisions = Division::where('id_division', '!=', 2000)->get();
+        $statuses = StatusRapat::all();
+        $allRapats = Rapat::all(); // Data semua rapat untuk pengecekan di frontend
+
+        $pics = User::where('id_role', 2)->get(); 
         $selectedPicId = $request->input('id_user_pic');
 
-        $rapatsQuery = Rapat::with(['cabang', 'room', 'status', 'pengaju'])
-            ->latest('tanggal'); // Menggunakan latest() lebih ringkas
+        $rapatsQuery = Rapat::with(['cabang', 'room', 'status', 'pengaju', 'divisions'])->orderBy('tanggal', 'desc');
 
         // Filter rapat jika PIC dipilih, jika tidak, kembalikan koleksi kosong
         $rapats = $selectedPicId
             ? $rapatsQuery->where('id_user_pengaju', $selectedPicId)->get()
             : collect();
 
-        return view('meetings.meeting-management', compact('pics', 'rapats'));
-    }
-
-    public function showReports()
-    {
-        return view('reports.report-absensi');
+        return view('meetings.meeting-management', compact('rapats', 'pics', 'cabangs', 'rooms', 'divisions', 'statuses', 'allRapats'));
     }
 
     // END Show FUNCTIONS

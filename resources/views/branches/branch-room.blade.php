@@ -157,27 +157,6 @@
                 @include('branches.partials.branch-list', ['cabang' => $cabang])
             </div>
         </div>
-        <form action="{{ route('branch.add') }}" method="POST" class="modal-content">
-            {{-- @csrf
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">Tambah Cabang Baru</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label for="cabang_name">Nama Cabang</label>
-                    <input type="text" name="cabang" id="cabang_name" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label for="alamat">Alamat</label>
-                    <input type="text" name="alamat" id="alamat" class="form-control" required>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan</button>
-            </div> --}}
-        </form>
     </div>
 </div>
 

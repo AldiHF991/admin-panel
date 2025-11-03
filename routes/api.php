@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/absensi', [AbsensiController::class, 'store']); // Untuk melakukan absensi
     Route::get('/absensi/history', [AbsensiController::class, 'history']); // Untuk melihat riwayat
 
+    // PERBAIKAN: Mengubah parameter {id} menjadi {cabang} agar Route Model Binding berfungsi.
     Route::get('/cabang/{cabang}/room', [RoomController::class, 'getRoomsByCabang']);
     Route::get('/cabang', [CabangController::class, 'index']);
     Route::get('/room', [RoomController::class, 'index']);

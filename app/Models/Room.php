@@ -30,8 +30,9 @@ class Room extends Model
     /**
      * Mendefinisikan relasi "belongsTo" ke model Cabang.
      */
-    public function cabang()
+    public function cabang(): BelongsTo
     {
+        // Parameter: (Model Terkait, Foreign Key di tabel ini, Owner Key di tabel cabang)
         return $this->belongsTo(Cabang::class, 'id_cabang', 'id');
     }
 

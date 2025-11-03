@@ -33,5 +33,13 @@ Route::delete('admin/branch/{id}/delete', [AdminController::class, 'deleteBranch
 Route::post('admin/room/edit', [AdminController::class, 'updateRoom'])->name('room.edit');
 Route::delete('admin/room/{id}/delete', [AdminController::class, 'deleteRoom'])->name('room.delete');
 
+Route::get('/cabang/{cabang}/rooms', [RapatController::class, 'getRoomsByCabang'])->name('cabang.rooms');
+Route::post('/meetings', [RapatController::class, 'store'])->name('meetings.store');
+Route::put('/meetings/{rapat}', [RapatController::class, 'update'])->name('meetings.update'); // <-- TAMBAHKAN ATAU PASTIKAN BARIS INI ADA
+Route::delete('/meetings/{rapat}', [RapatController::class, 'destroy'])->name('meetings.destroy');
+
+    // Rute untuk QR Code
+Route::get('/meetings/{rapat}/qr', [RapatController::class, 'showQrCode'])->name('meetings.showQr');
+
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

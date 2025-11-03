@@ -112,8 +112,7 @@
         </form>
 
         <div class="login-footer mt-3">
-            <p class="mb-1">Username: <strong>admin</strong> | Password: <strong>12345</strong></p>
-            <p class="text-muted mb-0">&copy; {{ date('Y') }} Sistem Absensi Rapat</p>
+                <p class="text-muted mb-0">&copy; {{ date('Y') }} Magang UNTAG Surabaya 2025</p>
         </div>
     </div>
 

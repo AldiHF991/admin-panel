@@ -70,10 +70,6 @@
             <i class="bi bi-calendar-event me-2"></i> Manajemen Rapat
         </a>
 
-        <!-- Laporan -->
-        <a href="{{ route('reports') }}" class="{{ request()->is('reports*') ? 'active' : '' }}">
-            <i class="bi bi-graph-up-arrow me-2"></i> Laporan Absensi
-        </a>
     </div>
 
     <!-- Content Area -->

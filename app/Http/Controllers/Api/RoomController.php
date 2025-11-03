@@ -98,13 +98,10 @@ class RoomController extends Controller
 
     public function getRoomsByCabang(Cabang $cabang)
     {
-        // PERBAIKAN: Mengembalikan SEMUA ruangan dari cabang yang dipilih,
-        // tidak hanya yang tersedia. Ini memungkinkan frontend untuk menampilkan
-        // status (hijau/merah) untuk setiap ruangan.
         try {
             // Mengambil ruangan yang berelasi dengan $cabang
             $rooms = $cabang->room()
-                ->with('status_ruangan_id') // Muat juga informasi detail statusnya
+                ->with('statusRuangan') // BENAR: Muat relasi 'statusRuangan' dari model Room.
                 ->get();
 
             return response()->json($rooms, 200);

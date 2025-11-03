@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Cabang extends Model
 {
@@ -27,8 +28,9 @@ class Cabang extends Model
     /**
      * Mendefinisikan relasi "hasMany" ke model Room.
      */
-    public function room()
+    public function room():HasMany
     {
+        // Parameter: (Model Terkait, Foreign Key di tabel room, Local Key di tabel cabang)
         return $this->hasMany(Room::class, 'id_cabang', 'id');
     }
 
@@ -37,6 +39,6 @@ class Cabang extends Model
      */
     public function rapat()
     {
-        return $this->hasMany(Rapat::class, 'id_room', 'id');
+        return $this->hasMany(Rapat::class, 'id_cabang', 'id');
     }
 }
