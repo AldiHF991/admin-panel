@@ -6,8 +6,8 @@
     <h2 class="mb-4">{{ $rapat->judul }}</h2>
     
     <div id="qr-code-container" class="p-4 bg-white rounded shadow-lg">
-        {{-- Dummy QR Code for now. Will be replaced with a real one. --}}
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=dummy-token-{{ time() }}" alt="QR Code">
+        {{-- Generate QR Code awal menggunakan simple-qrcode --}}
+        {!! QrCode::size(400)->generate($rapat->current_qr_token ?? 'no-token-available') !!}
     </div>
 
     <div class="mt-4 text-center">
@@ -33,12 +33,20 @@
         }
     }
 
-    function updateQrCode() {
-        // This is where you would fetch the new QR code from the server.
-        // For now, we'll just update the dummy image to show it's changing.
-        const newDummyToken = `dummy-token-${new Date().getTime()}`;
-        qrCodeContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${newDummyToken}" alt="QR Code">`;
-        console.log("QR Code updated with new token:", newDummyToken);
+    async function updateQrCode() {
+        try {
+            // Fetch QR code baru (sebagai SVG) dari server
+            const response = await fetch("{{ route('meetings.getQrCodeSvg', $rapat->id_rapat) }}");
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const newQrCodeSvg = await response.text();
+            qrCodeContainer.innerHTML = newQrCodeSvg;
+            console.log("QR Code updated at: " + new Date().toLocaleTimeString());
+        } catch (error) {
+            console.error("Could not fetch new QR code:", error);
+            qrCodeContainer.innerHTML = `<div class="alert alert-danger">Gagal memuat QR Code. Memuat ulang...</div>`;
+        }
     }
 
     setInterval(updateTimer, 1000);

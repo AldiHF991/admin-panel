@@ -19,7 +19,8 @@ Route::get('/admin/meetings', [AdminController::class, 'showMeetings'])->name('m
 Route::get('/admin/reports', [AdminController::class, 'showReports'])->name('reports');
 
 // Route for meeting management
-Route::get('/meetings/qr/{rapat}', [RapatController::class, 'showQrCode'])->name('meetings.showQr'); // Tetap
+Route::get('/meetings/{rapat}/qr', [RapatController::class, 'showQrCode'])->name('meetings.showQr');
+Route::get('/meetings/{rapat}/qr-code', [RapatController::class, 'getQrCodeSvg'])->name('meetings.getQrCodeSvg');
 Route::resource('/admin/meetings', RapatController::class)->except(['index', 'show', 'create', 'edit']);
 
 Route::post('admin/users/add', [AdminController::class, 'storeUserAccount'])->name('users.add');
@@ -37,9 +38,6 @@ Route::get('/cabang/{cabang}/rooms', [RapatController::class, 'getRoomsByCabang'
 Route::post('/meetings', [RapatController::class, 'store'])->name('meetings.store');
 Route::put('/meetings/{rapat}', [RapatController::class, 'update'])->name('meetings.update'); // <-- TAMBAHKAN ATAU PASTIKAN BARIS INI ADA
 Route::delete('/meetings/{rapat}', [RapatController::class, 'destroy'])->name('meetings.destroy');
-
-    // Rute untuk QR Code
-Route::get('/meetings/{rapat}/qr', [RapatController::class, 'showQrCode'])->name('meetings.showQr');
 
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

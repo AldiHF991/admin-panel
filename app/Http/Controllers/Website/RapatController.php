@@ -7,6 +7,7 @@ use App\Models\Rapat;
 use App\Models\Cabang;
 use App\Models\User;
 use Illuminate\Http\Request;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class RapatController extends Controller
 {
@@ -31,6 +32,20 @@ class RapatController extends Controller
     public function showQrCode(Rapat $rapat)
     {
         return view('meetings.qr-code', compact('rapat'));
+    }
+
+    /**
+     * Mengembalikan SVG QR Code untuk rapat tertentu.
+     * Digunakan untuk pembaruan AJAX di halaman display QR.
+     */
+    public function getQrCodeSvg(Rapat $rapat)
+    {
+        // Pastikan rapat memiliki token
+        $token = $rapat->current_qr_token ?? 'invalid-token';
+
+        $svg = QrCode::size(400)->generate($token);
+
+        return response($svg)->header('Content-Type', 'image/svg+xml');
     }
 
     public function store(Request $request)
@@ -91,19 +106,19 @@ class RapatController extends Controller
     }
 
     public function getRoomsByCabang(Cabang $cabang)
-{
-    try {
-        // Mengambil ruangan yang berelasi dengan $cabang
-        $rooms = $cabang->room()
-            ->with('statusRuangan')
-            ->get();
+    {
+        try {
+            // Mengambil ruangan yang berelasi dengan $cabang
+            $rooms = $cabang->room()
+                ->with('statusRuangan')
+                ->get();
 
-        return response()->json($rooms, 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Gagal mengambil data ruangan.', 
-            'error' => $e->getMessage()
-        ], 500);
+            return response()->json($rooms, 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil data ruangan.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 }
