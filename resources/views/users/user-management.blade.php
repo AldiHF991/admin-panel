@@ -156,6 +156,20 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="add_password">Password <span class="text-danger">*</span></label>
+                        <input type="password" name="password" id="add_password" class="form-control @error('password') is-invalid @enderror" required>
+                        @error('password')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="add_password_confirmation">Konfirmasi Password <span class="text-danger">*</span></label>
+                        <input type="password" name="password_confirmation" id="add_password_confirmation" class="form-control" required>
+                        {{-- Error untuk konfirmasi biasanya ditangani oleh 'password' rule 'confirmed' --}}
+                    </div>
+                </div>
                 <div class="mb-3">
                     <label for="add_role">Role <span class="text-danger">*</span></label>
                     <select name="id_role" id="add_role" class="form-select @error('id_role') is-invalid @enderror" required>
@@ -243,6 +257,20 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="edit_password">Password Baru</label>
+                        <input type="password" name="password" id="edit_password" class="form-control @error('password') is-invalid @enderror">
+                        @error('password')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="edit_password_confirmation">Konfirmasi Password</label>
+                        <input type="password" name="password_confirmation" id="edit_password_confirmation" class="form-control">
+                    </div>
+                </div>
+                <small class="form-text text-muted mb-3 d-block">Kosongkan password jika tidak ingin mengubahnya.</small>
                 <div class="mb-3">
                     <label for="edit_id_role">Role <span class="text-danger">*</span></label>
                     <select name="id_role" id="edit_id_role" class="form-select @error('id_role') is-invalid @enderror" required>

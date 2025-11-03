@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    
     public function index()
     {
         $users = User::latest()->paginate(10);
@@ -26,7 +27,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:1|confirmed',
             'role' => 'required|in:admin,user',
             'is_active' => 'boolean',
         ]);
@@ -50,7 +51,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
-            'password' => 'nullable|string|min:8|confirmed',
+            'password' => 'nullable|string|min:1|confirmed',
             'role' => 'required|in:admin,user',
             'is_active' => 'boolean',
         ]);
