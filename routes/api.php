@@ -16,6 +16,7 @@ Route::get('/user', function (Request $request) {
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
+
     Route::get('/userPIC', [AuthController::class, 'getUsersWithRole']);
     Route::get('/pic/get-division', [AuthController::class, 'getDivision']);
     // Route::get('/users-by-division', [AuthController::class, 'getUsersByDivision']);
@@ -23,7 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::get('rapat/{id}/export-absensi', [RapatController::class, 'exportAbsensi']); // Endpoint untuk ekspor absensi
-    Route::get('/rapat/saya', [RapatController::class, 'rapatSaya']); // Endpoint untuk ekspor Excel
+    Route::get('/rapat/saya', [RapatController::class, 'rapatSaya']); 
     Route::apiResource('rapat', RapatController::class);
     Route::get('rapat/{id}/peserta', [RapatController::class, 'getPesertaRapat']);
     Route::post('rapat/{id}/peserta', [RapatController::class, 'addPesertaRapat']);
@@ -35,7 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/absensi', [AbsensiController::class, 'store']); // Untuk melakukan absensi
     Route::get('/absensi/history', [AbsensiController::class, 'history']); // Untuk melihat riwayat
 
-    // PERBAIKAN: Mengubah parameter {id} menjadi {cabang} agar Route Model Binding berfungsi.
+    // mengubah parameter {id} menjadi {cabang} agar Route Model Binding berfungsi.
     Route::get('/cabang/{cabang}/room', [RoomController::class, 'getRoomsByCabang']);
     Route::get('/cabang', [CabangController::class, 'index']);
     Route::get('/room', [RoomController::class, 'index']);

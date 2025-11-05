@@ -69,6 +69,7 @@ class QrCodeController extends Controller
             'id_rapat' => $rapat->id_rapat,
             'id_user' => $user->id_user,
             'waktu_absen' => $now,
+            'id_status_kehadiran'=> 2, // Hadir
         ]);
 
         return response()->json([
