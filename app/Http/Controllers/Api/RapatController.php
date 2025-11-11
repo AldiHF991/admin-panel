@@ -277,7 +277,7 @@ class RapatController extends Controller
 
         // Ambil data absensi untuk rapat ini, sertakan data user yang absen
         $absensi = Absensi::where('id_rapat', $id)
-            ->with('user:id_user,name,email') // Eager load data user (hanya kolom yang perlu)
+            ->with('user:id_user,id_division,name,email') // Eager load data user (hanya kolom yang perlu)
             ->orderBy('waktu_absen', 'asc')
             ->get();
 

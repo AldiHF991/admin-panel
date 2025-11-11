@@ -50,6 +50,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
+// Endpoint untuk tamu (tidak memerlukan otentikasi login)
+Route::post('/rapat/guest-scan-absen', [QrCodeController::class, 'guestScanAbsen']);
+
 // Route untuk mengambil data rapat berdasarkan PIC untuk web admin
 Route::get('/meetings/by-pic/{user}', [\App\Http\Controllers\Website\RapatController::class, 'getMeetingsByPic']);
 
