@@ -36,6 +36,20 @@ class AbsensiController extends Controller
         return response()->json(['data' => $history]);
     }
 
+    public function getByRapat($id_rapat)
+{
+    // Ambil semua data absensi beserta data user
+    $data = Absensi::with('user:id_user,name,email')
+        ->where('id_rapat', $id_rapat)
+        ->orderBy('waktu_absen', 'asc')
+        ->get();
+
+    return response()->json([
+        'data' => $data
+    ]);
+}
+
+
     public function export()
     {
         return Excel::download(new AbsensiExport, 'absensi.xlsx');

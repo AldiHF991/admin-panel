@@ -77,6 +77,13 @@
                                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ $rapat->id_rapat }}">
                                         <li><a class="dropdown-item edit-btn" href="#" data-bs-toggle="modal" data-bs-target="#editRapatModal" data-rapat='{{ json_encode($rapat) }}'>Edit</a></li>
                                         <li><a class="dropdown-item" href="{{ route('meetings.showQr', $rapat->id_rapat) }}" target="_blank">QR Code</a></li>
+                                        <!-- <li><a class="dropdown-item" href="{{ url('/meetings/' . $rapat->id_rapat . '/absensi') }}">Absensi</a></li> -->
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url('/absensi/' . $rapat->id_rapat) }}">
+                                                Absensi
+                                            </a>
+                                        </li>
+
                                         <li>
                                             <form action="{{ route('meetings.destroy', $rapat->id_rapat) }}" method="POST" class="d-inline">
                                                 @csrf

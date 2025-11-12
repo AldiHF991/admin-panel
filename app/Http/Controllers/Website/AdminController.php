@@ -13,6 +13,8 @@ use App\Models\StatusRuangan;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
@@ -87,6 +89,51 @@ class AdminController extends Controller
     // END Show FUNCTIONS
 
     // ACCOUNT MANAGEMENT FUNCTIONS START
+
+    // Register User Account (Admin Only)
+    public function register(Request $request)
+    {
+        $this->authorize('admin-auth'); // Hanya Admin yang bisa menyetujui
+
+        // Kode validasi Anda tetap sama
+        $v = Validator::make($request->all(), [
+            'username' => 'required|string|unique:users,username',
+            'password' => 'required|string|min:1',
+            'name' => 'required|string',
+            'email' => 'nullable|email|unique:users,email',
+            'phone' => 'nullable|string',
+            'id_role' => 'nullable|integer',
+            'gender' => 'nullable|in:Male,Female',
+            'id_division' => 'nullable|integer',
+            'photo' => 'nullable|image|max:2048',
+        ]);
+
+        if ($v->fails()) {
+            return response()->json(['errors' => $v->errors()], 422);
+        }
+
+        $data = $v->validated();
+
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('photos', 'public');
+            $data['photo'] = Storage::url($path);
+        }
+
+        $data['password'] = Hash::make($data['password']);
+
+        // Pengguna baru berhasil dibuat oleh admin
+        $user = User::create($data);
+
+        // Anda mungkin tidak perlu membuat token untuk user yang baru dibuat
+        // karena user ini tidak langsung login. Sesuaikan sesuai kebutuhan.
+        // $token = $user->createToken('api_token')->plainTextToken;
+
+        // Cukup kembalikan data user yang baru dibuat
+        return response()->json([
+            'message' => 'User created successfully by admin.',
+            'user' => $user,
+        ], 201);
+    }
 
     // Store User Account
     // BUG, NEED FOR FIXED

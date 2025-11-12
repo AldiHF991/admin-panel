@@ -3,11 +3,18 @@
 use App\Http\Controllers\Website\AdminController;
 use App\Http\Controllers\Website\AuthController;
 use App\Http\Controllers\Website\RapatController;
+use App\Http\Controllers\Api\AbsensiController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('auth.login');
 });
+
+Route::get('/absensi/{id}', function ($id) {
+    return view('meetings.absensi', ['id' => $id]);
+});
+
+Route::get('/rapat/{id_rapat}/absensi', [AbsensiController::class, 'getByRapat']);
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login'); // Anda bisa memberi nama yang sama
@@ -39,5 +46,7 @@ Route::post('/meetings', [RapatController::class, 'store'])->name('meetings.stor
 Route::put('/meetings/{rapat}', [RapatController::class, 'update'])->name('meetings.update'); // <-- TAMBAHKAN ATAU PASTIKAN BARIS INI ADA
 Route::delete('/meetings/{rapat}', [RapatController::class, 'destroy'])->name('meetings.destroy');
 
-
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// routes/web.php - tambahkan di akhir file
+Route::get('/api/rapat/{id}/absensi', [App\Http\Controllers\Api\AbsensiController::class, 'getByRapat']);
