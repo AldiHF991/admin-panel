@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Website;
 use App\Http\Controllers\Controller;
 use App\Models\Rapat;
 use App\Models\Cabang;
+use App\Models\Absensi;
 use App\Models\User;
 use Illuminate\Http\Request;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -46,6 +47,22 @@ class RapatController extends Controller
         $svg = QrCode::size(400)->generate($token);
 
         return response($svg)->header('Content-Type', 'image/svg+xml');
+    }
+
+    /**
+     * Menampilkan halaman display absensi untuk rapat tertentu.
+     */
+    public function showAbsensi(Rapat $rapat)
+    {
+        // Ambil data absensi awal untuk rapat ini
+        $initialAbsensi = Absensi::with('user')
+            ->where('id_rapat', $rapat->id_rapat)
+            ->orderBy('waktu_absen', 'asc')
+            ->get();
+
+        // Menggunakan view baru yang akan kita buat
+        // Mengirimkan variabel rapatId dan initialAbsensi ke view
+        return view('meetings.absensi', ['rapatId' => $rapat->id_rapat, 'initialAbsensi' => $initialAbsensi]);
     }
 
     public function store(Request $request)

@@ -4,6 +4,7 @@ use App\Http\Controllers\Website\AdminController;
 use App\Http\Controllers\Website\AuthController;
 use App\Http\Controllers\Website\RapatController;
 use Illuminate\Support\Facades\Route;
+use App\Models\Rapat; 
 
 Route::get('/', function () {
     return view('auth.login');
@@ -21,6 +22,7 @@ Route::get('/admin/reports', [AdminController::class, 'showReports'])->name('rep
 // Route for meeting management
 Route::get('/meetings/{rapat}/qr', [RapatController::class, 'showQrCode'])->name('meetings.showQr');
 Route::get('/meetings/{rapat}/qr-code', [RapatController::class, 'getQrCodeSvg'])->name('meetings.getQrCodeSvg');
+Route::get('/meetings/{rapat}/absensi', [RapatController::class, 'showAbsensi'])->name('meetings.showAbsensi');
 Route::resource('/admin/meetings', RapatController::class)->except(['index', 'show', 'create', 'edit']);
 
 Route::post('admin/users/add', [AdminController::class, 'storeUserAccount'])->name('users.add');
@@ -39,5 +41,14 @@ Route::post('/meetings', [RapatController::class, 'store'])->name('meetings.stor
 Route::put('/meetings/{rapat}', [RapatController::class, 'update'])->name('meetings.update'); // <-- TAMBAHKAN ATAU PASTIKAN BARIS INI ADA
 Route::delete('/meetings/{rapat}', [RapatController::class, 'destroy'])->name('meetings.destroy');
 
+// Route::get('/display-absensi/{rapatId}', function ($rapatId) {
+//     // Ambil data absensi yang sudah ada untuk rapat ini
+//     $initialAbsensi = \App\Models\Absensi::with('user')
+//         ->where('id_rapat', $rapatId)
+//         ->orderBy('waktu_absen', 'asc')
+//         ->get();
+
+//     return view('absensi-display', ['rapatId' => $rapatId, 'initialAbsensi' => $initialAbsensi]);
+// })->name('absensi.display');
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

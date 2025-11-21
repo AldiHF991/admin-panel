@@ -14,12 +14,15 @@
             width: 250px;
             min-height: 100vh;
             background-color: #0d6efd;
+            position: relative; /* Diperlukan untuk positioning toggle */
         }
+
         .sidebar a {
             color: white;
             display: block;
             padding: 10px 20px;
             text-decoration: none;
+            white-space: nowrap; /* Mencegah teks turun baris */
         }
         .sidebar a:hover {
             background-color: #0b5ed7;
@@ -37,6 +40,58 @@
             flex-grow: 1;
             overflow-y: auto;
         }
+
+        /* Transisi Halus */
+        .sidebar, .content-wrapper {
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* State Sidebar saat diperkecil (collapsed) */
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .sidebar.collapsed .sidebar-brand-text,
+        .sidebar.collapsed .sidebar-link-text {
+            display: none;
+        }
+
+        .sidebar.collapsed .sidebar-brand {
+            justify-content: center;
+        }
+
+        .sidebar.collapsed a i {
+            font-size: 1.5rem; /* Perbesar ikon saat sidebar kecil */
+        }
+        /* Tombol Toggle Sidebar Baru */
+        .sidebar-toggle {
+            position: absolute;
+            top: 50%;
+            right: -15px; /* Menonjol keluar dari sidebar */
+            transform: translateY(-50%);
+            width: 30px;
+            height: 30px;
+            background-color: #0d6efd;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+        .sidebar-toggle:hover {
+            background-color: #0a58ca;
+            transform: translateY(-50%) scale(1.1);
+        }
+        .sidebar-toggle i {
+            transition: transform 0.3s ease;
+        }
+        .sidebar.collapsed .sidebar-toggle i {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body>
@@ -44,32 +99,39 @@
 <div class="d-flex">
 
     <!-- Sidebar -->
-    <div class="sidebar text-white">
-        <div class="p-3 border-bottom border-light">
-            <h4 class="fw-bold mb-0">Absensi Rapat</h4>
-            <small class="text-light">Admin Dashboard</small>
+    <div class="sidebar text-white" id="sidebar">
+        <div class="p-3 border-bottom border-light d-flex align-items-center sidebar-brand">
+            <i class="bi bi-calendar-check-fill fs-4 me-3"></i>
+            <div>
+                <h4 class="fw-bold mb-0 sidebar-brand-text">BBWS Brantas</h4>
+                <small class="text-light sidebar-brand-text">Admin Dashboard</small>
+            </div>
         </div>
 
         <!-- Dashboard -->
-        <a href="{{ url('/') }}" class="{{ request()->is('/') ? 'active' : '' }}">
-            <i class="bi bi-speedometer2 me-2"></i> Dashboard
+        <a href="{{ route('dashboard') }}" class="{{ request()->is('/') ? 'active' : '' }}">
+            <i class="bi bi-speedometer2 me-2"></i> <span class="sidebar-link-text">Dashboard</span>
         </a>
 
         <!-- Account Management -->
         <a href="{{ route('userManagement') }}" class="{{ request()->is('users*') ? 'active' : '' }}">
-            <i class="bi bi-people-fill me-2"></i> Account Management
+            <i class="bi bi-people-fill me-2"></i> <span class="sidebar-link-text">Account Management</span>
         </a>
 
         <!-- Cabang & Ruang -->
         <a href="{{ route('branch') }}" class="{{ request()->is('branches*') ? 'active' : '' }}">
-            <i class="bi bi-building me-2"></i> Cabang & Ruang
+            <i class="bi bi-building me-2"></i> <span class="sidebar-link-text">Cabang & Ruang</span>
         </a>
 
         <!-- Manajemen Rapat -->
         <a href="{{ route('meetings.index') }}" class="{{ request()->is('admin/meetings*') ? 'active' : '' }}">
-            <i class="bi bi-calendar-event me-2"></i> Manajemen Rapat
+            <i class="bi bi-calendar-event me-2"></i> <span class="sidebar-link-text">Manajemen Rapat</span>
         </a>
 
+        <!-- Tombol Toggle Sidebar -->
+        <div id="sidebarToggle" class="sidebar-toggle">
+            <i class="bi bi-chevron-left"></i>
+        </div>
     </div>
 
     <!-- Content Area -->
@@ -77,7 +139,7 @@
 
         <!-- Navbar atas -->
         <nav class="navbar navbar-light bg-white shadow-sm px-4">
-            <div class="container-fluid d-flex justify-content-end">
+            <div class="container-fluid d-flex justify-content-end"> <!-- Tombol hamburger dihapus dari sini -->
                 <div class="dropdown">
                     <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle"
                        id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
@@ -116,5 +178,22 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 @stack('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+
+        // Cek status sidebar dari localStorage
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            sidebar.classList.add('collapsed');
+        }
+
+        sidebarToggle.addEventListener('click', function () {
+            sidebar.classList.toggle('collapsed');
+            // Simpan status ke localStorage
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        });
+    });
+</script>
 </body>
 </html>

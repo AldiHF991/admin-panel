@@ -18,9 +18,29 @@ class AdminController extends Controller
 {
 
     // Show FUNCTIONS START
-    public function showDashboard()
+  
+  public function showDashboard()
     {
-        return view('dashboard');
+        // Mengambil data statistik
+        $totalRapat = Rapat::count();
+        $totalPengguna = User::count();
+        $totalCabang = Cabang::count();
+
+        // Mengambil 5 rapat yang akan datang (berdasarkan tanggal)
+        $rapatAkanDatang = Rapat::with(['pengaju', 'status', 'room'])
+            ->where('tanggal', '>=', now()->toDateString())
+            ->orderBy('tanggal', 'asc')
+            ->orderBy('waktu_start', 'asc')
+            ->take(5)
+            ->get();
+
+        // Mengirim data ke view
+        return view('dashboard', compact(
+            'totalRapat',
+            'totalPengguna',
+            'totalCabang',
+            'rapatAkanDatang'
+        ));
     }
 
     public function showUserManagement(Request $request)

@@ -32,19 +32,24 @@ class AuthController extends Controller
             return response()->json(['errors' => $v->errors()], 422);
         }
 
-        $user = User::where('username', $request->username)->first();
+        $credentials = $request->only('username', 'password');
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
+        // Coba untuk melakukan otentikasi
+        if (Auth::attempt($credentials)) {
+            // Otentikasi berhasil.
+            // Regenerasi session untuk keamanan.
+            $request->session()->regenerate();
+
+            // Alihkan ke route 'dashboard' yang akan memanggil AdminController@showDashboard
+            return redirect()->route('dashboard');
         }
 
-        // PERBAIKAN: Muat relasi dengan eager loading
-        $user->load(['role', 'division']);
-
-        $token = $user->createToken('api_token')->plainTextToken;
-
-        // PERBAIKAN: Response yang lebih aman dan konsisten
-        return view('dashboard');
+        // Jika otentikasi gagal, kembalikan ke halaman login dengan pesan error.
+        // Menggunakan `withErrors` untuk mengirim pesan error spesifik.
+        // Anda bisa menampilkan error ini di view login Anda.
+        return back()->withErrors([
+            'username' => 'Username atau password yang diberikan tidak cocok.',
+        ])->onlyInput('username');
     }
 
     // BUG, NEED FOR FIXED

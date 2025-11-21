@@ -8,3 +8,8 @@ NOTE:
     - Seeder yang dibawa hanya berlaku untuk memudahkan developing
     - Seeder division masih dummy. yang lain real.
 
+
+# NOTE 21 NOV 2025
+    - php artisan serve --host=0.0.0.0 --port:8000
+    - php artisan reverb:start
+    - npm run dev

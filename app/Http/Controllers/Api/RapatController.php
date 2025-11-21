@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-
+use App\Events\AbsensiUpdated;
 use App\Exports\AbsensiRapatExport;
 use App\Http\Controllers\Controller;
 use App\Models\Absensi;
@@ -280,6 +280,8 @@ class RapatController extends Controller
             ->with('user:id_user,id_division,name,email') // Eager load data user (hanya kolom yang perlu)
             ->orderBy('waktu_absen', 'asc')
             ->get();
+
+        broadcast(new AbsensiUpdated($id, $absensi));
 
         return response()->json([
             'data' => $absensi,
