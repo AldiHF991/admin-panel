@@ -49,16 +49,25 @@ class AdminController extends Controller
         $roles = Role::all();
         $divisions = Division::all();
 
-        // 2. Ambil id_role yang dipilih dari request
+        // 2. Ambil parameter dari request untuk filter dan pencarian
         $selectedRoleId = $request->input('id_role');
+        $searchTerm = $request->input('search');
 
         // 3. Siapkan query user
-        $usersQuery = User::with(['role', 'division']);
+        $usersQuery = User::with(['role', 'division'])->latest(); // Mengurutkan dari yang terbaru
 
-        // 4. Filter user jika role dipilih, jika tidak, kembalikan koleksi kosong
-        $users = $selectedRoleId
-            ? $usersQuery->where('id_role', $selectedRoleId)->paginate(10)->appends($request->except('page'))
-            : collect();
+        // 4. Terapkan filter berdasarkan role jika ada
+        if ($selectedRoleId) {
+            $usersQuery->where('id_role', $selectedRoleId);
+        }
+
+        // 5. Terapkan filter pencarian berdasarkan nama jika ada
+        if ($searchTerm) {
+            $usersQuery->where('name', 'like', '%' . $searchTerm . '%');
+        }
+
+        // 6. Lakukan paginasi dan tambahkan parameter query string ke link paginasi
+        $users = $usersQuery->paginate(10)->appends($request->query());
 
         return view('users.user-management', compact('users', 'roles', 'divisions'));
     }

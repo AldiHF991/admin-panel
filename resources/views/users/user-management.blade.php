@@ -26,22 +26,23 @@
         </div>
         <div class="card-body">
             {{-- Bagian filter tidak diubah --}}
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <form action="{{ route('userManagement') }}" method="GET">
-                        <div class="input-group">
-                            <select name="id_role" class="form-select" onchange="this.form.submit()">
-                                <option value="">-- Pilih Role untuk Filter --</option>
-                                @foreach ($roles as $role)
-                                    <option value="{{ $role->id_role }}" {{ request('id_role') == $role->id_role ? 'selected' : '' }}>
-                                        {{ $role->role }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </form>
+            <form action="{{ route('userManagement') }}" method="GET" id="filter-form">
+                <div class="row mb-3 g-2">
+                    <div class="col-md-6">
+                        <select name="id_role" class="form-select" onchange="this.form.submit()">
+                            <option value="">-- Semua Role --</option>
+                            @foreach ($roles as $role)
+                                <option value="{{ $role->id_role }}" {{ request('id_role') == $role->id_role ? 'selected' : '' }}>
+                                    {{ $role->role }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" name="search" id="search-input" class="form-control" placeholder="Cari berdasarkan nama..." value="{{ request('search') }}">
+                    </div>
                 </div>
-            </div>
+            </form>
 
             {{-- Tabel tidak diubah --}}
             <table class="table table-hover mt-3">
@@ -87,9 +88,11 @@
                     <tr>
                         <td colspan="6" class="text-center text-muted">
                             @if(request()->has('id_role') && request('id_role') != '')
-                                Tidak ada data pengguna untuk role yang dipilih.
+                                Tidak ada pengguna yang cocok dengan filter dan pencarian.
+                            @elseif(request()->has('search') && request('search') != '')
+                                Tidak ada pengguna yang cocok dengan pencarian.
                             @else
-                                Silakan pilih role untuk menampilkan data pengguna.
+                                Belum ada data pengguna.
                             @endif
                         </td>
                     </tr>
@@ -100,7 +103,7 @@
             {{-- Pagination tidak diubah --}}
             <div class="d-flex justify-content-end">
                 @if ($users instanceof \Illuminate\Pagination\AbstractPaginator)
-                    {{ $users->links() }}
+                    {{ $users->appends(request()->query())->links() }}
                 @endif
             </div>
 
@@ -134,10 +137,8 @@
                 @endif
 
                 <div class="mb-3">
-                    {{-- Tambahkan span.text-danger untuk tanda * --}}
-                    <label for="add_name">Nama <span class="text-danger">*</span></label>
-                    {{-- Tambahkan class @error dan div.invalid-feedback --}}
-                    <input type="text" name="name" id="add_name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
+                                 <label for="add_name">Nama <span class="text-danger">*</span></label>
+                                        <input type="text" name="name" id="add_name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
                     @error('name')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -159,15 +160,25 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="add_password">Password <span class="text-danger">*</span></label>
-                        <input type="password" name="password" id="add_password" class="form-control @error('password') is-invalid @enderror" required>
+                        <div class="input-group">
+                            <input type="password" name="password" id="add_password" class="form-control @error('password') is-invalid @enderror" required>
+                            <button class="btn btn-outline-secondary" type="button" data-toggle-password="add_password">
+                                <i class="bi bi-eye-slash"></i>
+                            </button>
+                        </div>
                         @error('password')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="add_password_confirmation">Konfirmasi Password <span class="text-danger">*</span></label>
-                        <input type="password" name="password_confirmation" id="add_password_confirmation" class="form-control" required>
-                        {{-- Error untuk konfirmasi biasanya ditangani oleh 'password' rule 'confirmed' --}}
+                        <div class="input-group">
+                            <input type="password" name="password_confirmation" id="add_password_confirmation" class="form-control" required>
+                            <button class="btn btn-outline-secondary" type="button" data-toggle-password="add_password_confirmation">
+                                <i class="bi bi-eye-slash"></i>
+                            </button>
+                            <div class="invalid-feedback" id="add_password_match_error"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="mb-3">
@@ -205,7 +216,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan</button>
+                <button type="submit" id="addUserSubmitBtn" class="btn btn-primary">Simpan</button>
             </div>
         </form>
     </div>
@@ -260,14 +271,25 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="edit_password">Password Baru</label>
-                        <input type="password" name="password" id="edit_password" class="form-control @error('password') is-invalid @enderror">
+                        <div class="input-group">
+                            <input type="password" name="password" id="edit_password" class="form-control @error('password') is-invalid @enderror">
+                            <button class="btn btn-outline-secondary" type="button" data-toggle-password="edit_password">
+                                <i class="bi bi-eye-slash"></i>
+                            </button>
+                        </div>
                         @error('password')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="edit_password_confirmation">Konfirmasi Password</label>
-                        <input type="password" name="password_confirmation" id="edit_password_confirmation" class="form-control">
+                        <div class="input-group">
+                            <input type="password" name="password_confirmation" id="edit_password_confirmation" class="form-control">
+                            <button class="btn btn-outline-secondary" type="button" data-toggle-password="edit_password_confirmation">
+                                <i class="bi bi-eye-slash"></i>
+                            </button>
+                            <div class="invalid-feedback" id="edit_password_match_error"></div>
+                        </div>
                     </div>
                 </div>
                 <small class="form-text text-muted mb-3 d-block">Kosongkan password jika tidak ingin mengubahnya.</small>
@@ -297,7 +319,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-warning">Update</button>
+                <button type="submit" id="editUserSubmitBtn" class="btn btn-warning">Update</button>
             </div>
         </form>
     </div>
@@ -350,6 +372,91 @@ document.getElementById('editUserModal').addEventListener('show.bs.modal', funct
         @endif
     });
 @endif
+
+// SKRIP BARU: Validasi real-time untuk konfirmasi password
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Ambil elemen tombol submit ---
+    const addUserSubmitBtn = document.getElementById('addUserSubmitBtn');
+    const editUserSubmitBtn = document.getElementById('editUserSubmitBtn');
+
+    // Fungsi untuk validasi password
+    function validatePasswordConfirmation(passwordInput, confirmInput, errorElement, submitButton) {
+        const password = passwordInput.value;
+        const confirmPassword = confirmInput.value;
+
+        // Untuk form edit, jika kedua password kosong, tidak ada error.
+        if (submitButton.id === 'editUserSubmitBtn' && !password && !confirmPassword) {
+            errorElement.style.display = 'none';
+            confirmInput.classList.remove('is-invalid');
+            submitButton.disabled = false;
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            errorElement.textContent = 'Konfirmasi password tidak cocok dengan password.';
+            errorElement.style.display = 'block';
+            confirmInput.classList.add('is-invalid');
+            submitButton.disabled = true; // Nonaktifkan tombol jika password tidak cocok
+        } else {
+            errorElement.style.display = 'none';
+            confirmInput.classList.remove('is-invalid');
+            submitButton.disabled = false; // Aktifkan kembali tombol jika password cocok
+        }
+    }
+
+    // --- Modal Tambah Akun ---
+    const addPassword = document.getElementById('add_password');
+    const addConfirmPassword = document.getElementById('add_password_confirmation');
+    const addError = document.getElementById('add_password_match_error');
+
+    addPassword.addEventListener('input', () => validatePasswordConfirmation(addPassword, addConfirmPassword, addError, addUserSubmitBtn));
+    addConfirmPassword.addEventListener('input', () => validatePasswordConfirmation(addPassword, addConfirmPassword, addError, addUserSubmitBtn));
+
+
+    // --- Modal Edit Akun ---
+    const editPassword = document.getElementById('edit_password');
+    const editConfirmPassword = document.getElementById('edit_password_confirmation');
+    const editError = document.getElementById('edit_password_match_error');
+
+    editPassword.addEventListener('input', () => validatePasswordConfirmation(editPassword, editConfirmPassword, editError, editUserSubmitBtn));
+    editConfirmPassword.addEventListener('input', () => validatePasswordConfirmation(editPassword, editConfirmPassword, editError, editUserSubmitBtn));
+
+    // SKRIP BARU: Toggle show/hide password
+    document.querySelectorAll('[data-toggle-password]').forEach(button => {
+        button.addEventListener('click', function () {
+            const targetId = this.getAttribute('data-toggle-password');
+            const passwordInput = document.getElementById(targetId);
+            const icon = this.querySelector('i');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            }
+        });
+    });
+
+    // SKRIP BARU: Live search dengan debounce
+    const searchInput = document.getElementById('search-input');
+    const filterForm = document.getElementById('filter-form');
+    let debounceTimer;
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () {
+            // Periksa apakah form ada sebelum submit
+            if (filterForm) {
+                filterForm.submit();
+            }
+        }, 500); // Tunggu 500ms setelah pengguna berhenti mengetik
+    });
+
+});
+
 </script>
 @endpush
 @endsection
