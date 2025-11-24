@@ -12,14 +12,41 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AbsensiRapatExport;
+use Carbon\Carbon;
 
 class RapatController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $pics = User::where('id_role', 2)->get(); // Assuming PIC is a role
+        $cabangs = Cabang::all();
+        $statuses = \App\Models\StatusRapat::all();
 
-        return view('meetings.meeting-management', compact('pics'));
+        // Ambil semua rapat untuk pengecekan jadwal di JS
+        $allRapats = Rapat::select('id_rapat', 'id_room', 'tanggal', 'waktu_start', 'waktu_end')->get();
+
+        // Query dasar
+        $query = Rapat::with(['cabang', 'room', 'status', 'userPengaju']);
+
+        // Filter berdasarkan PIC
+        if ($request->filled('id_user_pic')) {
+            $query->where('id_user_pengaju', $request->id_user_pic);
+        }
+
+        // Filter berdasarkan pencarian judul
+        if ($request->filled('search')) {
+            $query->where('judul', 'like', '%' . $request->search . '%');
+        }
+
+        // Logika Sorting
+        $sort = $request->get('sort', 'judul'); // Default sort by judul
+        $direction = $request->get('direction', 'asc'); // Default ascending
+        $query->orderBy($sort, $direction);
+
+        // Terapkan paginasi dengan limit 10
+        $rapats = $query->paginate(10);
+
+        return view('meetings.meeting-management', compact('pics', 'cabangs', 'statuses', 'rapats', 'allRapats', 'sort', 'direction'));
     }
 
     public function getMeetingsByPic(User $user)

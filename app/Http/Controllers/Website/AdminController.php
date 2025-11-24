@@ -87,11 +87,11 @@ class AdminController extends Controller
         // 2. Ambil parameter dari request
         $selectedCabangId = $request->input('id_cabang');
         $searchTerm = $request->input('search');
-        $sort = $request->input('sort', 'room'); // Default sort by room name
+        $sort = $request->input('sort', 'room.room'); // Default sort by room name
         $direction = $request->input('direction', 'asc'); // Default direction ascending
 
         // 3. Siapkan query ruangan
-        $roomQuery = Room::with(['cabang', 'statusRuangan']);
+        $roomQuery = Room::with(['cabang', 'statusRuangan'])->select('room.*');
 
         // 4. Terapkan filter berdasarkan cabang jika ada
         if ($selectedCabangId) {
@@ -103,8 +103,12 @@ class AdminController extends Controller
             $roomQuery->where('room', 'like', '%' . $searchTerm . '%');
         }
 
-        // 6. Terapkan pengurutan
-        $roomQuery->orderBy($sort, $direction);
+        // 6. Terapkan pengurutan (termasuk join untuk sort by alamat)
+        if ($sort === 'cabang.alamat') {
+            $roomQuery->join('cabang', 'room.id_cabang', '=', 'cabang.id')->orderBy('cabang.alamat', $direction);
+        } else {
+            $roomQuery->orderBy($sort, $direction);
+        }
 
         // 7. Lakukan paginasi
         $rooms = $roomQuery->paginate(10)->appends($request->query());
@@ -141,10 +145,10 @@ class AdminController extends Controller
             $rapatsQuery->where('judul', 'like', '%' . $searchTerm . '%');
         }
 
-        // Terapkan pengurutan dan ambil data rapat
-        $rapats = $rapatsQuery->orderBy($sort, $direction)->get();
+        // Terapkan pengurutan, paginasi, dan ambil data rapat
+        $rapats = $rapatsQuery->orderBy($sort, $direction)->paginate(10)->appends($request->query());
 
-        return view('meetings.meeting-management', compact('rapats', 'pics', 'cabangs', 'rooms', 'divisions', 'statuses', 'allRapats', 'sort', 'direction'));
+        return view('meetings.meeting-management', compact('rapats', 'pics', 'cabangs', 'rooms', 'divisions', 'statuses', 'allRapats', 'sort', 'direction', 'selectedPicId'));
     }
 
     // END Show FUNCTIONS

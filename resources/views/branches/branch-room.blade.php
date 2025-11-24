@@ -76,13 +76,29 @@
                             {{-- Tombol untuk sorting nama ruangan --}}
                             <a href="{{ route('branch', array_merge(request()->query(), ['sort' => 'room', 'direction' => request('direction', 'asc') == 'asc' ? 'desc' : 'asc'])) }}" class="text-black text-decoration-none">
                                 Nama Ruangan
-                                @if(request('sort', 'room') == 'room')
-                                    <i class="bi {{ request('direction', 'asc') == 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
+                                @if ($sort === 'room.room')
+                                    {{-- Ikon jika kolom ini sedang aktif diurutkan --}}
+                                    <i class="bi {{ $direction === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
+                                @else
+                                    {{-- Ikon default jika kolom lain yang diurutkan --}}
+                                    <i class="bi bi-sort-alpha-down"></i>
                                 @endif
                             </a>
                         </th>
                         <th>Cabang</th>
-                        <th>Alamat Cabang</th>
+                        <th>
+                            {{-- Tombol untuk sorting alamat cabang --}}
+                            <a href="{{ route('branch', array_merge(request()->query(), ['sort' => 'cabang.alamat', 'direction' => request('direction', 'asc') == 'asc' ? 'desc' : 'asc'])) }}" class="text-black text-decoration-none">
+                                Alamat Cabang
+                                @if ($sort === 'cabang.alamat')
+                                    {{-- Ikon jika kolom ini sedang aktif diurutkan --}}
+                                    <i class="bi {{ $direction === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
+                                @else
+                                    {{-- Ikon default jika kolom lain yang diurutkan --}}
+                                    <i class="bi bi-sort-alpha-down"></i>
+                                @endif
+                            </a>
+                        </th>
                         <th>Status</th>
                         <th>Aksi</th>
                     </tr>
@@ -131,74 +147,14 @@
                 </tbody>
             </table>
 
-            <!-- PAGINATION YANG DIPERBAIKI - FIXED ERROR -->
-            @if($rooms instanceof \Illuminate\Pagination\AbstractPaginator && $rooms->total() > $rooms->perPage())
-            <div class="d-flex justify-content-between align-items-center mt-4">
-                <div class="text-muted">
-                    Menampilkan {{ $rooms->firstItem() }} sampai {{ $rooms->lastItem() }} dari {{ $rooms->total() }} entri
-                </div>
-                
-                <nav aria-label="Page navigation">
-                    <ul class="pagination mb-0">
-                        <!-- Previous Page Link -->
-                        @if ($rooms->onFirstPage())
-                            <li class="page-item disabled">
-                                <span class="page-link">Sebelumnya</span>
-                            </li>
-                        @else
-                            <li class="page-item">
-                                <a class="page-link" href="{{ $rooms->previousPageUrl() }}" rel="prev">Sebelumnya</a>
-                            </li>
-                        @endif
-
-                        <!-- Pagination Elements -->
-                        @php
-                            $current = $rooms->currentPage();
-                            $last = $rooms->lastPage();
-                            $start = max(1, $current - 2);
-                            $end = min($last, $current + 2);
-                        @endphp
-
-                        @if($start > 1)
-                            <li class="page-item"><a class="page-link" href="{{ $rooms->url(1) }}">1</a></li>
-                            @if($start > 2)
-                                <li class="page-item disabled"><span class="page-link">...</span></li>
-                            @endif
-                        @endif
-
-                        @for ($page = $start; $page <= $end; $page++)
-                            @if ($page == $rooms->currentPage())
-                                <li class="page-item active"><span class="page-link">{{ $page }}</span></li>
-                            @else
-                                <li class="page-item"><a class="page-link" href="{{ $rooms->url($page) }}">{{ $page }}</a></li>
-                            @endif
-                        @endfor
-
-                        @if($end < $last)
-                            @if($end < $last - 1)
-                                <li class="page-item disabled"><span class="page-link">...</span></li>
-                            @endif
-                            <li class="page-item"><a class="page-link" href="{{ $rooms->url($last) }}">{{ $last }}</a></li>
-                        @endif
-
-                        <!-- Next Page Link -->
-                        @if ($rooms->hasMorePages())
-                            <li class="page-item">
-                                <a class="page-link" href="{{ $rooms->nextPageUrl() }}" rel="next">Selanjutnya</a>
-                            </li>
-                        @else
-                            <li class="page-item disabled">
-                                <span class="page-link">Selanjutnya</span>
-                            </li>
-                        @endif
-                    </ul>
-                </nav>
+            <!-- PAGINATION YANG DIPERBAIKI DAN DISIMPLIFY -->
+            <!-- PAGINATION -->
+            <div class="d-flex justify-content-end mt-4">
+                @if ($rooms instanceof \Illuminate\Pagination\AbstractPaginator)
+                    {{ $rooms->appends(request()->query())->links('pagination::simple-bootstrap-5') }}
+                @endif
+                {{ $rooms->appends(request()->query())->links('pagination::simple-bootstrap-5') }}
             </div>
-            @elseif($rooms instanceof \Illuminate\Pagination\AbstractPaginator)
-            <div class="text-muted mt-3">
-                Menampilkan semua {{ $rooms->total() }} entri
-            </div>
-            @endif
 
         </div>
     </div>

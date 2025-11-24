@@ -61,10 +61,13 @@
                         <th>#</th>
                         <th>
                             {{-- Link untuk sorting berdasarkan judul --}}
-                            <a href="{{ route('meetings.index', array_merge(request()->query(), ['sort' => 'judul', 'direction' => ($sort === 'judul' && $direction === 'asc') ? 'desc' : 'asc'])) }}" class="text-decoration-none text-white">
+                            <a href="{{ route('meetings.index', array_merge(request()->query(), ['sort' => 'judul', 'direction' => ($sort === 'judul' && $direction === 'asc') ? 'desc' : 'asc'])) }}" class="text-decoration-none text-black">
                                 Judul
                                 @if ($sort === 'judul')
                                     <i class="bi {{ $direction === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
+                                @else
+                                    {{-- Ikon default jika kolom lain yang diurutkan --}}
+                                    <i class="bi bi-sort-alpha-down"></i>
                                 @endif
                             </a>
                         </th>
@@ -79,7 +82,12 @@
                 <tbody id="meetingsTableBody">
                     @forelse ($rapats as $rapat)
                         <tr>
-                            <td>{{ $loop->iteration }}</td> {{-- Nomor iterasi sederhana --}}
+                            {{-- PERBAIKAN: Penomoran yang benar untuk paginasi --}}
+                            @if ($rapats instanceof \Illuminate\Pagination\AbstractPaginator)
+                                <td>{{ $rapats->firstItem() + $loop->index }}</td>
+                            @else
+                                <td>{{ $loop->iteration }}</td>
+                            @endif
                             <td>{{ $rapat->judul }}</td>
                             <td>{{ $rapat->cabang ? $rapat->cabang->cabang : 'N/A' }}</td>
                             <td>{{ $rapat->room ? $rapat->room->room : 'N/A' }}</td>
@@ -113,6 +121,14 @@
                     @endforelse
                 </tbody>
             </table>
+
+            {{-- Tampilkan Paginasi jika data adalah instance Paginator --}}
+            @if ($rapats instanceof \Illuminate\Pagination\AbstractPaginator)
+                <div class="d-flex justify-content-end mt-3">
+                    {{-- appends(request()->query()) memastikan filter dan sort tetap ada saat pindah halaman --}}
+                    {{ $rapats->appends(request()->query())->links('pagination::simple-bootstrap-5') }}
+                </div>
+            @endif
         </div>
     </div>
 </div>
@@ -279,6 +295,25 @@
         </form>
     </div>
 </div>
+
+{{-- MODAL BARU: Konfirmasi Waktu Lampau --}}
+<div class="modal fade" id="pastTimeConfirmModal" tabindex="-1" aria-labelledby="pastTimeConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pastTimeConfirmModalLabel"><i class="bi bi-exclamation-triangle-fill text-warning"></i> Konfirmasi Waktu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Waktu rapat yang Anda masukkan sudah berlalu. Apakah Anda yakin ingin melanjutkannya?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-warning" id="confirmPastTimeBtn">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('styles')
@@ -298,6 +333,23 @@
     select option:disabled {
         color: #adb5bd;
         background-color: #e9ecef;
+    }
+
+    /* Gaya modern untuk modal konfirmasi */
+    #pastTimeConfirmModal .modal-content {
+        /* Menambahkan bayangan agar lebih menonjol */
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        border: 5px solid rgba(255, 193, 7, 0.5); /* Outline kuning (warning) */
+    }
+
+    /* Menggelapkan dan memberikan efek blur pada backdrop */
+    .modal-backdrop.show {
+        /* Opasitas default adalah 0.5, kita naikkan menjadi 0.7 */
+        opacity: 0.7; 
+        
+        /* Efek blur modern (jika didukung browser) */
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
     }
 </style>
 @endpush
@@ -640,6 +692,42 @@
                 window.location.href = `{{ route('meetings.index') }}?${params.toString()}`;
             }
         }, 500); // Tunggu 500ms setelah pengguna berhenti mengetik
+    });
+
+    // Hapus script lama yang menangani redirect dari server
+    // @if (session('confirm_past_time_update')) ... @endif
+
+    // Logika baru untuk konfirmasi waktu lampau dengan modal
+    const pastTimeConfirmModalEl = document.getElementById('pastTimeConfirmModal');
+    const pastTimeConfirmModal = new bootstrap.Modal(pastTimeConfirmModalEl);
+    const confirmPastTimeBtn = document.getElementById('confirmPastTimeBtn');
+    let formToSubmit; // Variabel untuk menyimpan form yang akan di-submit
+
+    document.getElementById('editRapatForm').addEventListener('submit', function(e) {
+        e.preventDefault(); // Selalu hentikan submit default terlebih dahulu
+
+        formToSubmit = this; // Simpan form saat ini
+        const dateInput = formToSubmit.querySelector('#edit_tanggal');
+        const startTimeInput = formToSubmit.querySelector('#edit_waktu_start');
+
+        // Cek apakah waktu berada di masa lampau
+        const selectedDateTime = new Date(`${dateInput.value}T${startTimeInput.value}`);
+        const now = new Date();
+
+        if (selectedDateTime < now) {
+            // Jika waktu di masa lampau, tampilkan modal konfirmasi
+            pastTimeConfirmModal.show();
+        } else {
+            // Jika waktu tidak di masa lampau, langsung submit form
+            formToSubmit.submit();
+        }
+    });
+
+    // Tambahkan event listener untuk tombol "Ya, Lanjutkan" di modal
+    confirmPastTimeBtn.addEventListener('click', function() {
+        if (formToSubmit) {
+            formToSubmit.submit(); // Submit form yang sudah disimpan
+        }
     });
 });
 </script>
