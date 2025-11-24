@@ -11,7 +11,7 @@ Route::get('/', function () {
 });
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login'); // Anda bisa memberi nama yang sama
+Route::post('/login', [AuthController::class, 'login'])->name('login'); 
 
 Route::get('/admin/dashboard', [AdminController::class, 'showDashboard'])->name('dashboard');
 Route::get('/admin/user-management', [AdminController::class, 'showUserManagement'])->name('userManagement');
@@ -23,7 +23,9 @@ Route::get('/admin/reports', [AdminController::class, 'showReports'])->name('rep
 Route::get('/meetings/{rapat}/qr', [RapatController::class, 'showQrCode'])->name('meetings.showQr');
 Route::get('/meetings/{rapat}/qr-code', [RapatController::class, 'getQrCodeSvg'])->name('meetings.getQrCodeSvg');
 Route::get('/meetings/{rapat}/absensi', [RapatController::class, 'showAbsensi'])->name('meetings.showAbsensi');
+Route::get('/meetings/{id}/export-absensi', [RapatController::class, 'exportAbsensi'])->name('meetings.exportAbsensi');
 Route::resource('/admin/meetings', RapatController::class)->except(['index', 'show', 'create', 'edit']);
+
 
 Route::post('admin/users/add', [AdminController::class, 'storeUserAccount'])->name('users.add');
 Route::post('admin/users/edit', [AdminController::class, 'updateUserAccount'])->name('users.edit');

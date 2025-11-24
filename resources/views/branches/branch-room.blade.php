@@ -36,34 +36,51 @@
                 <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addBranchModal" style="display: none;">
                     <i class="bi bi-plus-circle me-1"></i> Tambah Cabang
                 </button>
-                <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addRoomModal" {{ request('id_cabang') ? '' : 'disabled' }}>
-                    <i class="bi bi-plus-circle me-1"></i> Tambah Ruangan
-                </button>
+                @if(!request('id_cabang'))
+                    <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="Silahkan memilih Cabang dahulu">
+                        <button class="btn btn-light btn-sm" type="button" disabled style="pointer-events: none;">
+                            <i class="bi bi-plus-circle me-1"></i> Tambah Ruangan
+                        </button>
+                    </span>
+                @else
+                    <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addRoomModal">
+                        <i class="bi bi-plus-circle me-1"></i> Tambah Ruangan
+                    </button>
+                @endif
             </div>
         </div>
         <div class="card-body">
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <form action="{{ route('branch') }}" method="GET">
-                        <div class="input-group">
-                            <select name="id_cabang" class="form-select" onchange="this.form.submit()">
-                                <option value="">-- Pilih Cabang untuk Filter --</option>
-                                @foreach ($cabang as $c)
-                                    <option value="{{ $c->id }}" {{ request('id_cabang') == $c->id ? 'selected' : '' }}>
-                                        {{ $c->cabang }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </form>
+            <form action="{{ route('branch') }}" method="GET" id="filter-form">
+                <div class="row mb-3 g-2">
+                    <div class="col-md-6">
+                        <select name="id_cabang" class="form-select" onchange="this.form.submit()">
+                            <option value="">-- Semua Cabang --</option>
+                            @foreach ($cabang as $c)
+                                <option value="{{ $c->id }}" {{ request('id_cabang') == $c->id ? 'selected' : '' }}>
+                                    {{ $c->cabang }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" name="search" id="search-input" class="form-control" placeholder="Cari berdasarkan nama ruangan..." value="{{ request('search') }}">
+                    </div>
                 </div>
-            </div>
+            </form>
 
             <table class="table table-hover mt-3">
                 <thead class="table-primary">
                     <tr>
                         <th>#</th>
-                        <th>Nama Ruangan</th>
+                        <th>
+                            {{-- Tombol untuk sorting nama ruangan --}}
+                            <a href="{{ route('branch', array_merge(request()->query(), ['sort' => 'room', 'direction' => request('direction', 'asc') == 'asc' ? 'desc' : 'asc'])) }}" class="text-black text-decoration-none">
+                                Nama Ruangan
+                                @if(request('sort', 'room') == 'room')
+                                    <i class="bi {{ request('direction', 'asc') == 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
+                                @endif
+                            </a>
+                        </th>
                         <th>Cabang</th>
                         <th>Alamat Cabang</th>
                         <th>Status</th>
@@ -103,10 +120,10 @@
                     @empty
                     <tr>
                         <td colspan="6" class="text-center text-muted">
-                            @if(request()->has('id_cabang') && request('id_cabang') != '')
+                            @if(request('search') || request('id_cabang'))
                                 Tidak ada data ruangan untuk cabang yang dipilih.
                             @else
-                                Silakan pilih cabang untuk menampilkan data ruangan.
+                                Belum ada data ruangan.
                             @endif
                         </td>
                     </tr>
@@ -292,6 +309,12 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Inisialisasi semua tooltip di halaman
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+
     // Script untuk modal edit ruangan
     const editRoomModal = document.getElementById('editRoomModal');
     if (editRoomModal) {
@@ -312,6 +335,20 @@ document.addEventListener('DOMContentLoaded', function () {
             modalRoomNameInput.value = roomName;
             modalCabangSelect.value = cabangId;
             modalStatusSelect.value = statusId;
+        });
+    }
+
+    // Script untuk live search dengan debounce
+    const searchInput = document.getElementById('search-input');
+    const filterForm = document.getElementById('filter-form');
+    let debounceTimer;
+
+    if (searchInput && filterForm) {
+        searchInput.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {
+                filterForm.submit();
+            }, 500); // Tunggu 500ms setelah pengguna berhenti mengetik
         });
     }
 });

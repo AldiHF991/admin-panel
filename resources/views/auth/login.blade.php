@@ -98,6 +98,14 @@
             </div>
         @endif
 
+        {{-- Menampilkan error validasi dari withErrors() --}}
+        @if ($errors->any())
+            <div class="alert alert-danger text-center p-2 mb-3" role="alert">
+                {{-- Ambil pesan error pertama, karena kita hanya mengirim satu --}}
+                {{ $errors->first() }}
+            </div>
+        @endif
+
         <form method="POST" action="{{ route('login') }}">
             @csrf
             <div class="mb-3 icon-input">

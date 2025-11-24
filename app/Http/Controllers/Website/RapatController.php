@@ -9,6 +9,9 @@ use App\Models\Absensi;
 use App\Models\User;
 use Illuminate\Http\Request;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\AbsensiRapatExport;
 
 class RapatController extends Controller
 {
@@ -137,5 +140,30 @@ class RapatController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+        /**
+     * Mengekspor data absensi rapat ke Excel.
+     * GET: /api/rapat/{id}/export-absensi
+     */
+    public function exportAbsensi($id)
+    {
+        // 1. Pastikan rapat ada
+        $rapat = Rapat::findOrFail($id);
+
+        // 2. Ambil data absensi untuk rapat ini, sertakan data user dan divisi.
+        // Ini mirip dengan getAbsensiRapat, tapi dengan lebih banyak relasi.
+        $absensi = Absensi::where('id_rapat', $id)
+            ->with('user:id_user,name,email,id_division', 'user.division:id_division,division_name')
+            ->orderBy('waktu_absen', 'asc')
+            ->get();
+
+        // 3. Buat nama file yang deskriptif agar tidak bingung
+        // contoh: laporan-absensi-rapat-koordinasi-2023-10-27.xlsx
+        $fileName = 'laporan-absensi-' . Str::slug($rapat->judul) . '-' . date('Y-m-d') . '.xlsx';
+
+        // 4. Gunakan class AbsensiRapatExport yang baru untuk men-download file
+        // Koleksi $absensi diteruskan ke constructor class export.
+        return Excel::download(new AbsensiRapatExport($absensi), $fileName);
     }
 }

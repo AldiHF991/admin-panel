@@ -10,7 +10,15 @@
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto p-8">
-        <h1 class="text-3xl font-bold mb-2 text-center">Daftar Hadir Rapat</h1>
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-2">
+            <h1 class="text-3xl font-bold text-center">Daftar Hadir Rapat</h1>
+            {{-- Tombol Export ke Excel --}}
+            <a href="{{ route('meetings.exportAbsensi', ['id' => $rapatId]) }}" 
+               class="mt-2 sm:mt-0 inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-800 focus:outline-none focus:border-green-800 focus:ring ring-green-300 disabled:opacity-25 transition ease-in-out duration-150">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Export ke Excel
+            </a>
+        </div>
 
         <div class="text-center mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100 shadow-sm max-w-md mx-auto">
             <div class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Waktu Saat Ini (WIB)</div>

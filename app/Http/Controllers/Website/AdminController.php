@@ -12,7 +12,9 @@ use App\Models\Room;
 use App\Models\StatusRuangan;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
@@ -52,10 +54,14 @@ class AdminController extends Controller
         // 2. Ambil parameter dari request untuk filter dan pencarian
         $selectedRoleId = $request->input('id_role');
         $searchTerm = $request->input('search');
+        $sort = $request->input('sort', 'created_at'); // Default sort by creation date
+        $direction = $request->input('direction', 'desc'); // Default direction descending
 
         // 3. Siapkan query user
-        $usersQuery = User::with(['role', 'division'])->latest(); // Mengurutkan dari yang terbaru
-
+        $usersQuery = User::with(['role', 'division']);
+        
+        // Terapkan pengurutan
+        $usersQuery->orderBy($sort, $direction);
         // 4. Terapkan filter berdasarkan role jika ada
         if ($selectedRoleId) {
             $usersQuery->where('id_role', $selectedRoleId);
@@ -69,7 +75,7 @@ class AdminController extends Controller
         // 6. Lakukan paginasi dan tambahkan parameter query string ke link paginasi
         $users = $usersQuery->paginate(10)->appends($request->query());
 
-        return view('users.user-management', compact('users', 'roles', 'divisions'));
+        return view('users.user-management', compact('users', 'roles', 'divisions', 'sort', 'direction'));
     }
 
     public function showBranch(Request $request)
@@ -78,18 +84,32 @@ class AdminController extends Controller
         $statusRuangan = StatusRuangan::all();
         $cabang = Cabang::all();
 
-        // 2. Ambil id_role yang dipilih dari request
+        // 2. Ambil parameter dari request
         $selectedCabangId = $request->input('id_cabang');
+        $searchTerm = $request->input('search');
+        $sort = $request->input('sort', 'room'); // Default sort by room name
+        $direction = $request->input('direction', 'asc'); // Default direction ascending
 
-        // 3. Siapkan query user
+        // 3. Siapkan query ruangan
         $roomQuery = Room::with(['cabang', 'statusRuangan']);
 
-        // 4. Filter user jika role dipilih, jika tidak, kembalikan koleksi kosong
-        $rooms = $selectedCabangId
-            ? $roomQuery->where('id_cabang', $selectedCabangId)->paginate(10)->appends($request->except('page'))
-            : collect();
+        // 4. Terapkan filter berdasarkan cabang jika ada
+        if ($selectedCabangId) {
+            $roomQuery->where('id_cabang', $selectedCabangId);
+        }
 
-        return view('branches.branch-room', compact('cabang', 'rooms', 'statusRuangan'));
+        // 5. Terapkan filter pencarian berdasarkan nama ruangan jika ada
+        if ($searchTerm) {
+            $roomQuery->where('room', 'like', '%' . $searchTerm . '%');
+        }
+
+        // 6. Terapkan pengurutan
+        $roomQuery->orderBy($sort, $direction);
+
+        // 7. Lakukan paginasi
+        $rooms = $roomQuery->paginate(10)->appends($request->query());
+
+        return view('branches.branch-room', compact('cabang', 'rooms', 'statusRuangan', 'sort', 'direction'));
     }
 
     public function showMeetings(Request $request)
@@ -100,17 +120,31 @@ class AdminController extends Controller
         $statuses = StatusRapat::all();
         $allRapats = Rapat::all(); // Data semua rapat untuk pengecekan di frontend
 
-        $pics = User::where('id_role', 2)->get(); 
+        // Ambil semua PIC, diurutkan berdasarkan nama
+        $pics = User::where('id_role', 2)->orderBy('name', 'asc')->get();
+
+        // Ambil parameter untuk filter, search, dan sort rapat
         $selectedPicId = $request->input('id_user_pic');
+        $searchTerm = $request->input('search');
+        $sort = $request->input('sort', 'tanggal'); // Default sort by tanggal
+        $direction = $request->input('direction', 'desc'); // Default direction descending
 
-        $rapatsQuery = Rapat::with(['cabang', 'room', 'status', 'pengaju', 'divisions'])->orderBy('tanggal', 'desc');
+        $rapatsQuery = Rapat::with(['cabang', 'room', 'status', 'pengaju', 'divisions']);
 
-        // Filter rapat jika PIC dipilih, jika tidak, kembalikan koleksi kosong
-        $rapats = $selectedPicId
-            ? $rapatsQuery->where('id_user_pengaju', $selectedPicId)->get()
-            : collect();
+        // Terapkan filter berdasarkan PIC yang dipilih
+        if ($selectedPicId) {
+            $rapatsQuery->where('id_user_pengaju', $selectedPicId);
+        }
 
-        return view('meetings.meeting-management', compact('rapats', 'pics', 'cabangs', 'rooms', 'divisions', 'statuses', 'allRapats'));
+        // Terapkan filter pencarian berdasarkan judul rapat
+        if ($searchTerm) {
+            $rapatsQuery->where('judul', 'like', '%' . $searchTerm . '%');
+        }
+
+        // Terapkan pengurutan dan ambil data rapat
+        $rapats = $rapatsQuery->orderBy($sort, $direction)->get();
+
+        return view('meetings.meeting-management', compact('rapats', 'pics', 'cabangs', 'rooms', 'divisions', 'statuses', 'allRapats', 'sort', 'direction'));
     }
 
     // END Show FUNCTIONS
@@ -118,41 +152,79 @@ class AdminController extends Controller
     // ACCOUNT MANAGEMENT FUNCTIONS START
 
     // Store User Account
-    // BUG, NEED FOR FIXED
     public function storeUserAccount(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username',
-            'email' => 'required|string|email|max:255|unique:users,email',
-            'id_role' => 'required|exists:role,id_role',
-            'id_division' => 'nullable|exists:division,id_division',
+        $v = Validator::make($request->all(), [
+            'username' => 'required|string|unique:users,username',
+            'password' => 'required|string|min:1',
+            'name' => 'required|string',
+            'email' => 'nullable|email|unique:users,email',
+            'phone' => 'nullable|string',
+            'id_role' => 'nullable|integer',
+            'gender' => 'nullable|in:Male,Female',
+            'id_division' => 'nullable|integer',
+            'photo' => 'nullable|image|max:2048',
         ]);
 
-        // Tambahkan password default
-        $validated['password'] = Hash::make('password');
+        if ($v->fails()) {
+            return response()->json(['errors' => $v->errors()], 422);
+        }
 
-        User::create($validated);
+        $data = $v->validated();
 
-        return redirect()->back()->with('success', 'User berhasil ditambahkan!');
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('photos', 'public');
+            $data['photo'] = Storage::url($path);
+        }
+
+        $data['password'] = Hash::make($data['password']);
+
+        // Pengguna baru berhasil dibuat oleh admin
+        $user = User::create($data);
+
+             return redirect()->back()->with('success', 'User berhasil ditambahkan!');
     }
 
     // Update User Account
     public function updateUserAccount(Request $request)
     {
-        $validated = $request->validate([
-            'id' => 'required|exists:users,id_user',
-            'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,'.$request->id.',id_user',
-            'email' => 'required|string|email|max:255|unique:users,email,'.$request->id.',id_user',
-            'id_role' => 'required|exists:role,id_role',
-            'id_division' => 'nullable|exists:division,id_division',
-        ]);
+        $userId = $request->input('id_user');
+        $user = User::findOrFail($userId);
 
-        $user = User::find($request->id);
-        // Hapus 'id' dari data yang akan diupdate
-        unset($validated['id']);
-        $user->update($validated);
+        $v = Validator::make($request->all(), [
+            'username' => 'required|string|max:255|unique:users,username,'.$userId.',id_user',
+            'password' => 'nullable|string|min:1',
+            'name' => 'required|string',
+            'email' => 'required|string|email|max:255|unique:users,email,'.$userId.',id_user',
+            'phone' => 'nullable|string',
+            'id_role' => 'nullable|integer',
+            'gender' => 'nullable|in:Male,Female',
+            'id_division' => 'nullable|integer',
+            'photo' => 'nullable|image|max:2048',
+        ]);
+        
+        if ($v->fails()) {
+            return redirect()->back()->withErrors($v)->withInput();
+        }
+
+        $data = $v->validated();
+
+        if ($request->hasFile('photo')) {
+            // Hapus foto lama jika ada
+            if ($user->photo && Storage::disk('public')->exists(str_replace('/storage/', '', $user->photo))) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $user->photo));
+            }
+            $path = $request->file('photo')->store('photos', 'public');
+            $data['photo'] = Storage::url($path);
+        }
+
+        if (!empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
+            unset($data['password']); // Jangan update password jika kosong
+        }
+
+        $user->update($data);
 
         return redirect()->back()->with('success', 'User berhasil diupdate!');
     }
@@ -184,7 +256,7 @@ class AdminController extends Controller
     public function storeRoom(Request $request)
     {
         $validated = $request->validate([
-            'room' => 'required|string|max:255',
+            'room' => 'required|string|max:255|unique:room,room',
             'id_cabang' => 'required|exists:cabang,id',
         ]);
 
@@ -232,7 +304,7 @@ class AdminController extends Controller
     {
         $validated = $request->validate([
             'id_room' => 'required|exists:room,id_room',
-            'room' => 'required|string|max:255',
+            'room' => 'required|string|max:255|unique:room,room,'.$request->id_room.',id_room',
             'id_cabang' => 'required|exists:cabang,id',
             'status_ruangan_id' => 'required|exists:status_ruangan,id',
         ]);

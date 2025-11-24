@@ -25,12 +25,11 @@
             </button>
         </div>
         <div class="card-body">
-            {{-- Bagian filter tidak diubah --}}
-            <form action="{{ route('userManagement') }}" method="GET" id="filter-form">
+                       <form action="{{ route('userManagement') }}" method="GET" id="filter-form">
                 <div class="row mb-3 g-2">
                     <div class="col-md-6">
                         <select name="id_role" class="form-select" onchange="this.form.submit()">
-                            <option value="">-- Semua Role --</option>
+                            <option value="">-- Pilih Role untuk Filter --</option>
                             @foreach ($roles as $role)
                                 <option value="{{ $role->id_role }}" {{ request('id_role') == $role->id_role ? 'selected' : '' }}>
                                     {{ $role->role }}
@@ -44,12 +43,23 @@
                 </div>
             </form>
 
-            {{-- Tabel tidak diubah --}}
             <table class="table table-hover mt-3">
                 <thead class="table-primary">
                     <tr>
                         <th>#</th>
-                        <th>Nama</th>
+                        <th>
+                            @php
+                                $nextDirection = (request('sort') === 'name' && request('direction') === 'asc') ? 'desc' : 'asc';
+                            @endphp
+                            <a href="{{ route('userManagement', array_merge(request()->query(), ['sort' => 'name', 'direction' => $nextDirection])) }}" class="text-decoration-none text-black">
+                                Nama
+                                @if (request('sort') === 'name')
+                                    <i class="bi {{ request('direction') === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
+                                @else
+                                    <i class="bi bi-sort-alpha-down"></i>
+                                @endif
+                            </a>
+                        </th>
                         <th>Email</th>
                         <th>Role</th>
                         <th>Divisi</th>
@@ -103,7 +113,7 @@
             {{-- Pagination tidak diubah --}}
             <div class="d-flex justify-content-end">
                 @if ($users instanceof \Illuminate\Pagination\AbstractPaginator)
-                    {{ $users->appends(request()->query())->links() }}
+                    {{ $users->appends(request()->query())->links('pagination::simple-bootstrap-5') }}
                 @endif
             </div>
 
@@ -226,7 +236,7 @@
     <div class="modal-dialog">
         <form action="{{ route('users.edit') }}" method="POST" class="modal-content">
             @csrf
-            <input type="hidden" name="id" id="edit_id">
+            <input type="hidden" name="id_user" id="edit_id">
             <input type="hidden" name="form_type" value="edit">
 
             <div class="modal-header bg-warning">

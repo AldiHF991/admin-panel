@@ -19,40 +19,55 @@
     <div class="card shadow-sm border-0">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Manajemen Rapat</h5>
-            {{-- PERBAIKAN: Tombol dinonaktifkan jika belum ada PIC yang dipilih --}}
-            <button class="btn btn-light btn-sm" 
-                    data-bs-toggle="modal" 
-                    data-bs-target="#addRapatModal"
-                    @if(!request('id_user_pic')) 
-                        disabled 
-                        title="Pilih PIC terlebih dahulu untuk menambah rapat" 
-                    @endif>
-                <i class="bi bi-plus-circle me-1"></i> Tambah Rapat
-            </button>
+            {{-- PERBAIKAN: Tooltip untuk tombol disabled --}}
+            @if(!request('id_user_pic'))
+                {{-- Bungkus dengan span untuk menampilkan tooltip saat disabled --}}
+                <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="Silahkan memilih PIC terlebih dahulu">
+                    <button class="btn btn-light btn-sm" type="button" disabled style="pointer-events: none;">
+                        <i class="bi bi-plus-circle me-1"></i> Tambah Rapat
+                    </button>
+                </span>
+            @else
+                {{-- Tombol normal jika PIC sudah dipilih --}}
+                <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addRapatModal">
+                    <i class="bi bi-plus-circle me-1"></i> Tambah Rapat
+                </button>
+            @endif
         </div>
         <div class="card-body">
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <form action="{{ route('meetings.index') }}" method="GET">
-                        <div class="input-group">
-                            <select name="id_user_pic" id="picSelector" class="form-select" onchange="this.form.submit()">
-                                <option value="">-- Pilih PIC --</option>
-                                @foreach ($pics as $pic)
-                                    <option value="{{ $pic->id_user }}" {{ request('id_user_pic') == $pic->id_user ? 'selected' : '' }}>
-                                        {{ $pic->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </form>
+            <form action="{{ route('meetings.index') }}" method="GET" id="filter-form">
+                <div class="row mb-3 g-2">
+                    <div class="col-md-5">
+                        <label for="picSelector" class="form-label visually-hidden">Pilih PIC</label>
+                        <select name="id_user_pic" id="picSelector" class="form-select" onchange="this.form.submit()">
+                            <option value="">-- Semua PIC --</option>
+                            @foreach ($pics as $pic)
+                                <option value="{{ $pic->id_user }}" {{ request('id_user_pic') == $pic->id_user ? 'selected' : '' }}>
+                                    {{ $pic->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-7">
+                        <label for="search-input" class="form-label visually-hidden">Cari Judul Rapat</label>
+                        <input type="text" name="search" id="search-input" class="form-control" placeholder="Cari berdasarkan judul rapat..." value="{{ request('search') }}">
+                    </div>
                 </div>
-            </div>
+            </form>
 
             <table class="table table-hover mt-3">
                 <thead class="table-primary">
                     <tr>
                         <th>#</th>
-                        <th>Judul</th>
+                        <th>
+                            {{-- Link untuk sorting berdasarkan judul --}}
+                            <a href="{{ route('meetings.index', array_merge(request()->query(), ['sort' => 'judul', 'direction' => ($sort === 'judul' && $direction === 'asc') ? 'desc' : 'asc'])) }}" class="text-decoration-none text-white">
+                                Judul
+                                @if ($sort === 'judul')
+                                    <i class="bi {{ $direction === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
+                                @endif
+                            </a>
+                        </th>
                         <th>Cabang</th>
                         <th>Ruangan</th>
                         <th>Tanggal</th>
@@ -64,7 +79,7 @@
                 <tbody id="meetingsTableBody">
                     @forelse ($rapats as $rapat)
                         <tr>
-                            <td>{{ $loop->iteration }}</td>
+                            <td>{{ $loop->iteration }}</td> {{-- Nomor iterasi sederhana --}}
                             <td>{{ $rapat->judul }}</td>
                             <td>{{ $rapat->cabang ? $rapat->cabang->cabang : 'N/A' }}</td>
                             <td>{{ $rapat->room ? $rapat->room->room : 'N/A' }}</td>
@@ -92,11 +107,7 @@
                     @empty
                         <tr>
                             <td colspan="8" class="text-center text-muted">
-                                @if(request('id_user_pic'))
-                                    Tidak ada data rapat untuk PIC yang dipilih.
-                                @else
-                                    Silakan pilih PIC untuk menampilkan data rapat.
-                                @endif
+                                Tidak ada data rapat yang cocok dengan filter.
                             </td>
                         </tr>
                     @endforelse
@@ -294,6 +305,11 @@
 @push('scripts')
 {{-- JS Flatpickr dihapus --}}
 <script>
+  // Inisialisasi semua tooltip di halaman
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl)
+  })
 
   document.addEventListener('DOMContentLoaded', function () {
     const allRapats = @json($allRapats);
@@ -602,6 +618,28 @@
         input.addEventListener(eventType, (e) => {
             clearError(e.target);
         });
+    });
+
+    // SKRIP BARU: Live search dengan debounce untuk judul rapat
+    const searchInput = document.getElementById('search-input');
+    const filterForm = document.getElementById('filter-form');
+    let debounceTimer;
+
+    searchInput.addEventListener('input', function (e) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () {
+            if (filterForm) {
+                // PERBAIKAN: Buat URL secara manual untuk memastikan semua parameter ada
+                const formData = new FormData(filterForm);
+                const params = new URLSearchParams();
+
+                // Tambahkan semua field form ke parameter, termasuk id_user_pic yang sudah terpilih
+                for (const pair of formData.entries()) {
+                    if (pair[1]) params.append(pair[0], pair[1]);
+                }
+                window.location.href = `{{ route('meetings.index') }}?${params.toString()}`;
+            }
+        }, 500); // Tunggu 500ms setelah pengguna berhenti mengetik
     });
 });
 </script>

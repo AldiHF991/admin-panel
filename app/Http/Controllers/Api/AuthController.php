@@ -19,7 +19,6 @@ class AuthController extends Controller
 
         $this->authorize('admin-auth'); // Hanya Admin yang bisa menyetujui
 
-        // Kode validasi Anda tetap sama
         $v = Validator::make($request->all(), [
             'username' => 'required|string|unique:users,username',
             'password' => 'required|string|min:1',
