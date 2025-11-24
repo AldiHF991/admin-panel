@@ -153,7 +153,6 @@
                 @if ($rooms instanceof \Illuminate\Pagination\AbstractPaginator)
                     {{ $rooms->appends(request()->query())->links('pagination::simple-bootstrap-5') }}
                 @endif
-                {{ $rooms->appends(request()->query())->links('pagination::simple-bootstrap-5') }}
             </div>
 
         </div>

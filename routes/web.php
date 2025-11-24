@@ -18,6 +18,7 @@ Route::get('/admin/user-management', [AdminController::class, 'showUserManagemen
 Route::get('/admin/branch', [AdminController::class, 'showBranch'])->name('branch');
 Route::get('/admin/meetings', [AdminController::class, 'showMeetings'])->name('meetings.index');
 Route::get('/admin/reports', [AdminController::class, 'showReports'])->name('reports');
+Route::get('/admin/reports/recent-activity', [AdminController::class, 'showRecentActivityReport'])->name('reports.recentActivity');
 
 // Route for meeting management
 Route::get('/meetings/{rapat}/qr', [RapatController::class, 'showQrCode'])->name('meetings.showQr');

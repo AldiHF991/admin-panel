@@ -93,7 +93,29 @@
                             <td>{{ $rapat->room ? $rapat->room->room : 'N/A' }}</td>
                             <td>{{ \Carbon\Carbon::parse($rapat->tanggal)->translatedFormat(    'd/m/Y') }}</td>
                             <td>{{ substr($rapat->waktu_start, 0, 5) }} - {{ $rapat->waktu_end ? substr($rapat->waktu_end, 0, 5) : 'Selesai tidak menentu' }}</td>
-                            <td><span class="badge bg-info">{{ $rapat->status ? $rapat->status->status_rapat : 'N/A' }}</span></td>
+                            <td>
+                                @php
+                                    $statusText = $rapat->status ? $rapat->status->status_rapat : 'N/A';
+                                    $statusClass = 'bg-secondary'; // Warna default
+                                    switch (strtolower($statusText)) {
+                                        case 'diterima':
+                                            $statusClass = 'bg-success';
+                                            break;
+                                        case 'ditolak':
+                                            $statusClass = 'bg-danger';
+                                            break;
+                                        case 'menunggu':
+                                            $statusClass = 'bg-warning text-dark';
+                                            break;
+                                        case 'berlangsung':
+                                            $statusClass = 'bg-primary';
+                                            break;
+                                        case 'selesai':
+                                            $statusClass = 'bg-dark';
+                                            break;
+                                    }
+                                @endphp
+                                <span class="badge {{ $statusClass }}">{{ $statusText }}</span></td>
                             <td>
                                 <div class="dropdown">
                                     <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton{{ $rapat->id_rapat }}" data-bs-toggle="dropdown" aria-expanded="false">Aksi</button>

@@ -23,17 +23,17 @@ class AdminController extends Controller
   
   public function showDashboard()
     {
+        $title = 'Dashboard';
         // Mengambil data statistik
         $totalRapat = Rapat::count();
         $totalPengguna = User::count();
         $totalCabang = Cabang::count();
 
-        // Mengambil 5 rapat yang akan datang (berdasarkan tanggal)
-        $rapatAkanDatang = Rapat::with(['pengaju', 'status', 'room'])
-            ->where('tanggal', '>=', now()->toDateString())
-            ->orderBy('tanggal', 'asc')
-            ->orderBy('waktu_start', 'asc')
-            ->take(5)
+        // Mengambil semua data rapat dari 3 hari terakhir
+        $rapatTigaHariTerakhir = Rapat::with(['pengaju', 'status', 'room'])
+            ->where('tanggal', '>=', now()->subDays(3)->toDateString())
+            ->orderBy('tanggal', 'desc')
+            ->orderBy('waktu_start', 'desc')
             ->get();
 
         // Mengirim data ke view
@@ -41,14 +41,32 @@ class AdminController extends Controller
             'totalRapat',
             'totalPengguna',
             'totalCabang',
-            'rapatAkanDatang'
+            'rapatTigaHariTerakhir',
+            'title'
         ));
     }
+
+    public function showRecentActivityReport()
+    {
+        $title = 'Laporan Aktivitas Rapat (3 Hari Terakhir)';
+
+        // Mengambil semua data rapat dari 3 hari terakhir
+        $rapatTigaHariTerakhir = Rapat::with(['pengaju', 'status', 'room'])
+            ->where('tanggal', '>=', now()->subDays(3)->toDateString())
+            ->orderBy('tanggal', 'desc')
+            ->orderBy('waktu_start', 'desc')
+            ->get();
+
+        // Mengirim data ke view khusus laporan
+        return view('reports.recent-activity', compact('rapatTigaHariTerakhir', 'title'));
+    }
+
 
     public function showUserManagement(Request $request)
     {
         // 1. Ambil semua role untuk dropdown filter
         $roles = Role::all();
+        $title = 'Manajemen Akun';
         $divisions = Division::all();
 
         // 2. Ambil parameter dari request untuk filter dan pencarian
@@ -75,12 +93,13 @@ class AdminController extends Controller
         // 6. Lakukan paginasi dan tambahkan parameter query string ke link paginasi
         $users = $usersQuery->paginate(10)->appends($request->query());
 
-        return view('users.user-management', compact('users', 'roles', 'divisions', 'sort', 'direction'));
+        return view('users.user-management', compact('users', 'roles', 'divisions', 'sort', 'direction', 'title'));
     }
 
     public function showBranch(Request $request)
     {
         // 1. Ambil semua role untuk dropdown filter
+        $title = 'Manajemen Cabang & Ruang';
         $statusRuangan = StatusRuangan::all();
         $cabang = Cabang::all();
 
@@ -113,11 +132,12 @@ class AdminController extends Controller
         // 7. Lakukan paginasi
         $rooms = $roomQuery->paginate(10)->appends($request->query());
 
-        return view('branches.branch-room', compact('cabang', 'rooms', 'statusRuangan', 'sort', 'direction'));
+        return view('branches.branch-room', compact('cabang', 'rooms', 'statusRuangan', 'sort', 'direction', 'title'));
     }
 
     public function showMeetings(Request $request)
     {
+        $title = 'Manajemen Rapat';
         $cabangs = Cabang::all();
         $rooms = Room::all();
         $divisions = Division::where('id_division', '!=', 2000)->get();
@@ -148,7 +168,7 @@ class AdminController extends Controller
         // Terapkan pengurutan, paginasi, dan ambil data rapat
         $rapats = $rapatsQuery->orderBy($sort, $direction)->paginate(10)->appends($request->query());
 
-        return view('meetings.meeting-management', compact('rapats', 'pics', 'cabangs', 'rooms', 'divisions', 'statuses', 'allRapats', 'sort', 'direction', 'selectedPicId'));
+        return view('meetings.meeting-management', compact('rapats', 'pics', 'cabangs', 'rooms', 'divisions', 'statuses', 'allRapats', 'sort', 'direction', 'selectedPicId', 'title'));
     }
 
     // END Show FUNCTIONS

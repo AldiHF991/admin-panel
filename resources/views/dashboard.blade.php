@@ -5,6 +5,44 @@
 
 @section('content')
 
+<style>
+    .recent-activity-scroll {
+        max-height: 450px; /* Anda bisa menyesuaikan tinggi maksimal ini */
+        overflow-y: auto;
+        padding: 1.5rem;
+    }
+
+    /* Styling untuk scrollbar modern (berbasis WebKit: Chrome, Safari, Edge) */
+    .recent-activity-scroll::-webkit-scrollbar {
+        width: 4px; /* Lebih kecil secara default */
+        transition: width 0.3s ease; /* Transisi lebih halus */
+    }
+
+    .recent-activity-scroll:hover::-webkit-scrollbar {
+        width: 8px; /* Menjadi lebih besar saat di-hover */
+    }
+
+    .recent-activity-scroll::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .recent-activity-scroll::-webkit-scrollbar-thumb {
+        background: #0d6efd;
+        border-radius: 10px;
+        transition: background-color 0.3s ease; /* Transisi warna thumb */
+    }
+
+    .recent-activity-scroll:hover::-webkit-scrollbar-thumb {
+        background-color: #0a58ca; /* Warna thumb sedikit lebih gelap saat hover */
+    }
+
+    /* Transisi halus untuk hover pada baris tabel */
+    .table-hover > tbody > tr {
+        transition: background-color 0.2s ease-in-out;
+    }
+</style>
+
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body text-center">
         <h5 id="realtime-clock-date" class="mb-1"></h5>
@@ -60,62 +98,66 @@
     </div>
 </div>
 
-<!-- Rapat Akan Datang -->
+<!-- Aktivitas Rapat (3 Hari Terakhir) -->
 <div class="card border-0 shadow-sm">
-    <div class="card-header bg-white border-0 py-3">
-        <h5 class="mb-0">Jadwal Rapat Terdekat</h5>
+    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Aktivitas Rapat (3 Hari Terakhir)</h5>
+        <a href="{{ route('reports.recentActivity') }}" target="_blank" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-arrows-fullscreen me-1"></i> Layar Penuh
+        </a>
     </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th scope="col">Judul Rapat</th>
-                        <th scope="col">Tanggal & Waktu</th>
-                        <th scope="col">Ruangan</th>
-                        <th scope="col">Pengaju</th>
-                        <th scope="col">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($rapatAkanDatang as $rapat)
-                        <tr>
-                            <td class="fw-medium">{{ $rapat->judul }}</td>
-                            <td>{{ \Carbon\Carbon::parse($rapat->tanggal)->isoFormat('dddd, D MMMM Y') }} | {{ \Carbon\Carbon::parse($rapat->waktu_start)->format('H:i') }} - {{ \Carbon\Carbon::parse($rapat->waktu_end)->format('H:i') }} WIB</td>
-                            <td>{{ $rapat->room->room ?? 'N/A' }}</td>
-                            <td>{{ $rapat->pengaju->name ?? 'N/A' }}</td>
-                            <td>
-                                @php
-                                    $statusText = $rapat->status->status_rapat ?? 'N/A';
-                                    $bgColor = 'secondary'; // Warna default
-                                    switch (strtolower($statusText)) {
-                                        case 'diterima':
-                                            $bgColor = 'success';
-                                            break;
-                                        case 'ditolak':
-                                            $bgColor = 'danger';
-                                            break;
-                                        case 'menunggu':
-                                        case 'menunggu persetujuan':
-                                            $bgColor = 'warning';
-                                            break;
-                                        case 'berlangsung':
-                                            $bgColor = 'primary';
-                                            break;
-                                    }
-                                @endphp
-                                <span class="badge rounded-pill bg-{{ $bgColor }}">
-                                    {{ $statusText }}
-                                </span>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">Tidak ada rapat yang akan datang.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+    <div class="card-body p-0">
+        <div class="recent-activity-scroll">
+            @forelse ($rapatTigaHariTerakhir->groupBy('tanggal') as $tanggal => $rapats)
+                <div class="mb-4">
+                    <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                        {{ \Carbon\Carbon::parse($tanggal)->isoFormat('dddd, D MMMM Y') }}
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th scope="col" style="width: 35%;">Judul Rapat</th>
+                                    <th scope="col" style="width: 20%;">Waktu</th>
+                                    <th scope="col" style="width: 15%;">Ruangan</th>
+                                    <th scope="col" style="width: 15%;">Pengaju</th>
+                                    <th scope="col" style="width: 15%;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($rapats as $rapat)
+                                    <tr>
+                                        <td class="fw-medium">{{ $rapat->judul }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($rapat->waktu_start)->format('H:i') }} - {{ \Carbon\Carbon::parse($rapat->waktu_end)->format('H:i') }} WIB</td>
+                                        <td>{{ $rapat->room->room ?? 'N/A' }}</td>
+                                        <td>{{ $rapat->pengaju->name ?? 'N/A' }}</td>
+                                        <td>
+                                            @php
+                                                $statusText = $rapat->status->status_rapat ?? 'N/A';
+                                                $bgColor = 'secondary'; // Warna default
+                                                switch (strtolower($statusText)) {
+                                                    case 'diterima': $bgColor = 'success'; break;
+                                                    case 'ditolak': $bgColor = 'danger'; break;
+                                                    case 'menunggu':
+                                                    case 'menunggu persetujuan': $bgColor = 'warning'; break;
+                                                    case 'berlangsung': $bgColor = 'primary'; break;
+                                                }
+                                            @endphp
+                                            <span class="badge rounded-pill bg-{{ $bgColor }}">
+                                                {{ $statusText }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @empty
+                <div class="text-center text-muted py-4">
+                    <p class="mb-0">Tidak ada aktivitas rapat dalam 3 hari terakhir.</p>
+                </div>
+            @endforelse
         </div>
     </div>
 </div>

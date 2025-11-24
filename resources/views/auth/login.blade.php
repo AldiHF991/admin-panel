@@ -3,17 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Admin Panel</title>
+    <title>Login</title>
+    <link rel="icon" href="{{ asset('images/logo_qr.png') }}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
         body {
-            background: linear-gradient(135deg, #0d6efd 0%, #6c63ff 100%);
+            /* Komposisi warna diubah agar ungu lebih menonjol */
+            background: linear-gradient(-45deg, #0d6efd, #4e2ac2, #6c63ff, #0d6efd);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: "Poppins", sans-serif;
+            position: relative; /* Diperlukan untuk pseudo-element */
+            overflow: hidden; /* Mencegah highlight keluar dari body */
+        }
+
+        /* Lapisan highlight yang mengikuti kursor */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Gradien radial sebagai "senter" */
+            background: radial-gradient(circle 300px at var(--x) var(--y), rgba(255, 255, 255, 0.15), transparent 80%);
+            will-change: background; /* Optimasi performa */
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         .login-card {
@@ -23,6 +54,7 @@
             padding: 2rem 2.5rem;
             width: 380px;
             transition: all 0.3s ease;
+            z-index: 10; /* Memastikan kartu login di atas highlight */
         }
 
         .login-card:hover {
@@ -126,5 +158,15 @@
 
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+    <script>
+        document.addEventListener('mousemove', function(e) {
+            const root = document.documentElement;
+            // Mengatur posisi x dan y sebagai CSS custom properties
+            // yang akan digunakan oleh pseudo-element ::before
+            root.style.setProperty('--x', e.clientX + 'px');
+            root.style.setProperty('--y', e.clientY + 'px');
+        });
+    </script>
 </body>
 </html>

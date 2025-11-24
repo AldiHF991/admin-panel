@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Admin Panel')</title>
+    <title>{{ $title ?? 'Admin Panel' }} | BBWS Brantas</title>
+    <link rel="icon" href="{{ asset('images/logo_qr.png') }}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
@@ -101,7 +102,7 @@
     <!-- Sidebar -->
     <div class="sidebar text-white" id="sidebar">
         <div class="p-3 border-bottom border-light d-flex align-items-center sidebar-brand">
-            <i class="bi bi-calendar-check-fill fs-4 me-3"></i>
+            <img src="{{ asset('images/logo1.png') }}" alt="BBWS Brantas Logo" style="height: 40px;" class="me-3">
             <div>
                 <h4 class="fw-bold mb-0 sidebar-brand-text">BBWS Brantas</h4>
                 <small class="text-light sidebar-brand-text">Admin Dashboard</small>
@@ -109,22 +110,22 @@
         </div>
 
         <!-- Dashboard -->
-        <a href="{{ route('dashboard') }}" class="{{ request()->is('/') ? 'active' : '' }}">
+        <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
             <i class="bi bi-speedometer2 me-2"></i> <span class="sidebar-link-text">Dashboard</span>
         </a>
 
         <!-- Account Management -->
-        <a href="{{ route('userManagement') }}" class="{{ request()->is('users*') ? 'active' : '' }}">
+        <a href="{{ route('userManagement') }}" class="{{ request()->routeIs('userManagement') ? 'active' : '' }}">
             <i class="bi bi-people-fill me-2"></i> <span class="sidebar-link-text">Account Management</span>
         </a>
 
         <!-- Cabang & Ruang -->
-        <a href="{{ route('branch') }}" class="{{ request()->is('branches*') ? 'active' : '' }}">
+        <a href="{{ route('branch') }}" class="{{ request()->routeIs('branch*') ? 'active' : '' }}">
             <i class="bi bi-building me-2"></i> <span class="sidebar-link-text">Cabang & Ruang</span>
         </a>
 
         <!-- Manajemen Rapat -->
-        <a href="{{ route('meetings.index') }}" class="{{ request()->is('admin/meetings*') ? 'active' : '' }}">
+        <a href="{{ route('meetings.index') }}" class="{{ request()->routeIs('meetings.*') ? 'active' : '' }}">
             <i class="bi bi-calendar-event me-2"></i> <span class="sidebar-link-text">Manajemen Rapat</span>
         </a>
 
