@@ -20,12 +20,15 @@ Route::get('/admin/meetings', [AdminController::class, 'showMeetings'])->name('m
 Route::get('/admin/reports', [AdminController::class, 'showReports'])->name('reports');
 Route::get('/admin/reports/recent-activity', [AdminController::class, 'showRecentActivityReport'])->name('reports.recentActivity');
 
-// Route for meeting management
+// Routes untuk RapatController
+Route::get('/admin/meetings', [AdminController::class, 'showMeetings'])->name('meetings.index');
+Route::post('/meetings', [RapatController::class, 'store'])->name('meetings.store');
+Route::put('/meetings/{rapat}', [RapatController::class, 'update'])->name('meetings.update');
+Route::delete('/meetings/{id}', [RapatController::class, 'destroy'])->name('meetings.destroy');
 Route::get('/meetings/{rapat}/qr', [RapatController::class, 'showQrCode'])->name('meetings.showQr');
 Route::get('/meetings/{rapat}/qr-code', [RapatController::class, 'getQrCodeSvg'])->name('meetings.getQrCodeSvg');
 Route::get('/meetings/{rapat}/absensi', [RapatController::class, 'showAbsensi'])->name('meetings.showAbsensi');
 Route::get('/meetings/{id}/export-absensi', [RapatController::class, 'exportAbsensi'])->name('meetings.exportAbsensi');
-Route::resource('/admin/meetings', RapatController::class)->except(['index', 'show', 'create', 'edit']);
 
 
 Route::post('admin/users/add', [AdminController::class, 'storeUserAccount'])->name('users.add');
@@ -40,9 +43,6 @@ Route::post('admin/room/edit', [AdminController::class, 'updateRoom'])->name('ro
 Route::delete('admin/room/{id}/delete', [AdminController::class, 'deleteRoom'])->name('room.delete');
 
 Route::get('/cabang/{cabang}/rooms', [RapatController::class, 'getRoomsByCabang'])->name('cabang.rooms');
-Route::post('/meetings', [RapatController::class, 'store'])->name('meetings.store');
-Route::put('/meetings/{rapat}', [RapatController::class, 'update'])->name('meetings.update'); // <-- TAMBAHKAN ATAU PASTIKAN BARIS INI ADA
-Route::delete('/meetings/{rapat}', [RapatController::class, 'destroy'])->name('meetings.destroy');
 
 // Route::get('/display-absensi/{rapatId}', function ($rapatId) {
 //     // Ambil data absensi yang sudah ada untuk rapat ini

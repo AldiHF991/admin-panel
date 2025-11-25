@@ -145,11 +145,16 @@ class RapatController extends Controller
         return redirect($redirectUrl)->with('success', 'Rapat berhasil diperbarui.');
     }
 
-    public function destroy(Rapat $rapat)
+    public function destroy($id)
     {
-        $rapat->delete();
+        try {
+            $rapat = Rapat::findOrFail($id);
+            $rapat->delete();
 
-        return redirect()->route('meetings.index')->with('success', 'Rapat berhasil dihapus.');
+            return redirect()->route('meetings.index')->with('success', 'Rapat berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->route('meetings.index')->with('error', 'Gagal menghapus rapat. ' . $e->getMessage());
+        }
     }
 
     public function getRoomsByCabang(Cabang $cabang)

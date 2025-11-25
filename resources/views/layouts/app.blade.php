@@ -7,6 +7,12 @@
     <link rel="icon" href="{{ asset('images/logo_qr.png') }}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script>
+        // Skrip ini mencegah "flicker" dengan menerapkan state sidebar sebelum render.
+        // Jika di localStorage tersimpan 'true', class 'sidebar-collapsed' akan ditambahkan ke <html>
+        // sebelum browser menggambar halaman, sehingga tidak ada animasi saat load.
+        (localStorage.getItem('sidebarCollapsed') === 'true') && document.documentElement.classList.add('sidebar-collapsed');
+    </script>
     <style>
         body {
             background-color: #f8f9fa;
@@ -48,20 +54,22 @@
         }
 
         /* State Sidebar saat diperkecil (collapsed) */
-        .sidebar.collapsed {
+        /* Diterapkan oleh JS saat diklik, atau oleh class di <html> saat load */
+        .sidebar-collapsed .sidebar, .sidebar.collapsed {
             width: 80px;
         }
 
-        .sidebar.collapsed .sidebar-brand-text,
-        .sidebar.collapsed .sidebar-link-text {
+        .sidebar-collapsed .sidebar .sidebar-brand-text,
+        .sidebar-collapsed .sidebar .sidebar-link-text,
+        .sidebar.collapsed .sidebar-brand-text, .sidebar.collapsed .sidebar-link-text {
             display: none;
         }
 
-        .sidebar.collapsed .sidebar-brand {
+        .sidebar-collapsed .sidebar .sidebar-brand, .sidebar.collapsed .sidebar-brand {
             justify-content: center;
         }
 
-        .sidebar.collapsed a i {
+        .sidebar-collapsed .sidebar a i, .sidebar.collapsed a i {
             font-size: 1.5rem; /* Perbesar ikon saat sidebar kecil */
         }
         /* Tombol Toggle Sidebar Baru */
@@ -90,7 +98,7 @@
         .sidebar-toggle i {
             transition: transform 0.3s ease;
         }
-        .sidebar.collapsed .sidebar-toggle i {
+        .sidebar-collapsed .sidebar .sidebar-toggle i, .sidebar.collapsed .sidebar-toggle i {
             transform: rotate(180deg);
         }
     </style>
@@ -180,21 +188,29 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 @stack('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    (function() {
+        const htmlEl = document.documentElement;
         const sidebar = document.getElementById('sidebar');
         const sidebarToggle = document.getElementById('sidebarToggle');
+        const isCollapsed = () => localStorage.getItem('sidebarCollapsed') === 'true';
 
-        // Cek status sidebar dari localStorage
-        if (localStorage.getItem('sidebarCollapsed') === 'true') {
-            sidebar.classList.add('collapsed');
-        }
+        // Fungsi untuk sinkronisasi state (menghapus class di <html> dan menambah di .sidebar)
+        // Ini diperlukan agar animasi klik tetap berfungsi setelah load halaman.
+        const syncSidebarState = () => {
+            if (isCollapsed()) {
+                htmlEl.classList.remove('sidebar-collapsed');
+                sidebar.classList.add('collapsed');
+            }
+        };
 
         sidebarToggle.addEventListener('click', function () {
             sidebar.classList.toggle('collapsed');
-            // Simpan status ke localStorage
             localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
         });
-    });
+
+        // Panggil fungsi sinkronisasi setelah event loop pertama selesai
+        setTimeout(syncSidebarState, 0);
+    })();
 </script>
 </body>
 </html>
