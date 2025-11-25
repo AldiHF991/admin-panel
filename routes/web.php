@@ -19,6 +19,7 @@ Route::get('/admin/branch', [AdminController::class, 'showBranch'])->name('branc
 Route::get('/admin/meetings', [AdminController::class, 'showMeetings'])->name('meetings.index');
 Route::get('/admin/reports', [AdminController::class, 'showReports'])->name('reports');
 Route::get('/admin/reports/recent-activity', [AdminController::class, 'showRecentActivityReport'])->name('reports.recentActivity');
+Route::get('/admin/reports/newly-created', [AdminController::class, 'showNewlyCreatedReport'])->name('reports.newlyCreated');
 
 // Routes untuk RapatController
 Route::get('/admin/meetings', [AdminController::class, 'showMeetings'])->name('meetings.index');
@@ -29,7 +30,8 @@ Route::get('/meetings/{rapat}/qr', [RapatController::class, 'showQrCode'])->name
 Route::get('/meetings/{rapat}/qr-code', [RapatController::class, 'getQrCodeSvg'])->name('meetings.getQrCodeSvg');
 Route::get('/meetings/{rapat}/absensi', [RapatController::class, 'showAbsensi'])->name('meetings.showAbsensi');
 Route::get('/meetings/{id}/export-absensi', [RapatController::class, 'exportAbsensi'])->name('meetings.exportAbsensi');
-
+Route::delete('/meetings/files/{file}', [RapatController::class, 'destroyFile'])->name('meetings.destroyFile');
+Route::get('/meetings/{id}/files', [RapatController::class, 'getFiles'])->name('meetings.getFiles');
 
 Route::post('admin/users/add', [AdminController::class, 'storeUserAccount'])->name('users.add');
 Route::post('admin/users/edit', [AdminController::class, 'updateUserAccount'])->name('users.edit');

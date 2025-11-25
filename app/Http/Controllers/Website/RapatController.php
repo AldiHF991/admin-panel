@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Website;
 
 use App\Http\Controllers\Controller;
 use App\Models\Rapat;
+use App\Models\RapatFile;
 use App\Models\Cabang;
 use App\Models\Absensi;
 use App\Models\User;
 use Illuminate\Http\Request;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AbsensiRapatExport;
 use Carbon\Carbon;
@@ -23,10 +25,10 @@ class RapatController extends Controller
         $statuses = \App\Models\StatusRapat::all();
 
         // Ambil semua rapat untuk pengecekan jadwal di JS
-        $allRapats = Rapat::select('id_rapat', 'id_room', 'tanggal', 'waktu_start', 'waktu_end')->get();
+        $allRapats = Rapat::with('files')->select('id_rapat', 'id_room', 'tanggal', 'waktu_start', 'waktu_end')->get();
 
         // Query dasar
-        $query = Rapat::with(['cabang', 'room', 'status', 'userPengaju']);
+        $query = Rapat::with(['cabang', 'room', 'status', 'userPengaju', 'files']);
 
         // Filter berdasarkan PIC
         if ($request->filled('id_user_pic')) {
@@ -106,12 +108,28 @@ class RapatController extends Controller
             'waktu_start' => 'required',
             'waktu_end' => 'nullable|after:waktu_start',
             'id_user_pengaju' => 'required|exists:users,id_user',
+            'desc' => 'nullable|string|max:255',
+            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx|max:5120', // Maks 5MB per file
         ]);
 
         // Set status default ke 'Diterima' karena dibuat oleh Admin
         $validatedData['id_status'] = 1;
 
-        Rapat::create($validatedData);
+        $rapat = Rapat::create($validatedData);
+
+        // Proses upload file jika ada
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $path = $file->store('public/rapat_files/' . $rapat->id_rapat);
+                RapatFile::create([
+                    'id_rapat' => $rapat->id_rapat,
+                    'file_path' => $path,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_type' => $file->getClientMimeType(),
+                    'file_size' => $file->getSize(),
+                ]);
+            }
+        }
 
         // Redirect kembali ke halaman manajemen dengan query string PIC yang sama
         $redirectUrl = route('meetings.index');
@@ -131,11 +149,26 @@ class RapatController extends Controller
             'tanggal' => 'required|date',
             'waktu_start' => 'required',
             'waktu_end' => 'nullable|after:waktu_start',
-            'desc' => 'nullable|string|max:100',
+            'desc' => 'nullable|string|max:255',
             'id_status' => 'required|exists:status_rapat,id_status',
+            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx|max:5120', // Maks 5MB per file
         ]);
 
         $rapat->update($validatedData);
+
+        // Proses upload file baru jika ada
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $path = $file->store('public/rapat_files/' . $rapat->id_rapat);
+                RapatFile::create([
+                    'id_rapat' => $rapat->id_rapat,
+                    'file_path' => $path,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_type' => $file->getClientMimeType(),
+                    'file_size' => $file->getSize(),
+                ]);
+            }
+        }
 
         // Redirect kembali ke halaman manajemen dengan query string PIC yang sama
         $redirectUrl = route('meetings.index');
@@ -149,11 +182,35 @@ class RapatController extends Controller
     {
         try {
             $rapat = Rapat::findOrFail($id);
+
+            // Hapus folder file terkait di storage
+            Storage::deleteDirectory('public/rapat_files/' . $rapat->id_rapat);
+
+            // Hapus record file dari database (relasi sudah di-handle jika di-setting onDelete('cascade'))
+            // Jika tidak, hapus manual: $rapat->files()->delete();
             $rapat->delete();
 
             return redirect()->route('meetings.index')->with('success', 'Rapat berhasil dihapus.');
         } catch (\Exception $e) {
             return redirect()->route('meetings.index')->with('error', 'Gagal menghapus rapat. ' . $e->getMessage());
+        }
+    }
+
+    public function destroyFile(RapatFile $file)
+    {
+        try {
+            // Hapus file dari storage
+            Storage::delete($file->file_path);
+            // Hapus record dari database
+            $file->delete();
+
+            return response()->json(['success' => true, 'message' => 'File berhasil dihapus.']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Gagal menghapus file.',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -197,5 +254,30 @@ class RapatController extends Controller
         // 4. Gunakan class AbsensiRapatExport yang baru untuk men-download file
         // Koleksi $absensi diteruskan ke constructor class export.
         return Excel::download(new AbsensiRapatExport($absensi), $fileName);
+    }
+
+    /**
+     * Mengambil file yang terikat pada sebuah rapat.
+     * Digunakan oleh AJAX call dari modal edit.
+     */
+    public function getFiles($id)
+    {
+        // Menggunakan findOrFail untuk otomatis menangani jika rapat tidak ditemukan
+        $rapat = Rapat::with('files')->findOrFail($id);
+
+        // Memformat data file agar sesuai dengan yang dibutuhkan di frontend
+        $files = $rapat->files->map(function ($file) {
+            return [
+                'id_file' => $file->id_file,
+                'file_name' => $file->file_name,
+                // Menghapus 'public/' dari path agar URL di frontend benar
+                'file_path' => str_replace('public/', '', $file->file_path),
+                // TAMBAHAN: Sertakan tipe file untuk ikon di frontend
+                'file_type' => $file->file_type,
+            ];
+        });
+
+        // Mengembalikan data file sebagai JSON
+        return response()->json($files);
     }
 }

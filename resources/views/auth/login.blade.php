@@ -9,10 +9,16 @@
 
     <style>
         body {
-            /* Komposisi warna diubah agar ungu lebih menonjol */
-            background: linear-gradient(-45deg, #0d6efd, #4e2ac2, #6c63ff, #0d6efd);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            /* --- AURORA BACKGROUND --- */
+            background-color: #030416; /* Warna dasar gelap untuk aurora */
+            background-image: 
+                radial-gradient(50% 50% at 20% 80%, rgba(108, 99, 255, 0.4) 0%, rgba(108, 99, 255, 0) 100%),
+                radial-gradient(50% 50% at 80% 20%, rgba(0, 123, 255, 0.4) 0%, rgba(0, 123, 255, 0) 100%),
+                radial-gradient(60% 60% at 50% 50%, rgba(40, 167, 69, 0.2) 0%, rgba(40, 167, 69, 0) 100%);
+            background-size: 200% 200%;
+            animation: auroraAnimation 20s ease-in-out infinite;
+            /* --- END AURORA --- */
+
             height: 100vh;
             display: flex;
             align-items: center;
@@ -35,7 +41,7 @@
             will-change: background; /* Optimasi performa */
         }
 
-        @keyframes gradientBG {
+        @keyframes auroraAnimation {
             0% {
                 background-position: 0% 50%;
             }

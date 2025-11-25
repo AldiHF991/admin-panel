@@ -165,7 +165,7 @@
 {{-- Add Rapat Modal --}}
 <div class="modal fade" id="addRapatModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form action="{{ route('meetings.store') }}" method="POST" class="modal-content" id="addRapatForm" novalidate>
+        <form action="{{ route('meetings.store') }}" method="POST" class="modal-content" id="addRapatForm" novalidate enctype="multipart/form-data">
             @csrf
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">Tambah Rapat</h5>
@@ -234,6 +234,14 @@
                     <label for="add_desc" class="form-label">Deskripsi (Opsional)</label>
                     <textarea class="form-control" id="add_desc" name="desc" rows="2"></textarea>
                 </div>
+                {{-- TAMBAHAN: Field Upload Dokumen --}}
+                <div class="mb-3">
+                    <label for="add_files" class="form-label">Dokumen Pendukung (Opsional)</label>
+                    <input class="form-control" type="file" id="add_files" name="files[]" multiple>
+                    <small class="form-text text-muted">Bisa pilih lebih dari satu file (Ctrl+Klik). Tipe: jpg, png, pdf, doc, ppt. Maks 5MB/file.</small>
+                    {{-- VISUALISASI FILE BARU --}}
+                    <ul class="list-group mt-2" id="add-files-list"></ul>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -246,7 +254,7 @@
 {{-- Edit Rapat Modal --}}
 <div class="modal fade" id="editRapatModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form action="" method="POST" class="modal-content" id="editRapatForm" novalidate>
+        <form action="" method="POST" class="modal-content" id="editRapatForm" novalidate enctype="multipart/form-data">
             @csrf 
             @method('PUT')
             <div class="modal-header bg-warning">
@@ -315,6 +323,20 @@
                     <label for="edit_desc" class="form-label">Deskripsi (Opsional)</label>
                     <textarea class="form-control" id="edit_desc" name="desc" rows="2"></textarea>
                 </div>
+                {{-- TAMBAHAN: Field Upload Dokumen & Daftar File --}}
+                <div class="mb-3">
+                    <label for="edit_files" class="form-label">Tambah Dokumen Pendukung (Opsional)</label>
+                    <input class="form-control" type="file" id="edit_files" name="files[]" multiple>
+                    {{-- VISUALISASI FILE BARU (EDIT) --}}
+                    <ul class="list-group mt-2" id="edit-files-list"></ul>
+                    <small class="form-text text-muted">File baru akan ditambahkan, tidak menimpa file lama.</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Dokumen Saat Ini:</label>
+                    <ul class="list-group" id="current-files-list">
+                        {{-- Daftar file akan diisi oleh JavaScript --}}
+                    </ul>
+                </div>
 
             </div>
             <div class="modal-footer">
@@ -376,6 +398,12 @@
         /* Opasitas default adalah 0.5, kita naikkan menjadi 0.7 */
         opacity: 0.7; 
         
+        /* Efek blur modern (jika didukung browser) */
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+    }
+
+    .file-item-actions {
         /* Efek blur modern (jika didukung browser) */
         -webkit-backdrop-filter: blur(5px);
         backdrop-filter: blur(5px);
@@ -655,11 +683,12 @@
     });
 
     // Event listener untuk modal edit
-    editModalEl.addEventListener('show.bs.modal', function (event) {
+    editModalEl.addEventListener('show.bs.modal', async function (event) { // Jadikan fungsi async
         const button = event.relatedTarget;
         const rapat = JSON.parse(button.getAttribute('data-rapat'));
         const form = document.getElementById('editRapatForm');
-        
+        const currentFilesList = document.getElementById('current-files-list');
+
         const cabangSelect = document.getElementById('edit_id_cabang');
         const roomSelect = document.getElementById('edit_id_room');
 
@@ -671,13 +700,83 @@
         document.getElementById('edit_waktu_start').value = rapat.waktu_start ? rapat.waktu_start.substring(0, 5) : '';
         document.getElementById('edit_waktu_end').value = rapat.waktu_end ? rapat.waktu_end.substring(0, 5) : '';
         document.getElementById('edit_id_status').value = rapat.id_status;
-        
+
         cabangSelect.value = rapat.id_cabang;
         roomSelect.dataset.originalValue = rapat.id_room;
-        
+
         updateRoomOptions(cabangSelect, roomSelect).then(() => {
             checkRoomAvailability(editModalEl);
         });
+
+        // PERBAIKAN: Ambil dan tampilkan file secara dinamis
+        currentFilesList.innerHTML = '<li class="list-group-item text-muted">Memuat dokumen...</li>';
+        try {
+            const response = await fetch(`{{ url('meetings') }}/${rapat.id_rapat}/files`);
+            if (!response.ok) throw new Error('Gagal memuat file.');
+            const files = await response.json();
+
+            currentFilesList.innerHTML = ''; // Kosongkan list setelah data didapat
+            if (files && files.length > 0) {
+                files.forEach(file => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    li.dataset.fileId = file.id_file;
+
+                    // Membuat link untuk file
+                    const fileLink = document.createElement('a');
+                    fileLink.href = `{{ asset('storage') }}/${file.file_path}`;
+                    fileLink.target = '_blank';
+                    fileLink.rel = 'noopener noreferrer'; // Keamanan tambahan
+                    // PERBAIKAN: Tambahkan ikon di sebelah nama file
+                    // Fungsi getFileIcon sudah ada dari implementasi sebelumnya
+                    const iconHTML = getFileIcon(file.file_type || '');
+                    fileLink.innerHTML = `${iconHTML} ${file.file_name}`;
+
+                    // Membuat tombol hapus
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.type = 'button';
+                    deleteBtn.className = 'btn btn-danger btn-sm';
+                    deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
+                    deleteBtn.onclick = () => deleteFile(file.id_file, li);
+
+                    li.appendChild(fileLink);
+                    li.appendChild(deleteBtn);
+                    currentFilesList.appendChild(li);
+                });
+            } else {
+                currentFilesList.innerHTML = '<li class="list-group-item text-muted">Tidak ada dokumen.</li>';
+            }
+        } catch (error) {
+            console.error('Error fetching files:', error);
+            currentFilesList.innerHTML = '<li class="list-group-item text-danger">Gagal memuat dokumen.</li>';
+        }
+
+    });
+
+    // Fungsi untuk menghapus file via AJAX
+    window.deleteFile = async function(fileId, listItemElement) {
+        if (!confirm('Anda yakin ingin menghapus file ini? Aksi ini tidak dapat dibatalkan.')) return;
+
+        try {
+            const response = await fetch(`{{ url('meetings/files') }}/${fileId}`, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            });
+            const result = await response.json();
+            if (result.success) {
+                listItemElement.remove(); // Hapus item dari list di UI
+                alert('File berhasil dihapus.');
+            } else { throw new Error(result.message); }
+        } catch (error) {
+            console.error('Error deleting file:', error);
+            alert('Gagal menghapus file. Silakan coba lagi.');
+        }
+    };
+
+    // Event listener untuk modal tambah
+    addModalEl.addEventListener('show.bs.modal', function() {
+        const form = addModalEl.querySelector('form');
+        form.reset();
     });
 
     // Event listener untuk modal tambah
@@ -691,7 +790,134 @@
         
         addModalEl.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
         addModalEl.querySelector('.room-help-text').style.display = 'block';
+
+        // Reset input file
+        document.getElementById('add_files').value = '';
+        // Reset list file
+        const addFilesList = document.getElementById('add-files-list');
+        addFilesList.innerHTML = '';
+
     });
+
+    // SKRIP BARU: Menampilkan file yang dipilih di modal "Tambah Rapat"
+    const addFilesInput = document.getElementById('add_files');
+    const addFilesList = document.getElementById('add-files-list');
+
+    addFilesInput.addEventListener('change', function() {
+        // Kosongkan daftar file sebelumnya
+        addFilesList.innerHTML = '';
+
+        if (this.files.length > 0) {
+            // Iterasi melalui file yang dipilih dan tampilkan di list
+            Array.from(this.files).forEach(file => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item list-group-item-info d-flex justify-content-between align-items-center';
+                
+                // Tampilkan nama dan tipe file
+                const fileInfo = document.createElement('span');
+                fileInfo.textContent = `${file.name} (${file.type || 'Tipe tidak diketahui'})`;
+                
+                li.appendChild(fileInfo);
+                addFilesList.appendChild(li);
+            });
+        }
+    });
+
+    // SKRIP DISEMPURNAKAN: Logika untuk pratinjau dan hapus file sebelum unggah
+    const addFileInput = document.getElementById('add_files');
+    const addFileList = document.getElementById('add-files-list');
+    let addFileDataTransfer = new DataTransfer();
+
+    const editFileInput = document.getElementById('edit_files');
+    const editFileList = document.getElementById('edit-files-list');
+    let editFileDataTransfer = new DataTransfer();
+
+    // Fungsi untuk mendapatkan ikon berdasarkan tipe file
+    function getFileIcon(fileType) {
+        if (fileType.includes('pdf')) return '<i class="bi bi-file-earmark-pdf text-danger me-2"></i>';
+        if (fileType.includes('word')) return '<i class="bi bi-file-earmark-word text-primary me-2"></i>';
+        if (fileType.includes('presentation') || fileType.includes('powerpoint')) return '<i class="bi bi-file-earmark-ppt text-warning me-2"></i>';
+        if (fileType.includes('image')) return '<i class="bi bi-file-earmark-image text-info me-2"></i>';
+        return '<i class="bi bi-file-earmark-text text-secondary me-2"></i>';
+    }
+
+    // Fungsi terpusat untuk merender daftar file
+    function renderFileList(fileListElement, dataTransfer) {
+        fileListElement.innerHTML = ''; // Kosongkan list
+        if (dataTransfer.files.length === 0) return;
+
+        Array.from(dataTransfer.files).forEach((file, index) => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item list-group-item-light d-flex justify-content-between align-items-center';
+
+            const fileInfo = document.createElement('span');
+            fileInfo.innerHTML = `${getFileIcon(file.type)} ${file.name}`;
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'btn btn-outline-danger btn-sm';
+            deleteBtn.innerHTML = '<i class="bi bi-x-lg"></i>';
+            deleteBtn.onclick = () => {
+                // Hapus file dari DataTransfer berdasarkan index
+                const newFiles = new DataTransfer();
+                Array.from(dataTransfer.files).forEach((f, i) => {
+                    if (i !== index) {
+                        newFiles.items.add(f);
+                    }
+                });
+                
+                // Perbarui DataTransfer yang relevan
+                if (fileListElement.id === 'add-files-list') {
+                    addFileDataTransfer = newFiles;
+                    addFileInput.files = newFiles.files; // Update input file
+                    renderFileList(addFileList, addFileDataTransfer);
+                } else {
+                    editFileDataTransfer = newFiles;
+                    editFileInput.files = newFiles.files; // Update input file
+                    renderFileList(editFileList, editFileDataTransfer);
+                }
+            };
+
+            li.appendChild(fileInfo);
+            li.appendChild(deleteBtn);
+            fileListElement.appendChild(li);
+        });
+    }
+
+    // Event listener untuk input file di modal "Tambah Rapat"
+    addFileInput.addEventListener('change', function() {
+        // Tambahkan file baru ke DataTransfer yang sudah ada
+        Array.from(this.files).forEach(file => {
+            addFileDataTransfer.items.add(file);
+        });
+        this.files = addFileDataTransfer.files; // Update input dengan file gabungan
+        renderFileList(addFileList, addFileDataTransfer);
+    });
+
+    // Event listener untuk input file di modal "Edit Rapat"
+    editFileInput.addEventListener('change', function() {
+        // Tambahkan file baru ke DataTransfer yang sudah ada
+        Array.from(this.files).forEach(file => {
+            editFileDataTransfer.items.add(file);
+        });
+        this.files = editFileDataTransfer.files; // Update input dengan file gabungan
+        renderFileList(editFileList, editFileDataTransfer);
+    });
+
+    // Reset daftar file saat modal ditutup atau dibuka
+    addModalEl.addEventListener('show.bs.modal', function() {
+        addFileDataTransfer = new DataTransfer();
+        addFileInput.value = '';
+        renderFileList(addFileList, addFileDataTransfer);
+    });
+
+    editModalEl.addEventListener('show.bs.modal', function() {
+        // Reset hanya untuk file baru, bukan file yang sudah ada
+        editFileDataTransfer = new DataTransfer();
+        editFileInput.value = '';
+        renderFileList(editFileList, editFileDataTransfer);
+    });
+
 
     // Clear error saat user mengetik
     document.querySelectorAll('#addRapatModal input, #addRapatModal select, #editRapatModal input, #editRapatModal select').forEach(input => {

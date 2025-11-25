@@ -36,12 +36,20 @@ class AdminController extends Controller
             ->orderBy('waktu_start', 'desc')
             ->get();
 
+        // TAMBAHAN: Mengambil data rapat yang baru dibuat dalam 3 hari terakhir
+        $rapatBaruDibuat = Rapat::with('pengaju') // Pastikan relasi 'userPengaju' ada di model Rapat
+            ->where('created_at', '>=', now()->subDays(3))
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         // Mengirim data ke view
         return view('dashboard', compact(
             'totalRapat',
             'totalPengguna',
             'totalCabang',
             'rapatTigaHariTerakhir',
+            // TAMBAHAN: Kirim data rapat baru ke view
+            'rapatBaruDibuat',
             'title'
         ));
     }
@@ -60,6 +68,19 @@ class AdminController extends Controller
         // Mengirim data ke view khusus laporan
         return view('reports.recent-activity', compact('rapatTigaHariTerakhir', 'title'));
     }
+
+    public function showNewlyCreatedReport()
+{
+    $rapatBaruDibuat = Rapat::with(['room', 'pengaju', 'status'])
+        ->where('created_at', '>=', now()->subDays(3))
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    return view('reports.newly-created', [
+        'title' => 'Laporan Rapat Baru Dibuat',
+        'rapatBaruDibuat' => $rapatBaruDibuat
+    ]);
+}
 
 
     public function showUserManagement(Request $request)

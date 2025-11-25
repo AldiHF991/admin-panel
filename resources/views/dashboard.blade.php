@@ -41,20 +41,35 @@
     .table-hover > tbody > tr {
         transition: background-color 0.2s ease-in-out;
     }
+
+    /* Animasi popup untuk kartu statistik */
+    .stat-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-8px) scale(1.03);
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+    }
 </style>
 
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body text-center">
         <h5 id="realtime-clock-date" class="mb-1"></h5>
-        <h3 id="realtime-clock-time" class="fw-bold text-primary mb-0"></h3>
+        <div class="d-flex justify-content-center align-items-center">
+            <h3 id="realtime-clock-time" class="fw-bold text-primary mb-0 me-2"></h3>
+            <span class="badge bg-primary">WIB</span>
+        </div>
     </div>
 </div>
+
+<hr class="my-4">
 
 
 <div class="row g-4 mb-4">
     <!-- Card: Total Rapat -->
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm">
+        <div class="card border-0 shadow-sm stat-card">
             <div class="card-body d-flex align-items-center">
                 <div class="bg-primary text-white p-3 rounded me-3">
                     <i class="bi bi-calendar3 fs-3"></i>
@@ -69,7 +84,7 @@
 
     <!-- Card: Total Pengguna -->
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm">
+        <div class="card border-0 shadow-sm stat-card">
             <div class="card-body d-flex align-items-center">
                 <div class="bg-success text-white p-3 rounded me-3">
                     <i class="bi bi-people-fill fs-3"></i>
@@ -84,7 +99,7 @@
 
     <!-- Card: Total Cabang -->
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm">
+        <div class="card border-0 shadow-sm stat-card">
             <div class="card-body d-flex align-items-center">
                 <div class="bg-warning text-white p-3 rounded me-3">
                     <i class="bi bi-building fs-3"></i>
@@ -98,66 +113,138 @@
     </div>
 </div>
 
-<!-- Aktivitas Rapat (3 Hari Terakhir) -->
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Aktivitas Rapat (3 Hari Terakhir)</h5>
-        <a href="{{ route('reports.recentActivity') }}" target="_blank" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-arrows-fullscreen me-1"></i> Layar Penuh
-        </a>
+<hr class="my-4">
+
+<div class="row">
+    <!-- Kolom Kiri: Rapat Baru Dibuat -->
+    <div class="col-lg-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Rapat Baru Dibuat (3 Hari Terakhir)</h5>
+                <a href="{{ route('reports.newlyCreated') }}" target="_blank" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-arrows-fullscreen me-1"></i> Layar Penuh
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="recent-activity-scroll">
+                    @forelse ($rapatBaruDibuat->groupBy(fn($item) => $item->created_at->format('Y-m-d')) as $tanggal => $rapats)
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-success border-bottom pb-2 mb-3">
+                                {{ \Carbon\Carbon::parse($tanggal)->isoFormat('dddd, D MMMM Y') }}
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" style="width: 35%;">Judul Rapat</th>
+                                            <th scope="col" style="width: 20%;">Waktu</th>
+                                            <th scope="col" style="width: 15%;">Ruangan</th>
+                                            <th scope="col" style="width: 15%;">Pengaju</th>
+                                            <th scope="col" style="width: 15%;">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($rapats as $rapat)
+                                            <tr>
+                                                <td class="fw-medium">{{ $rapat->judul }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($rapat->waktu_start)->format('H:i') }} - {{ \Carbon\Carbon::parse($rapat->waktu_end)->format('H:i') }} WIB</td>
+                                                <td>{{ $rapat->room->room ?? 'N/A' }}</td>
+                                                <td>{{ $rapat->pengaju->name ?? 'N/A' }}</td>
+                                                <td>
+                                                    @php
+                                                        $statusText = $rapat->status->status_rapat ?? 'N/A';
+                                                        $bgColor = 'secondary'; // Warna default
+                                                        switch (strtolower($statusText)) {
+                                                            case 'diterima': $bgColor = 'success'; break;
+                                                            case 'ditolak': $bgColor = 'danger'; break;
+                                                            case 'menunggu':
+                                                            case 'menunggu persetujuan': $bgColor = 'warning'; break;
+                                                            case 'berlangsung': $bgColor = 'primary'; break;
+                                                        }
+                                                    @endphp
+                                                    <span class="badge rounded-pill bg-{{ $bgColor }}">
+                                                        {{ $statusText }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center text-muted py-4">
+                            <p class="mb-0">Tidak ada rapat yang dibuat dalam 3 hari terakhir.</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card-body p-0">
-        <div class="recent-activity-scroll">
-            @forelse ($rapatTigaHariTerakhir->groupBy('tanggal') as $tanggal => $rapats)
-                <div class="mb-4">
-                    <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
-                        {{ \Carbon\Carbon::parse($tanggal)->isoFormat('dddd, D MMMM Y') }}
-                    </h6>
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th scope="col" style="width: 35%;">Judul Rapat</th>
-                                    <th scope="col" style="width: 20%;">Waktu</th>
-                                    <th scope="col" style="width: 15%;">Ruangan</th>
-                                    <th scope="col" style="width: 15%;">Pengaju</th>
-                                    <th scope="col" style="width: 15%;">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($rapats as $rapat)
-                                    <tr>
-                                        <td class="fw-medium">{{ $rapat->judul }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($rapat->waktu_start)->format('H:i') }} - {{ \Carbon\Carbon::parse($rapat->waktu_end)->format('H:i') }} WIB</td>
-                                        <td>{{ $rapat->room->room ?? 'N/A' }}</td>
-                                        <td>{{ $rapat->pengaju->name ?? 'N/A' }}</td>
-                                        <td>
-                                            @php
-                                                $statusText = $rapat->status->status_rapat ?? 'N/A';
-                                                $bgColor = 'secondary'; // Warna default
-                                                switch (strtolower($statusText)) {
-                                                    case 'diterima': $bgColor = 'success'; break;
-                                                    case 'ditolak': $bgColor = 'danger'; break;
-                                                    case 'menunggu':
-                                                    case 'menunggu persetujuan': $bgColor = 'warning'; break;
-                                                    case 'berlangsung': $bgColor = 'primary'; break;
-                                                }
-                                            @endphp
-                                            <span class="badge rounded-pill bg-{{ $bgColor }}">
-                                                {{ $statusText }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+
+    <!-- Kolom Kanan: Aktivitas Rapat Terkini -->
+    <div class="col-lg-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Aktivitas Rapat (Jadwal Terdekat)</h5>
+                <a href="{{ route('reports.recentActivity') }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-arrows-fullscreen me-1"></i> Layar Penuh
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="recent-activity-scroll">
+                    @forelse ($rapatTigaHariTerakhir->groupBy('tanggal') as $tanggal => $rapats)
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                                {{ \Carbon\Carbon::parse($tanggal)->isoFormat('dddd, D MMMM Y') }}
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" style="width: 35%;">Judul Rapat</th>
+                                            <th scope="col" style="width: 20%;">Waktu</th>
+                                            <th scope="col" style="width: 15%;">Ruangan</th>
+                                            <th scope="col" style="width: 15%;">Pengaju</th>
+                                            <th scope="col" style="width: 15%;">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($rapats as $rapat)
+                                            <tr>
+                                                <td class="fw-medium">{{ $rapat->judul }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($rapat->waktu_start)->format('H:i') }} - {{ \Carbon\Carbon::parse($rapat->waktu_end)->format('H:i') }} WIB</td>
+                                                <td>{{ $rapat->room->room ?? 'N/A' }}</td>
+                                                <td>{{ $rapat->pengaju->name ?? 'N/A' }}</td>
+                                                <td>
+                                                    @php
+                                                        $statusText = $rapat->status->status_rapat ?? 'N/A';
+                                                        $bgColor = 'secondary'; // Warna default
+                                                        switch (strtolower($statusText)) {
+                                                            case 'diterima': $bgColor = 'success'; break;
+                                                            case 'ditolak': $bgColor = 'danger'; break;
+                                                            case 'menunggu':
+                                                            case 'menunggu persetujuan': $bgColor = 'warning'; break;
+                                                            case 'berlangsung': $bgColor = 'primary'; break;
+                                                        }
+                                                    @endphp
+                                                    <span class="badge rounded-pill bg-{{ $bgColor }}">
+                                                        {{ $statusText }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center text-muted py-4">
+                            <p class="mb-0">Tidak ada aktivitas rapat dalam 3 hari terakhir.</p>
+                        </div>
+                    @endforelse
                 </div>
-            @empty
-                <div class="text-center text-muted py-4">
-                    <p class="mb-0">Tidak ada aktivitas rapat dalam 3 hari terakhir.</p>
-                </div>
-            @endforelse
+            </div>
         </div>
     </div>
 </div>
@@ -217,7 +304,7 @@
         };
 
         document.getElementById('realtime-clock-date').textContent = now.toLocaleDateString('id-ID', optionsDate);
-        document.getElementById('realtime-clock-time').textContent = now.toLocaleTimeString('id-ID', optionsTime) + ' WIB';
+        document.getElementById('realtime-clock-time').textContent = now.toLocaleTimeString('id-ID', optionsTime);
     }
 
     setInterval(updateClock, 1000);
