@@ -1,6 +1,15 @@
 @extends('layouts.app')
 
+@section('title', 'Manajemen Cabang & Ruangan')
+@section('page-title', 'Manajemen Cabang & Ruangan')
+
 @section('content')
+{{-- Elemen untuk Loading Overlay --}}
+<div id="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1060; justify-content: center; align-items: center;">
+    <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
 <div class="container mt-4">
 
     @if (session('success'))
@@ -124,8 +133,8 @@
                                     data-cabang-id="{{ $room->id_cabang }}"
                                     data-status-id="{{ $room->status_ruangan_id }}">
                                 <i class="bi bi-pencil-square"></i> Edit
-                            </button>
-                            <form action="{{ route('room.delete', $room->id_room) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus ruangan ini?');">
+                            </button> 
+                            <form action="{{ route('room.delete', $room->id_room) }}" method="POST" class="d-inline loading-trigger-form" onsubmit="return confirm('Apakah Anda yakin ingin menghapus ruangan ini?');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-danger">
@@ -170,7 +179,7 @@
             <div class="modal-body">
                 <!-- Form Tambah Cabang -->
                 <h6 class="mb-3">Tambah Cabang Baru</h6>
-                <form action="{{ route('branch.add') }}" method="POST" class="mb-4 p-3 border rounded">
+                <form action="{{ route('branch.add') }}" method="POST" class="mb-4 p-3 border rounded loading-trigger-form">
                     @csrf
                     <div class="row g-2">
                         <div class="col-md">
@@ -198,7 +207,7 @@
 <!-- Modal Tambah Ruangan -->
 <div class="modal fade" id="addRoomModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form action="{{ route('room.add') }}" method="POST" class="modal-content">
+        <form action="{{ route('room.add') }}" method="POST" class="modal-content loading-trigger-form">
             @csrf
             <input type="hidden" name="id_cabang" value="{{ request('id_cabang') }}">
             <div class="modal-header bg-primary text-white">
@@ -222,7 +231,7 @@
 <!-- Modal Edit Ruangan -->
 <div class="modal fade" id="editRoomModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form action="{{ route('room.edit') }}" method="POST" class="modal-content">
+        <form action="{{ route('room.edit') }}" method="POST" class="modal-content loading-trigger-form">
             @csrf
             <input type="hidden" name="id_room" id="edit_room_id">
             <div class="modal-header bg-warning text-dark">
@@ -304,6 +313,16 @@ document.addEventListener('DOMContentLoaded', function () {
             debounceTimer = setTimeout(function () {
                 filterForm.submit();
             }, 500); // Tunggu 500ms setelah pengguna berhenti mengetik
+        });
+    }
+
+    // Script untuk menampilkan loading overlay saat form di-submit
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) {
+        document.querySelectorAll('.loading-trigger-form').forEach(form => {
+            form.addEventListener('submit', function() {
+                loadingOverlay.style.display = 'flex';
+            });
         });
     }
 });

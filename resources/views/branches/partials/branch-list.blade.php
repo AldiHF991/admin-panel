@@ -10,7 +10,7 @@
         <tbody>
             @forelse ($cabang as $c)
                 <tr>
-                    <form action="{{ route('branch.edit') }}" method="POST">
+                    <form action="{{ route('branch.edit') }}" method="POST" class="loading-trigger-form">
                         @csrf
                         <input type="hidden" name="id" value="{{ $c->id }}">
                         <td>
@@ -24,7 +24,7 @@
                                 <i class="bi bi-save"></i>
                             </button>
                     </form>
-                    <form action="{{ route('branch.delete', $c->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Menghapus Cabang akan menghapus seluruh Data Ruang nya, Apakah kamu Yakin?');">
+                    <form action="{{ route('branch.delete', $c->id) }}" method="POST" class="d-inline loading-trigger-form" onsubmit="return confirm('Menghapus Cabang akan menghapus seluruh Data Ruang nya, Apakah kamu Yakin?');">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-sm btn-danger">

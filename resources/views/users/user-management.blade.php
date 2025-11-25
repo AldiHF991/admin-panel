@@ -1,6 +1,15 @@
 @extends('layouts.app')
 
+@section('title', 'Manajemen Akun')
+@section('page-title', 'Manajemen Akun')
+
 @section('content')
+{{-- Elemen untuk Loading Overlay --}}
+<div id="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1060; justify-content: center; align-items: center;">
+    <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
 <div class="container mt-4">
 
     {{-- Session alerts tidak diubah --}}
@@ -87,7 +96,7 @@
                                 Edit
                             </button>
 
-                            <form action="{{ route('users.delete', ['id' => $u->id_user]) }}" method="POST" class="d-inline">
+                            <form action="{{ route('users.delete', ['id' => $u->id_user]) }}" method="POST" class="d-inline delete-form">
                                 @csrf
                                 @method('DELETE') <button type="submit" class="btn btn-sm btn-danger"
                                         onclick="return confirm('Anda yakin ingin menghapus akun {{ $u->name }}?')">Hapus</button>
@@ -123,7 +132,7 @@
 
 <div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form action="{{ route('users.add') }}" method="POST" class="modal-content">
+        <form action="{{ route('users.add') }}" method="POST" class="modal-content" id="addUserForm">
             @csrf
             {{-- Input tersembunyi untuk identifikasi form saat validasi gagal --}}
             <input type="hidden" name="form_type" value="add">
@@ -234,7 +243,7 @@
 
 <div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form action="{{ route('users.edit') }}" method="POST" class="modal-content">
+        <form action="{{ route('users.edit') }}" method="POST" class="modal-content" id="editUserForm">
             @csrf
             <input type="hidden" name="id_user" id="edit_id">
             <input type="hidden" name="form_type" value="edit">
@@ -465,6 +474,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500); // Tunggu 500ms setelah pengguna berhenti mengetik
     });
 
+    // SKRIP BARU: Menampilkan loading screen saat submit
+    const loadingOverlay = document.getElementById('loading-overlay');
+
+    // Untuk form tambah
+    const addForm = document.getElementById('addUserForm');
+    if(addForm) {
+        addForm.addEventListener('submit', function() {
+            loadingOverlay.style.display = 'flex';
+        });
+    }
+
+    // Untuk form edit
+    const editForm = document.getElementById('editUserForm');
+    if(editForm) {
+        editForm.addEventListener('submit', function() {
+            loadingOverlay.style.display = 'flex';
+        });
+    }
+
+    // Untuk semua form hapus
+    document.querySelectorAll('.delete-form').forEach(form => {
+        form.addEventListener('submit', function() {
+            loadingOverlay.style.display = 'flex';
+        });
+    });
 });
 
 </script>

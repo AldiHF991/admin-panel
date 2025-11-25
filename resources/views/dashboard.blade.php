@@ -61,7 +61,7 @@
                 </div>
                 <div>
                     <h5 class="card-title mb-0">Total Rapat</h5>
-                    <h3 class="fw-bold text-primary mt-1">{{ $totalRapat ?? 0 }}</h3>
+                    <h3 class="fw-bold text-primary mt-1 count-up">{{ $totalRapat ?? 0 }}</h3>
                 </div>
             </div>
         </div>
@@ -76,7 +76,7 @@
                 </div>
                 <div>
                     <h5 class="card-title mb-0">Total Pengguna</h5>
-                    <h3 class="fw-bold text-success mt-1">{{ $totalPengguna ?? 0 }}</h3>
+                    <h3 class="fw-bold text-success mt-1 count-up">{{ $totalPengguna ?? 0 }}</h3>
                 </div>
             </div>
         </div>
@@ -91,7 +91,7 @@
                 </div>
                 <div>
                     <h5 class="card-title mb-0">Total Cabang</h5>
-                    <h3 class="fw-bold text-warning mt-1">{{ $totalCabang ?? 0 }}</h3>
+                    <h3 class="fw-bold text-warning mt-1 count-up">{{ $totalCabang ?? 0 }}</h3>
                 </div>
             </div>
         </div>
@@ -166,6 +166,39 @@
 
 @push('scripts')
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Fungsi untuk animasi count-up yang modern
+        const animateCountUp = (el) => {
+            const target = parseInt(el.dataset.target || el.textContent, 10);
+            const duration = 1500; // Durasi animasi dalam milidetik (1.5 detik)
+            let startTimestamp = null;
+            el.textContent = '0'; // Mulai dari 0
+
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                
+                // Efek ease-out (melambat di akhir) untuk kesan lebih halus
+                const easedProgress = 1 - Math.pow(1 - progress, 3);
+                
+                el.textContent = Math.floor(easedProgress * target);
+
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    // Pastikan angka akhir sesuai target setelah animasi selesai
+                    el.textContent = target.toLocaleString('id-ID');
+                }
+            };
+            window.requestAnimationFrame(step);
+        };
+
+        // Terapkan animasi ke semua elemen dengan class 'count-up'
+        document.querySelectorAll('.count-up').forEach(el => {
+            animateCountUp(el);
+        });
+    });
+
     function updateClock() {
         const now = new Date();
         const optionsDate = {

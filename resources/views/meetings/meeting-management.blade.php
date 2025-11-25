@@ -1,6 +1,13 @@
 @extends('layouts.app')
 
 @section('content')
+{{-- Elemen untuk Loading Overlay --}}
+<div id="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1060; justify-content: center; align-items: center;">
+    <div class="spinner-border text-light" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
 <div class="container mt-4">
 
     @if (session('success'))
@@ -124,7 +131,7 @@
                                         <li><a class="dropdown-item" href="{{ route('meetings.showAbsensi', $rapat->id_rapat) }}" target="_blank">Absensi</a></li>
                                         <li><a class="dropdown-item" href="{{ route('meetings.showQr', $rapat->id_rapat) }}" target="_blank">QR Code</a></li>
                                         <li>
-                                            <form action="{{ route('meetings.destroy', $rapat->id_rapat) }}" method="POST" class="d-inline">
+                                            <form action="{{ route('meetings.destroy', $rapat->id_rapat) }}" method="POST" class="d-inline delete-meeting-form">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="dropdown-item" onclick="return confirm('Anda yakin ingin menghapus rapat ini?')">Hapus</button>
@@ -751,6 +758,26 @@
             formToSubmit.submit(); // Submit form yang sudah disimpan
         }
     });
+
+    // SKRIP BARU: Menampilkan loading screen saat form di-submit
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) {
+        // Untuk form tambah rapat
+        document.getElementById('addRapatForm').addEventListener('submit', function(e) {
+            // Hanya tampilkan loading jika form valid dan akan di-submit
+            if (validateForm(this)) {
+                loadingOverlay.style.display = 'flex';
+            }
+        });
+
+        // Untuk semua form hapus
+        document.querySelectorAll('.delete-meeting-form').forEach(form => {
+            form.addEventListener('submit', function() {
+                loadingOverlay.style.display = 'flex';
+            });
+        });
+    }
+
 });
 </script>
 @endpush
