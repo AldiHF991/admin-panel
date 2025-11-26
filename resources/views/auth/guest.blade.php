@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Guest Mode</title>
+    <link rel="icon" href="{{ asset('images/logo_qr.png') }}" type="image/png"> 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Warna Dominan Logo Kementerian PU */
+            --pu-blue-dark: #001A33;    /* Biru sangat gelap untuk dasar background */
+            --pu-blue-main: #003366;    /* Biru utama dari logo PU */
+            --pu-blue-light: #00509E;   /* Biru lebih terang untuk aksen dan gradien */
+            --pu-yellow: #F4C430;       /* Kuning emas dari logo PU */
+        }
+
+        body {
+            /* --- PU THEMED AURORA BACKGROUND --- */
+            background-color: var(--pu-blue-dark);
+            background-image: 
+                /* Gradien cahaya Kuning Emas (lebih dominan) */
+                radial-gradient(ellipse 40% 50% at 20% 80%, rgba(244, 196, 48, 0.25) 0%, rgba(244, 196, 48, 0) 100%),
+                /* Gradien cahaya Biru Terang (lebih dominan) */
+                radial-gradient(ellipse 40% 50% at 80% 20%, rgba(0, 80, 158, 0.5) 0%, rgba(0, 80, 158, 0) 100%),
+                /* Gradien cahaya Biru Utama di tengah */
+                radial-gradient(ellipse 50% 60% at 50% 50%, rgba(0, 51, 102, 0.4) 0%, rgba(0, 51, 102, 0) 100%);
+            background-size: 200% 200%;
+            animation: auroraAnimation 15s ease-in-out infinite;
+            /* --- END AURORA --- */
+
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: "Poppins", sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Highlight cursor dibuat sedikit keemasan agar elegan */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle 350px at var(--x) var(--y), rgba(255, 255, 255, 0.08), transparent 80%);
+            will-change: background;
+            pointer-events: none; /* Agar tidak mengganggu klik */
+        }
+
+        @keyframes auroraAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            /* Shadow dengan sedikit nuansa biru tua */
+            box-shadow: 0 10px 30px rgba(0, 26, 51, 0.5); 
+            padding: 2.5rem 2.5rem;
+            width: 380px;
+            transition: all 0.3s ease;
+            z-index: 10;
+            border-top: 5px solid var(--pu-yellow); /* Aksen garis emas di atas kartu */
+        }
+
+        .login-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 26, 51, 0.6);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        /* Style untuk logo di atas judul */
+        .login-logo {
+            max-width: 90px; /* Ukuran logo yang disesuaikan */
+            height: auto;
+            display: block;
+            margin: 0 auto 1.5rem auto; /* Otomatis di tengah dan memberi jarak bawah */
+        }
+
+        .login-header h4 {
+            font-weight: 800;
+            color: var(--pu-blue-main); /* Judul menggunakan Biru PU */
+            letter-spacing: 0.5px;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            border: 1px solid #ced4da;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(0, 51, 102, 0.15); /* Shadow biru */
+            border-color: var(--pu-blue-main);
+        }
+
+        /* Tombol Utama - Biru PU */
+        .btn-primary {
+            border-radius: 8px;
+            font-weight: 600;
+            /* Menggunakan gradien biru yang sesuai tema */
+            background-image: linear-gradient(45deg, var(--pu-blue-light), var(--pu-blue-main));
+            border: none;
+            transition: all 0.3s ease;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            background-size: 150% auto; /* Untuk efek hover */
+        }
+
+        .btn-primary:hover {
+            background-position: right center; /* Menggeser gradien saat hover */
+            box-shadow: 0 4px 12px rgba(0, 51, 102, 0.3);
+        }
+
+        .login-footer {
+            font-size: 0.85rem;
+            text-align: center;
+            color: #6c757d;
+            margin-top: 1.5rem;
+        }
+
+        .icon-input {
+            position: relative;
+        }
+
+        /* Ikon input diberi warna Emas PU agar kontras dan elegan */
+        .icon-input i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--pu-yellow); /* Menggunakan warna kuning emas PU */
+            font-size: 1.1rem;
+            z-index: 5;
+        }
+
+        .icon-input input {
+            padding-left: 3rem; /* Memberi ruang untuk ikon */
+        }
+        
+        /* Custom Alert Style */
+        .alert-danger {
+            background-color: #fff2f2;
+            border-color: #ffcccc;
+            color: #cc0000;
+            font-size: 0.9rem;
+            border-radius: 8px;
+        }
+
+        /* --- RESPONSIVE DESIGN UNTUK MOBILE --- */
+        @media (max-width: 576px) {
+            .login-card {
+                width: 90%; /* Lebar kartu menjadi 90% dari layar */
+                padding: 2rem 1.5rem; /* Padding dikurangi agar konten tidak terlalu sempit */
+                box-shadow: 0 8px 25px rgba(0, 26, 51, 0.4);
+            }
+
+            .login-header h4 {
+                font-size: 1.6rem; /* Ukuran judul disesuaikan */
+            }
+
+            .login-header p {
+                font-size: 0.85rem !important; /* Ukuran sub-judul disesuaikan */
+            }
+        }
+
+        /* --- STYLE UNTUK QR SCANNER POPUP --- */
+        #qr-scanner-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: none; /* Sembunyi secara default */
+            align-items: center;
+            justify-content: center;
+            z-index: 1050;
+            flex-direction: column;
+        }
+
+        #qr-reader {
+            width: 90vw;
+            max-width: 500px;
+            background: #111;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid var(--pu-yellow);
+        }
+
+        #close-scanner-btn {
+            margin-top: 20px;
+            background-color: #fff;
+            color: #333;
+            font-weight: 600;
+            border: none;
+        }
+
+        /* Animasi garis pemindai */
+        #qr-reader-results {
+            color: white;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        /* Menyembunyikan beberapa elemen UI default dari library */
+        #qr-reader__dashboard_section_csr, #qr-reader__dashboard_section_fsr {
+            display: none !important;
+        }
+
+        /* --- STYLE UNTUK LOADING OVERLAY --- */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 26, 51, 0.9);
+            display: none; /* Sembunyi secara default */
+            align-items: center;
+            justify-content: center;
+            z-index: 1100; /* Di atas modal scanner */
+            flex-direction: column;
+            color: white;
+            text-align: center;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            color: var(--pu-yellow);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-header">
+            <img src="{{ asset('images/logo_qr.png') }}" alt="Logo BBWS Brantas" class="login-logo">
+            <h4>Selamat Datang</h4>
+            <p class="text-muted mb-0" style="font-size: 0.9rem;">Sistem Manajemen Rapat BBWS Brantas</p>
+        </div>
+
+        @if(session('error'))
+            <div class="alert alert-danger text-center p-2 mb-3">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="alert alert-danger text-center p-2 mb-3" role="alert">
+                {{ $errors->first() }}
+            </div>
+        @endif
+
+        <!-- Tombol di luar form untuk memicu popup -->
+        <button type="button" id="scan-qr-btn" class="btn btn-primary w-100 mt-3">
+            <i class="bi bi-qr-code-scan me-2"></i>Scan QR Code
+        </button>
+
+        <form id="qr-login-form" method="POST" action="{{ route('login') }}" style="display: none;">
+            @csrf
+            <input type="hidden" name="qr_code_data" id="qr_code_data">
+        </form>
+
+        <div class="login-footer">
+            <p class="mb-0">&copy; {{ date('Y') }} Kementerian Pekerjaan Umum</p>
+            <p class="text-muted small">Magang UNTAG Surabaya 2025</p>
+        </div>
+    </div>
+
+    <!-- Popup/Modal untuk QR Scanner -->
+    <div id="qr-scanner-modal">
+        <div id="qr-reader"></div>
+        <div id="qr-reader-results" class="text-center">Arahkan kamera ke QR Code</div>
+        <button id="close-scanner-btn" class="btn mt-3">Tutup</button>
+    </div>
+
+    <!-- Overlay untuk loading setelah scan berhasil -->
+    <div id="loading-overlay">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3 mb-0">Scan Berhasil! Memproses login...</p>
+    </div>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+
+    <script>
+        document.addEventListener('mousemove', function(e) {
+            const root = document.documentElement;
+            root.style.setProperty('--x', e.clientX + 'px');
+            root.style.setProperty('--y', e.clientY + 'px');
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const modal = document.getElementById('qr-scanner-modal');
+            const scanBtn = document.getElementById('scan-qr-btn');
+            const closeBtn = document.getElementById('close-scanner-btn');
+            const resultsContainer = document.getElementById('qr-reader-results');
+            const qrForm = document.getElementById('qr-login-form');
+            const qrInput = document.getElementById('qr_code_data');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            
+            let html5QrCode;
+
+            const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                if (html5QrCode && html5QrCode.isScanning) {
+                    html5QrCode.stop().then(() => {
+                        modal.style.display = 'none';
+                        loadingOverlay.style.display = 'flex'; // Tampilkan loading
+                        qrInput.value = decodedText; // Masukkan hasil scan ke input form
+                        
+                        // Beri jeda sedikit agar pengguna melihat pesan loading
+                        setTimeout(() => {
+                            qrForm.submit(); // Kirim form
+                        }, 500);
+
+                    }).catch(err => console.error("Gagal menghentikan scanner setelah sukses.", err));
+                }
+            };
+
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+            // Fungsi untuk memulai scanner
+            const startScanner = () => {
+                // Inisialisasi scanner di sini agar state selalu baru
+                html5QrCode = new Html5Qrcode("qr-reader");
+                modal.style.display = 'flex';
+                resultsContainer.innerText = "Meminta izin kamera...";
+
+                // Cek izin dan ketersediaan kamera (penting untuk mobile)
+                Html5Qrcode.getCameras().then(cameras => {
+                    if (cameras && cameras.length) {
+                        // Gunakan kamera belakang (environment) jika ada
+                        const cameraId = cameras.find(c => c.label.toLowerCase().includes('back'))?.id || cameras[0].id;
+                        resultsContainer.innerText = "Arahkan kamera ke QR Code";
+                        html5QrCode.start(cameraId, config, qrCodeSuccessCallback)
+                            .catch(err => {
+                                console.error("Gagal memulai scanner:", err);
+                                resultsContainer.innerText = "Error: Gagal memulai kamera.";
+                            });
+                    } else {
+                        resultsContainer.innerText = "Error: Tidak ada kamera yang ditemukan.";
+                    }
+                }).catch(err => {
+                    console.error("Gagal mendapatkan akses kamera:", err);
+                    resultsContainer.innerText = "Error: Akses kamera ditolak. Pastikan menggunakan HTTPS.";
+                });
+            };
+
+            // Fungsi untuk menghentikan scanner
+            const stopScanner = () => {
+                if (html5QrCode && html5QrCode.isScanning) {
+                    html5QrCode.stop().then(() => {
+                        modal.style.display = 'none';
+                    });
+                } else {
+                    modal.style.display = 'none';
+                }
+            };
+
+            scanBtn.addEventListener('click', startScanner);
+            closeBtn.addEventListener('click', stopScanner);
+        });
+    </script>
+</body>
+</html>

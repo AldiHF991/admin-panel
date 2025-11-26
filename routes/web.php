@@ -3,15 +3,14 @@
 use App\Http\Controllers\Website\AdminController;
 use App\Http\Controllers\Website\AuthController;
 use App\Http\Controllers\Website\RapatController;
+use App\Http\Controllers\Website\GuestController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Rapat; 
 
-Route::get('/', function () {
-    return view('auth.login');
-});
+Route::get('/', [GuestController::class, 'showGuest'])->name('guest');
 
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login'); 
+Route::get('/adminpanel/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/adminpanel/login', [AuthController::class, 'login'])->name('login'); 
 
 Route::get('/admin/dashboard', [AdminController::class, 'showDashboard'])->name('dashboard');
 Route::get('/admin/user-management', [AdminController::class, 'showUserManagement'])->name('userManagement');

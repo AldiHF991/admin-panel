@@ -109,7 +109,7 @@ class RapatController extends Controller
             'waktu_end' => 'nullable|after:waktu_start',
             'id_user_pengaju' => 'required|exists:users,id_user',
             'desc' => 'nullable|string|max:255',
-            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx|max:5120', // Maks 5MB per file
+            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,txt|max:5120', // Maks 5MB per file
         ]);
 
         // Set status default ke 'Diterima' karena dibuat oleh Admin
@@ -136,7 +136,9 @@ class RapatController extends Controller
         if ($request->id_user_pengaju) {
             $redirectUrl .= '?id_user_pic=' . $request->id_user_pengaju;
         }
-        return redirect($redirectUrl)->with('success', 'Rapat berhasil ditambahkan.');
+        // TAMBAHKAN 'highlight_id' ke session saat redirect
+        return redirect($redirectUrl)->with('success', 'Rapat berhasil ditambahkan.')
+                                     ->with('highlight_id', $rapat->id_rapat);
     }
 
     public function update(Request $request, Rapat $rapat)
@@ -151,7 +153,7 @@ class RapatController extends Controller
             'waktu_end' => 'nullable|after:waktu_start',
             'desc' => 'nullable|string|max:255',
             'id_status' => 'required|exists:status_rapat,id_status',
-            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx|max:5120', // Maks 5MB per file
+            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,txt|max:5120', // Maks 5MB per file
         ]);
 
         $rapat->update($validatedData);
@@ -175,7 +177,9 @@ class RapatController extends Controller
         if ($rapat->id_user_pengaju) {
             $redirectUrl .= '?id_user_pic=' . $rapat->id_user_pengaju;
         }
-        return redirect($redirectUrl)->with('success', 'Rapat berhasil diperbarui.');
+        // TAMBAHKAN 'highlight_id' ke session saat redirect
+        return redirect($redirectUrl)->with('success', 'Rapat berhasil diperbarui.')
+                                     ->with('highlight_id', $rapat->id_rapat);
     }
 
     public function destroy($id)

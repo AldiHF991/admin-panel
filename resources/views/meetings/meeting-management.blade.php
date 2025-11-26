@@ -88,7 +88,7 @@
                 </thead>
                 <tbody id="meetingsTableBody">
                     @forelse ($rapats as $rapat)
-                        <tr>
+                        <tr data-rapat-id="{{ $rapat->id_rapat }}">
                             {{-- PERBAIKAN: Penomoran yang benar untuk paginasi --}}
                             @if ($rapats instanceof \Illuminate\Pagination\AbstractPaginator)
                                 <td>{{ $rapats->firstItem() + $loop->index }}</td>
@@ -127,14 +127,22 @@
                                 <div class="dropdown">
                                     <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton{{ $rapat->id_rapat }}" data-bs-toggle="dropdown" aria-expanded="false">Aksi</button>
                                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ $rapat->id_rapat }}">
-                                        <li><a class="dropdown-item edit-btn" href="#" data-bs-toggle="modal" data-bs-target="#editRapatModal" data-rapat='{{ json_encode($rapat) }}'>Edit</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('meetings.showAbsensi', $rapat->id_rapat) }}" target="_blank">Absensi</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('meetings.showQr', $rapat->id_rapat) }}" target="_blank">QR Code</a></li>
+                                        <li><a class="dropdown-item edit-btn" href="#" data-bs-toggle="modal" data-bs-target="#editRapatModal" data-rapat='{{ json_encode($rapat) }}'><i class="bi bi-pencil-square me-2"></i>Edit</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('meetings.showAbsensi', $rapat->id_rapat) }}" target="_blank"><i class="bi bi-person-check me-2"></i>Absensi</a></li>
+                                        {{-- PERUBAHAN: Link QR Code diubah untuk memicu modal --}}
+                                        @php
+                                            $statusTextForQr = $rapat->status ? $rapat->status->status_rapat : 'N/A';
+                                        @endphp
+                                        <li>
+                                            <a class="dropdown-item qr-code-btn" href="#" data-qr-url="{{ route('meetings.showQr', $rapat->id_rapat) }}" data-rapat-status="{{ $statusTextForQr }}">
+                                                <i class="bi bi-qr-code me-2"></i>QR Code
+                                            </a>
+                                        </li>
                                         <li>
                                             <form action="{{ route('meetings.destroy', $rapat->id_rapat) }}" method="POST" class="d-inline delete-meeting-form">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="dropdown-item" onclick="return confirm('Anda yakin ingin menghapus rapat ini?')">Hapus</button>
+                                                <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Anda yakin ingin menghapus rapat ini?')"><i class="bi bi-trash me-2"></i>Hapus</button>
                                             </form>
                                         </li>
                                     </ul>
@@ -173,6 +181,8 @@
             </div>
             <div class="modal-body" id="addRapatBody">
                 {{-- URUTAN FIELD DIPERBAIKI --}}
+                {{-- TAMBAHAN: Hidden input untuk menangkap PIC dari filter --}}
+                <input type="hidden" name="id_user_pic_from_filter" value="{{ request('id_user_pic') }}">
                 <div class="mb-3">
                     <label for="add_judul" class="form-label">Judul Rapat</label>
                     <input type="text" class="form-control" id="add_judul" name="judul" required>
@@ -238,7 +248,9 @@
                 <div class="mb-3">
                     <label for="add_files" class="form-label">Dokumen Pendukung (Opsional)</label>
                     <input class="form-control" type="file" id="add_files" name="files[]" multiple>
-                    <small class="form-text text-muted">Bisa pilih lebih dari satu file (Ctrl+Klik). Tipe: jpg, png, pdf, doc, ppt. Maks 5MB/file.</small>
+                    {{-- Elemen untuk menampilkan pesan error ukuran file --}}
+                    <div id="add-files-error" class="invalid-feedback" style="display: none;"></div>
+                    <small class="form-text text-muted">Bisa pilih lebih dari satu file (Ctrl+Klik). Tipe: jpg, png, pdf, doc, docx, ppt, pptx, txt. Maks 5MB/file.</small>
                     {{-- VISUALISASI FILE BARU --}}
                     <ul class="list-group mt-2" id="add-files-list"></ul>
                 </div>
@@ -327,6 +339,8 @@
                 <div class="mb-3">
                     <label for="edit_files" class="form-label">Tambah Dokumen Pendukung (Opsional)</label>
                     <input class="form-control" type="file" id="edit_files" name="files[]" multiple>
+                    {{-- Elemen untuk menampilkan pesan error ukuran file --}}
+                    <div id="edit-files-error" class="invalid-feedback" style="display: none;"></div>
                     {{-- VISUALISASI FILE BARU (EDIT) --}}
                     <ul class="list-group mt-2" id="edit-files-list"></ul>
                     <small class="form-text text-muted">File baru akan ditambahkan, tidak menimpa file lama.</small>
@@ -361,6 +375,26 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                 <button type="button" class="btn btn-warning" id="confirmPastTimeBtn">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL BARU: Konfirmasi dan Error untuk QR Code --}}
+<div class="modal fade" id="qrConfirmModal" tabindex="-1" aria-labelledby="qrConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header" id="qrConfirmModalHeader">
+                <h5 class="modal-title" id="qrConfirmModalLabel">
+                    {{-- Judul akan diisi oleh JS --}}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="qrConfirmModalBody">
+                {{-- Pesan akan diisi oleh JS --}}
+            </div>
+            <div class="modal-footer" id="qrConfirmModalFooter">
+                {{-- Tombol akan diisi oleh JS --}}
             </div>
         </div>
     </div>
@@ -408,6 +442,16 @@
         -webkit-backdrop-filter: blur(5px);
         backdrop-filter: blur(5px);
     }
+
+    /* Gaya untuk highlight baris tabel */
+    .table-row-highlight {
+        animation: highlight-fade 4s ease-out;
+    }
+
+    @keyframes highlight-fade {
+        0%, 50% { background-color: rgba(255, 193, 7, 0.4); } /* Mulai & tahan warna kuning */
+        100% { background-color: transparent; } /* Pudar ke transparan */
+    }
 </style>
 @endpush
 
@@ -424,6 +468,18 @@
     const allRapats = @json($allRapats);
     const editModalEl = document.getElementById('editRapatModal');
     const addModalEl = document.getElementById('addRapatModal');
+
+    // --- FUNGSI UNTUK HIGHLIGHT BARIS BARU/EDIT ---
+    const highlightedId = "{{ session('highlight_id') }}";
+    if (highlightedId) {
+        const row = document.querySelector(`tr[data-rapat-id='${highlightedId}']`);
+        if (row) {
+            // Scroll ke baris dan berikan highlight
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            row.classList.add('table-row-highlight');
+        }
+    }
+
 
     // --- FUNGSI UNTUK AUTO-REFRESH RUANGAN BERDASARKAN CABANG ---
     async function updateRoomOptions(cabangSelect, roomSelect) {
@@ -886,22 +942,62 @@
 
     // Event listener untuk input file di modal "Tambah Rapat"
     addFileInput.addEventListener('change', function() {
+        const maxFileSize = 5 * 1024 * 1024; // 5MB
+        const errorElement = document.getElementById('add-files-error');
+
+        // Reset status error setiap kali ada perubahan
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+        this.classList.remove('is-invalid');
+        const oversizedFiles = [];
+
         // Tambahkan file baru ke DataTransfer yang sudah ada
         Array.from(this.files).forEach(file => {
-            addFileDataTransfer.items.add(file);
+            if (file.size > maxFileSize) {
+                oversizedFiles.push(file.name);
+            } else {
+                addFileDataTransfer.items.add(file);
+            }
         });
         this.files = addFileDataTransfer.files; // Update input dengan file gabungan
         renderFileList(addFileList, addFileDataTransfer);
+
+        if (oversizedFiles.length > 0) {
+            const errorMessage = `Beberapa file melebihi batas 5MB dan tidak akan diunggah: ${oversizedFiles.join(', ')}.`;
+            this.classList.add('is-invalid');
+            errorElement.textContent = errorMessage;
+            errorElement.style.display = 'block';
+        }
     });
 
     // Event listener untuk input file di modal "Edit Rapat"
     editFileInput.addEventListener('change', function() {
+        const maxFileSize = 5 * 1024 * 1024; // 5MB
+        const errorElement = document.getElementById('edit-files-error');
+
+        // Reset status error setiap kali ada perubahan
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+        this.classList.remove('is-invalid');
+        const oversizedFiles = [];
+
         // Tambahkan file baru ke DataTransfer yang sudah ada
         Array.from(this.files).forEach(file => {
-            editFileDataTransfer.items.add(file);
+            if (file.size > maxFileSize) {
+                oversizedFiles.push(file.name);
+            } else {
+                editFileDataTransfer.items.add(file);
+            }
         });
         this.files = editFileDataTransfer.files; // Update input dengan file gabungan
         renderFileList(editFileList, editFileDataTransfer);
+
+        if (oversizedFiles.length > 0) {
+            const errorMessage = `Beberapa file melebihi batas 5MB dan tidak akan diunggah: ${oversizedFiles.join(', ')}.`;
+            this.classList.add('is-invalid');
+            errorElement.textContent = errorMessage;
+            errorElement.style.display = 'block';
+        }
     });
 
     // Reset daftar file saat modal ditutup atau dibuka
@@ -1004,6 +1100,57 @@
         });
     }
 
+    // --- SKRIP BARU: Logika untuk Modal Konfirmasi QR Code ---
+    const qrConfirmModalEl = document.getElementById('qrConfirmModal');
+    const qrConfirmModal = new bootstrap.Modal(qrConfirmModalEl);
+    const qrModalHeader = document.getElementById('qrConfirmModalHeader');
+    const qrModalLabel = document.getElementById('qrConfirmModalLabel');
+    const qrModalBody = document.getElementById('qrConfirmModalBody');
+    const qrModalFooter = document.getElementById('qrConfirmModalFooter');
+
+    document.querySelectorAll('.qr-code-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const status = this.getAttribute('data-rapat-status');
+            const qrUrl = this.getAttribute('data-qr-url');
+
+            // Reset tampilan modal
+            qrModalHeader.className = 'modal-header';
+            qrModalFooter.innerHTML = '';
+
+            if (status.toLowerCase() === 'berlangsung') {
+                // Tampilan untuk konfirmasi
+                qrModalHeader.classList.add('bg-primary', 'text-white');
+                qrModalLabel.innerHTML = `<i class="bi bi-patch-question-fill me-2"></i> Konfirmasi Pembuatan QR Code`;
+                qrModalBody.textContent = 'Anda akan membuat QR Code untuk rapat ini. Apakah Anda yakin ingin melanjutkan?';
+
+                const continueBtn = document.createElement('button');
+                continueBtn.type = 'button';
+                continueBtn.className = 'btn btn-primary';
+                continueBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i> Ya, Lanjutkan';
+                continueBtn.onclick = () => {
+                    window.open(qrUrl, '_blank');
+                    qrConfirmModal.hide();
+                };
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.type = 'button';
+                cancelBtn.className = 'btn btn-secondary';
+                cancelBtn.textContent = 'Batal';
+                cancelBtn.setAttribute('data-bs-dismiss', 'modal');
+
+                qrModalFooter.appendChild(cancelBtn);
+                qrModalFooter.appendChild(continueBtn);
+            } else {
+                // Tampilan untuk error
+                qrModalHeader.classList.add('bg-danger', 'text-white');
+                qrModalLabel.innerHTML = `<i class="bi bi-x-octagon-fill me-2"></i> Aksi Ditolak`;
+                qrModalBody.textContent = `QR Code baru bisa dibuat jika status rapat telah "Berlangsung". Status saat ini adalah "${status}".`;
+            }
+            qrConfirmModal.show();
+        });
+    });
 });
 </script>
 @endpush
