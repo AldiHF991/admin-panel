@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use App\Models\Rapat; 
 
 Route::get('/', [GuestController::class, 'showGuest'])->name('guest');
+Route::post('/', [GuestController::class, 'store'])->name('guest.store');
 
 Route::get('/adminpanel/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/adminpanel/login', [AuthController::class, 'login'])->name('login'); 
@@ -30,7 +31,10 @@ Route::get('/meetings/{rapat}/qr-code', [RapatController::class, 'getQrCodeSvg']
 Route::get('/meetings/{rapat}/absensi', [RapatController::class, 'showAbsensi'])->name('meetings.showAbsensi');
 Route::get('/meetings/{id}/export-absensi', [RapatController::class, 'exportAbsensi'])->name('meetings.exportAbsensi');
 Route::delete('/meetings/files/{file}', [RapatController::class, 'destroyFile'])->name('meetings.destroyFile');
+Route::get('/meetings/{rapat}/guest', [RapatController::class, 'showGuestLogin'])->name('meetings.guestLogin');
+Route::post('/meetings/{rapat}/guest', [RapatController::class, 'storeGuest'])->name('meetings.storeGuest');
 Route::get('/meetings/{id}/files', [RapatController::class, 'getFiles'])->name('meetings.getFiles');
+Route::get('/meetings/{id}/guest-qr', [RapatController::class, 'showGuestQr'])->name('meetings.showGuestQr');
 
 Route::post('admin/users/add', [AdminController::class, 'storeUserAccount'])->name('users.add');
 Route::post('admin/users/edit', [AdminController::class, 'updateUserAccount'])->name('users.edit');

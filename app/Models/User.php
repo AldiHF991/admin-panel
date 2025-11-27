@@ -93,4 +93,11 @@ class User extends Authenticatable
     {
         return $this->division ? $this->division->division_name : null;
     }
+
+    public function absensi()
+    {
+        // PERBAIKAN: Tentukan local key secara eksplisit karena primary key model ini bukan 'id'.
+        // Laravel akan otomatis menangani 'attendable_type' dan 'attendable_id'.
+        return $this->morphMany(Absensi::class, 'attendable', 'attendable_type', 'attendable_id', 'id_user');
+    }
 }

@@ -38,11 +38,12 @@ class AbsensiUpdated implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        // Channel ini harus cocok dengan yang didengarkan di frontend.
-        // Kita menggunakan PrivateChannel karena data absensi mungkin sensitif.
-        // Nama channel dinamis berdasarkan ID rapat.
-        $rapatId = $this->absensi->first()->rapat_id ?? 'default';
-        return new PrivateChannel('Absensi.Rapat.' . $rapatId);
+        // PERBAIKAN: Menggunakan Channel publik agar sesuai dengan channels.php dan frontend.
+        // Otorisasi sudah diatur di channels.php (return true).
+        // Mengambil id_rapat dari data absensi. Diasumsikan $this->absensi adalah collection.
+        $rapatId = $this->absensi->first()->id_rapat ?? 'default';
+
+        return new Channel('Absensi.Rapat.' . $rapatId);
     }
 
     /**
@@ -52,6 +53,13 @@ class AbsensiUpdated implements ShouldBroadcast
      */
     public function broadcastWith()
     {
-        return ['absensi' => $this->absensi];
+        // 1. Eager load relasi 'attendable' untuk semua item.
+        $this->absensi->load('attendable');
+
+        // 2. Muat relasi 'division' hanya untuk item yang merupakan User.
+        $this->absensi->where('attendable_type', \App\Models\User::class)
+                      ->load('attendable.division');
+
+        return ['absensi' => $this->absensi->values()];
     }
 }

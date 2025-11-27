@@ -9,18 +9,23 @@ class Absensi extends Model
 {
     use HasUuids;
 
-    protected $primaryKey = 'id_absensi';
+    protected $primaryKey = 'id';
     protected $table = 'absensi';
 
     public $timestamps = false;
 
     protected $fillable = [
-        'id_rapat', 'id_user', 'waktu_absen', 'id_status_kehadiran',
+        'id_rapat', 'attendable_id', 'attendable_type', 'waktu_absen', 'id_status_kehadiran',
     ];
 
-    public function user()
+    /**
+     * Mendefinisikan relasi polimorfik "attendable".
+     * Ini memungkinkan absensi dimiliki oleh User atau Guest.
+     */
+    public function attendable()
     {
-        return $this->belongsTo(User::class, 'id_user');
+        // PERBAIKAN: Definisikan morphTo dengan nama, tipe, dan ID secara eksplisit
+        return $this->morphTo('attendable', 'attendable_type', 'attendable_id');
     }
 
     public function rapat()

@@ -138,6 +138,8 @@
                                                 <i class="bi bi-qr-code me-2"></i>QR Code
                                             </a>
                                         </li>
+                                        {{-- PERUBAHAN: Link Guest Mode diubah untuk menampilkan halaman QR --}}
+                                        <li><a class="dropdown-item" href="{{ route('meetings.showGuestQr', $rapat->id_rapat) }}" target="_blank"><i class="bi bi-person-badge me-2"></i>Guest Mode</a></li>
                                         <li>
                                             <form action="{{ route('meetings.destroy', $rapat->id_rapat) }}" method="POST" class="d-inline delete-meeting-form">
                                                 @csrf

@@ -219,27 +219,9 @@
         #qr-reader__dashboard_section_csr, #qr-reader__dashboard_section_fsr {
             display: none !important;
         }
-
-        /* --- STYLE UNTUK LOADING OVERLAY --- */
-        #loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 26, 51, 0.9);
-            display: none; /* Sembunyi secara default */
-            align-items: center;
-            justify-content: center;
-            z-index: 1100; /* Di atas modal scanner */
-            flex-direction: column;
-            color: white;
-            text-align: center;
-        }
-        .spinner-border {
-            width: 3rem;
-            height: 3rem;
-            color: var(--pu-yellow);
+        
+        .welcome-text {
+            font-size: 1rem;
         }
 
     </style>
@@ -247,9 +229,16 @@
 <body>
     <div class="login-card">
         <div class="login-header">
-            <img src="{{ asset('images/logo_qr.png') }}" alt="Logo BBWS Brantas" class="login-logo">
-            <h4>Selamat Datang</h4>
-            <p class="text-muted mb-0" style="font-size: 0.9rem;">Sistem Manajemen Rapat BBWS Brantas</p>
+            <img src="{{ asset('images/logo_qr.png') }}" alt="Logo BBWS Brantas" class="login-logo" style="max-width: 75px; margin-bottom: 1rem;">
+            {{-- Logika untuk menampilkan judul rapat atau judul default --}}
+            @if(isset($rapat))
+                <p class="text-muted mb-2 welcome-text">Selamat Datang di Rapat:</p>
+                <h4 style="font-size: 1.4rem; line-height: 1.4; font-weight: 700;">{{ $rapat->judul }}</h4>
+                <p class="text-muted mt-2" style="font-size: 0.9rem;">Silakan isi formulir kehadiran di bawah ini.</p>
+            @else
+                <h4>Selamat Datang</h4>
+                <p class="text-muted mb-0" style="font-size: 0.9rem;">Sistem Manajemen Rapat BBWS Brantas</p>
+            @endif
         </div>
 
         @if(session('error'))
@@ -258,122 +247,83 @@
             </div>
         @endif
 
+        @if(session('success'))
+            <div class="alert alert-success text-center p-2 mb-3">
+                {{ session('success') }}
+            </div>
+        @endif
+
         @if ($errors->any())
-            <div class="alert alert-danger text-center p-2 mb-3" role="alert">
+            <div class="alert alert-danger text-center p-2 mb-3">
                 {{ $errors->first() }}
             </div>
         @endif
 
         <!-- Tombol di luar form untuk memicu popup -->
-        <button type="button" id="scan-qr-btn" class="btn btn-primary w-100 mt-3">
-            <i class="bi bi-qr-code-scan me-2"></i>Scan QR Code
+        <button type="button" class="btn btn-primary w-100 mt-3" data-bs-toggle="modal" data-bs-target="#guest-form-modal">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Masuk Rapat
         </button>
-
-        <form id="qr-login-form" method="POST" action="{{ route('login') }}" style="display: none;">
-            @csrf
-            <input type="hidden" name="qr_code_data" id="qr_code_data">
-        </form>
 
         <div class="login-footer">
             <p class="mb-0">&copy; {{ date('Y') }} Kementerian Pekerjaan Umum</p>
             <p class="text-muted small">Magang UNTAG Surabaya 2025</p>
         </div>
     </div>
-
-    <!-- Popup/Modal untuk QR Scanner -->
-    <div id="qr-scanner-modal">
-        <div id="qr-reader"></div>
-        <div id="qr-reader-results" class="text-center">Arahkan kamera ke QR Code</div>
-        <button id="close-scanner-btn" class="btn mt-3">Tutup</button>
-    </div>
-
-    <!-- Overlay untuk loading setelah scan berhasil -->
-    <div id="loading-overlay">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
+    
+    <!-- Modal untuk Form Data Diri Tamu -->
+    <div class="modal fade" id="guest-form-modal" tabindex="-1" aria-labelledby="guestFormModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="border-bottom: 2px solid var(--pu-yellow);">
+                    <h5 class="modal-title" id="guestFormModalLabel" style="color: var(--pu-blue-main); font-weight: 600;">Formulir Kehadiran Tamu</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {{-- Sesuaikan action form --}}
+                    @if(isset($rapat))
+                        <form id="guest-form" action="{{ route('meetings.storeGuest', ['rapat' => $rapat->id_rapat]) }}" method="POST">
+                    @else
+                        <form id="guest-form" action="{{ route('guest.store') }}" method="POST">
+                    @endif
+                        @csrf
+                        <div class="mb-3">
+                            <label for="nama" class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="nama" name="nama" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="asal_instansi" class="form-label">Asal Instansi / Unit Kerja <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="asal_instansi" name="asal_instansi" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="jabatan" class="form-label">Jabatan <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="jabatan" name="jabatan" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nomor" class="form-label">Nomor WhatsApp (Opsional)</label>
+                            <input type="tel" class="form-control" id="nomor" name="nomor" placeholder="Contoh: 081234567890">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <button type="submit" form="guest-form" class="btn btn-primary">Kirim</button>
+                </div>
+            </div>
         </div>
-        <p class="mt-3 mb-0">Scan Berhasil! Memproses login...</p>
     </div>
 
+    <!-- Modal untuk QR Code Halaman -->
+    
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
 
     <script>
         document.addEventListener('mousemove', function(e) {
             const root = document.documentElement;
             root.style.setProperty('--x', e.clientX + 'px');
             root.style.setProperty('--y', e.clientY + 'px');
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-            const modal = document.getElementById('qr-scanner-modal');
-            const scanBtn = document.getElementById('scan-qr-btn');
-            const closeBtn = document.getElementById('close-scanner-btn');
-            const resultsContainer = document.getElementById('qr-reader-results');
-            const qrForm = document.getElementById('qr-login-form');
-            const qrInput = document.getElementById('qr_code_data');
-            const loadingOverlay = document.getElementById('loading-overlay');
-            
-            let html5QrCode;
-
-            const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-                if (html5QrCode && html5QrCode.isScanning) {
-                    html5QrCode.stop().then(() => {
-                        modal.style.display = 'none';
-                        loadingOverlay.style.display = 'flex'; // Tampilkan loading
-                        qrInput.value = decodedText; // Masukkan hasil scan ke input form
-                        
-                        // Beri jeda sedikit agar pengguna melihat pesan loading
-                        setTimeout(() => {
-                            qrForm.submit(); // Kirim form
-                        }, 500);
-
-                    }).catch(err => console.error("Gagal menghentikan scanner setelah sukses.", err));
-                }
-            };
-
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-            // Fungsi untuk memulai scanner
-            const startScanner = () => {
-                // Inisialisasi scanner di sini agar state selalu baru
-                html5QrCode = new Html5Qrcode("qr-reader");
-                modal.style.display = 'flex';
-                resultsContainer.innerText = "Meminta izin kamera...";
-
-                // Cek izin dan ketersediaan kamera (penting untuk mobile)
-                Html5Qrcode.getCameras().then(cameras => {
-                    if (cameras && cameras.length) {
-                        // Gunakan kamera belakang (environment) jika ada
-                        const cameraId = cameras.find(c => c.label.toLowerCase().includes('back'))?.id || cameras[0].id;
-                        resultsContainer.innerText = "Arahkan kamera ke QR Code";
-                        html5QrCode.start(cameraId, config, qrCodeSuccessCallback)
-                            .catch(err => {
-                                console.error("Gagal memulai scanner:", err);
-                                resultsContainer.innerText = "Error: Gagal memulai kamera.";
-                            });
-                    } else {
-                        resultsContainer.innerText = "Error: Tidak ada kamera yang ditemukan.";
-                    }
-                }).catch(err => {
-                    console.error("Gagal mendapatkan akses kamera:", err);
-                    resultsContainer.innerText = "Error: Akses kamera ditolak. Pastikan menggunakan HTTPS.";
-                });
-            };
-
-            // Fungsi untuk menghentikan scanner
-            const stopScanner = () => {
-                if (html5QrCode && html5QrCode.isScanning) {
-                    html5QrCode.stop().then(() => {
-                        modal.style.display = 'none';
-                    });
-                } else {
-                    modal.style.display = 'none';
-                }
-            };
-
-            scanBtn.addEventListener('click', startScanner);
-            closeBtn.addEventListener('click', stopScanner);
         });
     </script>
 </body>

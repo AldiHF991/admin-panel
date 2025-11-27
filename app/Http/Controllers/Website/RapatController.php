@@ -8,13 +8,16 @@ use App\Models\RapatFile;
 use App\Models\Cabang;
 use App\Models\Absensi;
 use App\Models\User;
+use App\Models\Guest;
 use Illuminate\Http\Request;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AbsensiRapatExport;
+use Illuminate\Support\Facedes\Validator;
 use Carbon\Carbon;
+
 
 class RapatController extends Controller
 {
@@ -86,11 +89,16 @@ class RapatController extends Controller
      */
     public function showAbsensi(Rapat $rapat)
     {
-        // Ambil data absensi awal untuk rapat ini
-        $initialAbsensi = Absensi::with('user')
+        // 1. Ambil semua data absensi dengan relasi polimorfik 'attendable' (User & Guest).
+        $initialAbsensi = Absensi::with('attendable')
             ->where('id_rapat', $rapat->id_rapat)
             ->orderBy('waktu_absen', 'asc')
             ->get();
+
+        // 2. Pisahkan absensi milik User dan muat relasi 'division' secara eksplisit.
+        // Ini mencegah error karena kita tidak mencoba memuat 'division' pada model Guest.
+        $initialAbsensi->where('attendable_type', User::class)
+                       ->load('attendable.division');
 
         // Menggunakan view baru yang akan kita buat
         // Mengirimkan variabel rapatId dan initialAbsensi ke view
@@ -284,4 +292,61 @@ class RapatController extends Controller
         // Mengembalikan data file sebagai JSON
         return response()->json($files);
     }
+
+    /**
+     * Menampilkan halaman login tamu untuk rapat tertentu.
+     */
+    public function showGuestLogin(Rapat $rapat)
+    {
+        // Menggunakan view yang sama dengan guest umum, tapi mengirimkan data rapat
+        return view('auth.guest', ['rapat' => $rapat]);
+    }
+
+    /**
+     * Menyimpan data tamu dari formulir login tamu.
+     */
+    public function storeGuest(Request $request, Rapat $rapat)
+    {
+        $validatedData = $request->validate([
+            'nama' => 'required|string|max:100',
+            'asal_instansi' => 'required|string|max:100',
+            'jabatan' => 'required|string|max:100',
+            'nomor' => 'nullable|string|max:25',
+        ]);
+
+        $guest = Guest::create($validatedData);
+
+        // Buat entri absensi untuk guest yang baru dibuat
+        // Ini akan secara otomatis mengisi 'attendable_id' dan 'attendable_type'
+        $guest->absensi()->create([
+            'id_rapat' => $rapat->id_rapat,
+            'waktu_absen' => now(),
+            'id_status_kehadiran' => 2, // Asumsikan 2 = Hadir
+        ]);
+        
+        // PERBAIKAN: Dispatch event setelah tamu berhasil absen.
+        // 1. Ambil semua data absensi terbaru untuk rapat ini.
+        $allAbsensi = Absensi::where('id_rapat', $rapat->id_rapat)
+                              ->with('attendable') // Eager load relasi
+                              ->orderBy('waktu_absen', 'asc')
+                              ->get();
+
+        // 2. Kirim event dengan data absensi yang lengkap.
+        \App\Events\AbsensiUpdated::dispatch($allAbsensi);
+
+        // Redirect kembali ke halaman yang sama dengan pesan sukses
+        return redirect()->route('meetings.guestLogin', $rapat->id_rapat)
+            ->with('success', 'Terima kasih, ' . $validatedData['nama'] . '. Kehadiran Anda telah berhasil dicatat.');
+    }
+
+    public function showGuestQr($id)
+{
+    $rapat = Rapat::findOrFail($id);
+    // Membuat URL untuk halaman login tamu
+    $guestUrl = route('meetings.guestLogin', $rapat->id_rapat);
+    
+    // Mengembalikan view baru dengan data yang diperlukan
+    return view('meetings.guest-qr', compact('rapat', 'guestUrl'));
+}
+
 }

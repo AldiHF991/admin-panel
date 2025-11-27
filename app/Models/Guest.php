@@ -25,6 +25,14 @@ class Guest extends Model
         'nama',
         'jabatan',
         'asal_instansi',
-        'nik',
+        'nomor',
     ];
+    /**
+         * Mendefinisikan relasi polimorfik ke model Absensi.
+         */
+        public function absensi()
+        {
+            // PERBAIKAN: Tentukan local key secara eksplisit karena primary key model ini adalah 'id_guest'.
+            return $this->morphMany(Absensi::class, 'attendable', 'attendable_type', 'attendable_id', 'id_guest');
+        }
 }
