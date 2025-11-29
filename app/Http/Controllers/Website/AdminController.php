@@ -7,21 +7,20 @@ use App\Models\Cabang;
 use App\Models\Division;
 use App\Models\Rapat;
 use App\Models\Role;
-use App\Models\StatusRapat;
 use App\Models\Room;
+use App\Models\StatusRapat;
 use App\Models\StatusRuangan;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class AdminController extends Controller
 {
-
     // Show FUNCTIONS START
-  
-  public function showDashboard()
+
+    public function showDashboard()
     {
         $title = 'Dashboard';
         // Mengambil data statistik
@@ -70,18 +69,17 @@ class AdminController extends Controller
     }
 
     public function showNewlyCreatedReport()
-{
-    $rapatBaruDibuat = Rapat::with(['room', 'pengaju', 'status'])
-        ->where('created_at', '>=', now()->subDays(3))
-        ->orderBy('created_at', 'desc')
-        ->get();
+    {
+        $rapatBaruDibuat = Rapat::with(['room', 'pengaju', 'status'])
+            ->where('created_at', '>=', now()->subDays(3))
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-    return view('reports.newly-created', [
-        'title' => 'Laporan Rapat Baru Dibuat',
-        'rapatBaruDibuat' => $rapatBaruDibuat
-    ]);
-}
-
+        return view('reports.newly-created', [
+            'title' => 'Laporan Rapat Baru Dibuat',
+            'rapatBaruDibuat' => $rapatBaruDibuat,
+        ]);
+    }
 
     public function showUserManagement(Request $request)
     {
@@ -98,7 +96,7 @@ class AdminController extends Controller
 
         // 3. Siapkan query user
         $usersQuery = User::with(['role', 'division']);
-        
+
         // Terapkan pengurutan
         $usersQuery->orderBy($sort, $direction);
         // 4. Terapkan filter berdasarkan role jika ada
@@ -108,7 +106,7 @@ class AdminController extends Controller
 
         // 5. Terapkan filter pencarian berdasarkan nama jika ada
         if ($searchTerm) {
-            $usersQuery->where('name', 'like', '%' . $searchTerm . '%');
+            $usersQuery->where('name', 'like', '%'.$searchTerm.'%');
         }
 
         // 6. Lakukan paginasi dan tambahkan parameter query string ke link paginasi
@@ -140,7 +138,7 @@ class AdminController extends Controller
 
         // 5. Terapkan filter pencarian berdasarkan nama ruangan jika ada
         if ($searchTerm) {
-            $roomQuery->where('room', 'like', '%' . $searchTerm . '%');
+            $roomQuery->where('room', 'like', '%'.$searchTerm.'%');
         }
 
         // 6. Terapkan pengurutan (termasuk join untuk sort by alamat)
@@ -183,7 +181,7 @@ class AdminController extends Controller
 
         // Terapkan filter pencarian berdasarkan judul rapat
         if ($searchTerm) {
-            $rapatsQuery->where('judul', 'like', '%' . $searchTerm . '%');
+            $rapatsQuery->where('judul', 'like', '%'.$searchTerm.'%');
         }
 
         // Terapkan pengurutan, paginasi, dan ambil data rapat
@@ -227,7 +225,7 @@ class AdminController extends Controller
         // Pengguna baru berhasil dibuat oleh admin
         $user = User::create($data);
 
-             return redirect()->back()->with('success', 'User berhasil ditambahkan!');
+        return redirect()->back()->with('success', 'User berhasil ditambahkan!');
     }
 
     // Update User Account
@@ -247,7 +245,7 @@ class AdminController extends Controller
             'id_division' => 'nullable|integer',
             'photo' => 'nullable|image|max:2048',
         ]);
-        
+
         if ($v->fails()) {
             return redirect()->back()->withErrors($v)->withInput();
         }
@@ -263,7 +261,7 @@ class AdminController extends Controller
             $data['photo'] = Storage::url($path);
         }
 
-        if (!empty($data['password'])) {
+        if (! empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         } else {
             unset($data['password']); // Jangan update password jika kosong

@@ -11,6 +11,7 @@ class Cabang extends Model
     use HasFactory;
 
     protected $table = 'cabang';
+
     protected $primaryKey = 'id';
 
     /**
@@ -28,7 +29,7 @@ class Cabang extends Model
     /**
      * Mendefinisikan relasi "hasMany" ke model Room.
      */
-    public function room():HasMany
+    public function room(): HasMany
     {
         // Parameter: (Model Terkait, Foreign Key di tabel room, Local Key di tabel cabang)
         return $this->hasMany(Room::class, 'id_cabang', 'id');

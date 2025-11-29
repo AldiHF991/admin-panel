@@ -20,10 +20,10 @@ class GuestController extends Controller
     public function store(Request $request)
     {
         $v = Validator::make($request->all(), [
-        'nama' => 'required|string',
-        'jabatan' => 'required|string',
-        'asal_instansi' => 'required|string',
-        'nik' => 'required|integer|unique:guests,nik', // Sementara, nunggu kebijakan dari Pak Wahyu
+            'nama' => 'required|string',
+            'jabatan' => 'required|string',
+            'asal_instansi' => 'required|string',
+            'nik' => 'required|integer|unique:guests,nik', // Sementara, nunggu kebijakan dari Pak Wahyu
         ]);
 
         if ($v->fails()) {

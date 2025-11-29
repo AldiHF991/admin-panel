@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+
 use App\Events\AbsensiUpdated;
 use App\Exports\AbsensiRapatExport;
 use App\Http\Controllers\Controller;
@@ -58,7 +59,7 @@ class RapatController extends Controller
         if ($request->has('id_user_pengaju') && ! empty($request->id_user_pengaju)) {
             $validatedData['id_user_pengaju'] = $request->id_user_pengaju;
         }
-        
+
         // 4. Terapkan logika untuk id_status berdasarkan role user
         if ($user->id_role == 1) { // Admin
             $validatedData['id_status'] = 1; // Langsung 'Diterima'
@@ -90,7 +91,7 @@ class RapatController extends Controller
         ], 201);
     }
 
-    // GET:     
+    // GET:
     public function show($id)
     {
         // PERBAIKAN: Memuat semua relasi yang dibutuhkan frontend, terutama 'cabang' dan 'divisions'.
@@ -306,7 +307,7 @@ class RapatController extends Controller
 
         // 3. Buat nama file yang deskriptif agar tidak bingung
         // contoh: laporan-absensi-rapat-koordinasi-2023-10-27.xlsx
-        $fileName = 'laporan-absensi-' . Str::slug($rapat->judul) . '-' . date('Y-m-d') . '.xlsx';
+        $fileName = 'laporan-absensi-'.Str::slug($rapat->judul).'-'.date('Y-m-d').'.xlsx';
 
         // 4. Gunakan class AbsensiRapatExport yang baru untuk men-download file
         // Koleksi $absensi diteruskan ke constructor class export.

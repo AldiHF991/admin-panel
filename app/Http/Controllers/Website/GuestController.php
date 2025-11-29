@@ -28,6 +28,6 @@ class GuestController extends Controller
         Guest::create($validatedData);
 
         // Tidak ada pencatatan absensi di sini karena ini adalah buku tamu umum
-        return redirect()->route('guest')->with('success', 'Terima kasih, ' . $validatedData['nama'] . '. Kehadiran Anda telah berhasil dicatat.');
+        return redirect()->route('guest')->with('success', 'Terima kasih, '.$validatedData['nama'].'. Kehadiran Anda telah berhasil dicatat.');
     }
 }

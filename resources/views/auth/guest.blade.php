@@ -282,10 +282,12 @@
                     {{-- Sesuaikan action form --}}
                     @if(isset($rapat))
                         <form id="guest-form" action="{{ route('meetings.storeGuest', ['rapat' => $rapat->id_rapat]) }}" method="POST">
-                    @else
-                        <form id="guest-form" action="{{ route('guest.store') }}" method="POST">
                     @endif
                         @csrf
+
+                        {{-- HIDDEN INPUT UNTUK DEVICE TOKEN --}}
+                        <input type="hidden" id="device_token" name="device_token">
+
                         <div class="mb-3">
                             <label for="nama" class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="nama" name="nama" required>
@@ -315,7 +317,6 @@
     <!-- Modal untuk QR Code Halaman -->
     
 
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
@@ -325,6 +326,38 @@
             root.style.setProperty('--x', e.clientX + 'px');
             root.style.setProperty('--y', e.clientY + 'px');
         });
+
+        // ===== DEVICE TOKEN GUEST (TIDAK MENGGANGGU KODE YANG ADA) =====
+        function getOrCreateGuestDeviceToken() {
+            try {
+                let token = localStorage.getItem('guest_device_token');
+
+                if (!token) {
+                    if (window.crypto && window.crypto.randomUUID) {
+                        token = window.crypto.randomUUID();
+                    } else {
+                        // Fallback kalau browser sangat tua
+                        token = 'dev-' + Math.random().toString(36).substring(2) + Date.now();
+                    }
+                    localStorage.setItem('guest_device_token', token);
+                }
+
+                return token;
+            } catch (e) {
+                // Jika localStorage tidak bisa diakses (mode private ketat), tetap generate token sementara
+                return 'dev-' + Math.random().toString(36).substring(2) + Date.now();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const token = getOrCreateGuestDeviceToken();
+            const input = document.getElementById('device_token');
+            if (input) {
+                input.value = token;
+            }
+            // console.log('guest device_token:', token);
+        });
+        // =================================================================
     </script>
 </body>
 </html>

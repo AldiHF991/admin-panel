@@ -782,7 +782,9 @@
 
                     // Membuat link untuk file
                     const fileLink = document.createElement('a');
-                    fileLink.href = `{{ asset('storage') }}/${file.file_path}`;
+                    // PERBAIKAN: Gunakan route yang benar untuk download, bukan direct asset.
+                    const downloadUrl = `{{ route('meetings.downloadFile', ['file' => ':fileId']) }}`.replace(':fileId', file.id_file);
+                    fileLink.href = downloadUrl;
                     fileLink.target = '_blank';
                     fileLink.rel = 'noopener noreferrer'; // Keamanan tambahan
                     // PERBAIKAN: Tambahkan ikon di sebelah nama file

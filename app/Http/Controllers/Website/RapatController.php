@@ -2,22 +2,19 @@
 
 namespace App\Http\Controllers\Website;
 
+use App\Exports\AbsensiRapatExport;
 use App\Http\Controllers\Controller;
+use App\Models\Absensi;
+use App\Models\Cabang;
+use App\Models\Guest;
 use App\Models\Rapat;
 use App\Models\RapatFile;
-use App\Models\Cabang;
-use App\Models\Absensi;
 use App\Models\User;
-use App\Models\Guest;
 use Illuminate\Http\Request;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\AbsensiRapatExport;
-use Illuminate\Support\Facedes\Validator;
-use Carbon\Carbon;
-
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class RapatController extends Controller
 {
@@ -40,7 +37,7 @@ class RapatController extends Controller
 
         // Filter berdasarkan pencarian judul
         if ($request->filled('search')) {
-            $query->where('judul', 'like', '%' . $request->search . '%');
+            $query->where('judul', 'like', '%'.$request->search.'%');
         }
 
         // Logika Sorting
@@ -98,7 +95,7 @@ class RapatController extends Controller
         // 2. Pisahkan absensi milik User dan muat relasi 'division' secara eksplisit.
         // Ini mencegah error karena kita tidak mencoba memuat 'division' pada model Guest.
         $initialAbsensi->where('attendable_type', User::class)
-                       ->load('attendable.division');
+            ->load('attendable.division');
 
         // Menggunakan view baru yang akan kita buat
         // Mengirimkan variabel rapatId dan initialAbsensi ke view
@@ -128,7 +125,7 @@ class RapatController extends Controller
         // Proses upload file jika ada
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $path = $file->store('public/rapat_files/' . $rapat->id_rapat);
+                $path = $file->store('public/rapat_files/'.$rapat->id_rapat);
                 RapatFile::create([
                     'id_rapat' => $rapat->id_rapat,
                     'file_path' => $path,
@@ -142,11 +139,12 @@ class RapatController extends Controller
         // Redirect kembali ke halaman manajemen dengan query string PIC yang sama
         $redirectUrl = route('meetings.index');
         if ($request->id_user_pengaju) {
-            $redirectUrl .= '?id_user_pic=' . $request->id_user_pengaju;
+            $redirectUrl .= '?id_user_pic='.$request->id_user_pengaju;
         }
+
         // TAMBAHKAN 'highlight_id' ke session saat redirect
         return redirect($redirectUrl)->with('success', 'Rapat berhasil ditambahkan.')
-                                     ->with('highlight_id', $rapat->id_rapat);
+            ->with('highlight_id', $rapat->id_rapat);
     }
 
     public function update(Request $request, Rapat $rapat)
@@ -169,7 +167,7 @@ class RapatController extends Controller
         // Proses upload file baru jika ada
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $path = $file->store('public/rapat_files/' . $rapat->id_rapat);
+                $path = $file->store('public/rapat_files/'.$rapat->id_rapat);
                 RapatFile::create([
                     'id_rapat' => $rapat->id_rapat,
                     'file_path' => $path,
@@ -183,11 +181,12 @@ class RapatController extends Controller
         // Redirect kembali ke halaman manajemen dengan query string PIC yang sama
         $redirectUrl = route('meetings.index');
         if ($rapat->id_user_pengaju) {
-            $redirectUrl .= '?id_user_pic=' . $rapat->id_user_pengaju;
+            $redirectUrl .= '?id_user_pic='.$rapat->id_user_pengaju;
         }
+
         // TAMBAHKAN 'highlight_id' ke session saat redirect
         return redirect($redirectUrl)->with('success', 'Rapat berhasil diperbarui.')
-                                     ->with('highlight_id', $rapat->id_rapat);
+            ->with('highlight_id', $rapat->id_rapat);
     }
 
     public function destroy($id)
@@ -196,7 +195,7 @@ class RapatController extends Controller
             $rapat = Rapat::findOrFail($id);
 
             // Hapus folder file terkait di storage
-            Storage::deleteDirectory('public/rapat_files/' . $rapat->id_rapat);
+            Storage::deleteDirectory('public/rapat_files/'.$rapat->id_rapat);
 
             // Hapus record file dari database (relasi sudah di-handle jika di-setting onDelete('cascade'))
             // Jika tidak, hapus manual: $rapat->files()->delete();
@@ -204,7 +203,7 @@ class RapatController extends Controller
 
             return redirect()->route('meetings.index')->with('success', 'Rapat berhasil dihapus.');
         } catch (\Exception $e) {
-            return redirect()->route('meetings.index')->with('error', 'Gagal menghapus rapat. ' . $e->getMessage());
+            return redirect()->route('meetings.index')->with('error', 'Gagal menghapus rapat. '.$e->getMessage());
         }
     }
 
@@ -219,9 +218,9 @@ class RapatController extends Controller
             return response()->json(['success' => true, 'message' => 'File berhasil dihapus.']);
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'Gagal menghapus file.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -238,12 +237,12 @@ class RapatController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal mengambil data ruangan.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
 
-        /**
+    /**
      * Mengekspor data absensi rapat ke Excel.
      * GET: /api/rapat/{id}/export-absensi
      */
@@ -261,7 +260,7 @@ class RapatController extends Controller
 
         // 3. Buat nama file yang deskriptif agar tidak bingung
         // contoh: laporan-absensi-rapat-koordinasi-2023-10-27.xlsx
-        $fileName = 'laporan-absensi-' . Str::slug($rapat->judul) . '-' . date('Y-m-d') . '.xlsx';
+        $fileName = 'laporan-absensi-'.Str::slug($rapat->judul).'-'.date('Y-m-d').'.xlsx';
 
         // 4. Gunakan class AbsensiRapatExport yang baru untuk men-download file
         // Koleksi $absensi diteruskan ke constructor class export.
@@ -304,49 +303,141 @@ class RapatController extends Controller
 
     /**
      * Menyimpan data tamu dari formulir login tamu.
+     * - Jika device_token BELUM pernah dipakai di rapat ini -> buat guest + absensi baru.
+     * - Jika device_token SUDAH pernah dipakai -> anggap "login ulang" dan langsung ke dashboard.
      */
     public function storeGuest(Request $request, Rapat $rapat)
     {
+        // 1. Validasi input
         $validatedData = $request->validate([
             'nama' => 'required|string|max:100',
             'asal_instansi' => 'required|string|max:100',
             'jabatan' => 'required|string|max:100',
             'nomor' => 'nullable|string|max:25',
+            'device_token' => 'required|string|max:191',
         ]);
 
-        $guest = Guest::create($validatedData);
+        $deviceToken = $validatedData['device_token'];
 
-        // Buat entri absensi untuk guest yang baru dibuat
-        // Ini akan secara otomatis mengisi 'attendable_id' dan 'attendable_type'
+        // 2. Ambil user agent & ip address
+        $userAgent = $request->userAgent();
+        $ipAddress = $request->ip();
+
+        // 3. Cek apakah device_token ini SUDAH pernah dipakai di rapat ini
+        $existingAbsensi = Absensi::where('id_rapat', $rapat->id_rapat)
+            ->where('device_token', $deviceToken)
+            ->with('attendable') // pastikan ada relasi morphTo attendable di model Absensi
+            ->first();
+
+        if ($existingAbsensi) {
+            // Ambil guest yang terkait dengan absensi ini
+            $guest = $existingAbsensi->attendable; // harusnya instance App\Models\Guest
+
+            // Set session lagi supaya middleware mengizinkan akses dashboard
+            $request->session()->put('guest_id', $guest->id_guest);
+            $request->session()->put('rapat_id', $rapat->id_rapat);
+
+            // ⬇⬇⬇ di sini pesan bahwa dia sudah pernah isi form
+            return redirect()->route('meetings.guestDashboard', [
+                'rapat' => $rapat->id_rapat,
+                'guest' => $guest->id_guest,
+            ])->with('info', 'Perangkat ini sudah tercatat hadir pada rapat ini. Anda tidak dapat mengisi ulang formulir dan akan diarahkan ke dashboard.');
+        }
+
+        // 4. Kalau BELUM pernah absen dengan device_token ini -> buat guest baru
+        $guest = Guest::create([
+            'nama' => $validatedData['nama'],
+            'asal_instansi' => $validatedData['asal_instansi'],
+            'jabatan' => $validatedData['jabatan'],
+            'nomor' => $validatedData['nomor'] ?? null,
+        ]);
+
+        // 5. Buat entri absensi untuk guest yang baru dibuat + simpan data keamanan
         $guest->absensi()->create([
             'id_rapat' => $rapat->id_rapat,
             'waktu_absen' => now(),
-            'id_status_kehadiran' => 2, // Asumsikan 2 = Hadir
-        ]);
-        
-        // PERBAIKAN: Dispatch event setelah tamu berhasil absen.
-        // 1. Ambil semua data absensi terbaru untuk rapat ini.
-        $allAbsensi = Absensi::where('id_rapat', $rapat->id_rapat)
-                              ->with('attendable') // Eager load relasi
-                              ->orderBy('waktu_absen', 'asc')
-                              ->get();
+            'id_status_kehadiran' => 2, // 2 = Hadir (asumsi)
 
-        // 2. Kirim event dengan data absensi yang lengkap.
+            'device_id_log' => null,           // guest tidak punya HWID
+            'device_token' => $deviceToken,
+            'user_agent' => $userAgent,
+            'ip_address' => $ipAddress,
+        ]);
+
+        // 6. Simpan info ke sesi
+        $request->session()->put('guest_id', $guest->id_guest);
+        $request->session()->put('rapat_id', $rapat->id_rapat);
+
+        // 7. Dispatch event untuk update realtime daftar absensi
+        $allAbsensi = Absensi::where('id_rapat', $rapat->id_rapat)
+            ->with('attendable')
+            ->orderBy('waktu_absen', 'asc')
+            ->get();
+
         \App\Events\AbsensiUpdated::dispatch($allAbsensi);
 
-        // Redirect kembali ke halaman yang sama dengan pesan sukses
-        return redirect()->route('meetings.guestLogin', $rapat->id_rapat)
-            ->with('success', 'Terima kasih, ' . $validatedData['nama'] . '. Kehadiran Anda telah berhasil dicatat.');
+        // 8. Redirect ke dashboard guest
+        return redirect()->route('meetings.guestDashboard', [
+            'rapat' => $rapat->id_rapat,
+            'guest' => $guest->id_guest,
+        ])->with('success', 'Terima kasih, '.$validatedData['nama'].'. Kehadiran Anda telah berhasil dicatat.');
+    }
+
+    /**
+     * Menampilkan dashboard guest setelah berhasil absen.
+     */
+    public function showGuestDashboard(Rapat $rapat, $guest)
+    {
+        $rapat->load(['cabang', 'room', 'files']);
+        $guest = Guest::findOrFail($guest);
+
+        return view('guest.dashboard', compact('rapat', 'guest'));
     }
 
     public function showGuestQr($id)
-{
-    $rapat = Rapat::findOrFail($id);
-    // Membuat URL untuk halaman login tamu
-    $guestUrl = route('meetings.guestLogin', $rapat->id_rapat);
-    
-    // Mengembalikan view baru dengan data yang diperlukan
-    return view('meetings.guest-qr', compact('rapat', 'guestUrl'));
-}
+    {
+        $rapat = Rapat::findOrFail($id);
+        // Membuat URL untuk halaman login tamu
+        $guestUrl = route('meetings.guestLogin', $rapat->id_rapat);
 
+        // Mengembalikan view baru dengan data yang diperlukan
+        return view('meetings.guest-qr', compact('rapat', 'guestUrl'));
+    }
+
+    /**
+     * Menghapus sesi tamu dan mengalihkannya ke halaman login.
+     */
+    public function logoutGuest(Request $request, Rapat $rapat)
+    {
+        // Hapus data spesifik dari sesi yang digunakan untuk otentikasi tamu
+        $request->session()->forget(['guest_id', 'rapat_id']);
+
+        // Invalidate sesi untuk menghapus semua data sesi
+        $request->session()->invalidate();
+
+        // Regenerasi token untuk keamanan dari serangan CSRF
+        $request->session()->regenerateToken();
+
+        // Redirect ke halaman login tamu untuk rapat yang sama dengan pesan sukses
+        return redirect()->route('meetings.guestLogin', ['rapat' => $rapat->id_rapat])
+            ->with('success', 'Anda telah berhasil logout.');
+    }
+
+    /**
+     * Menangani permintaan unduhan file yang aman.
+     * Metode ini dipanggil oleh route yang dilindungi middleware 'auth'.
+     */
+    public function downloadFile(RapatFile $file)
+    {
+        // Pengecekan keberadaan file tetap penting untuk keamanan.
+        // $file->file_path berisi path relatif dari 'storage/app/', contoh: 'public/rapat_files/...'
+        if (! Storage::exists($file->file_path)) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        // PERBAIKAN: Gunakan Storage::download() untuk keamanan dan keandalan.
+        // Metode ini menangani path secara internal dan lebih aman daripada response()->download(storage_path(...)).
+        // Argumen pertama adalah path dari storage, argumen kedua adalah nama file yang akan dilihat pengguna.
+        return Storage::download($file->file_path, $file->file_name);
+    }
 }

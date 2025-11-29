@@ -3,10 +3,10 @@
 use App\Http\Controllers\Api\AbsensiController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CabangController;
+use App\Http\Controllers\Api\GuestController;
 use App\Http\Controllers\Api\QrCodeController;
 use App\Http\Controllers\Api\RapatController;
 use App\Http\Controllers\Api\RoomController;
-use App\Http\Controllers\Api\GuestController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -25,7 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::get('rapat/{id}/export-absensi', [RapatController::class, 'exportAbsensi']); // Endpoint untuk ekspor absensi
-    Route::get('/rapat/saya', [RapatController::class, 'rapatSaya']); 
+    Route::get('/rapat/saya', [RapatController::class, 'rapatSaya']);
     Route::apiResource('rapat', RapatController::class);
     Route::get('rapat/{id}/peserta', [RapatController::class, 'getPesertaRapat']);
     Route::post('rapat/{id}/peserta', [RapatController::class, 'addPesertaRapat']);
@@ -52,7 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Endpoint untuk form tamu (Guest Mode)
-//Route::apiResource('/form-guest', [GuestController::class]);
+// Route::apiResource('/form-guest', [GuestController::class]);
 
 // Endpoint untuk tamu (tidak memerlukan otentikasi login)
 Route::post('/rapat/guest-scan-absen', [QrCodeController::class, 'guestScanAbsen']);

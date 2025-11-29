@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+
 use App\Http\Controllers\Controller;
 use App\Models\Absensi;
 use App\Models\Rapat;
@@ -68,7 +69,7 @@ class QrCodeController extends Controller
             'id_rapat' => $rapat->id_rapat,
             'id_user' => $user->id_user,
             'waktu_absen' => $now,
-            'id_status_kehadiran'=> 2, // Hadir
+            'id_status_kehadiran' => 2, // Hadir
         ]);
 
         return response()->json([
@@ -118,7 +119,7 @@ class QrCodeController extends Controller
             'guest_jabatan' => $validatedData['guest_jabatan'],
             'guest_instansi' => $validatedData['guest_instansi'],
             'waktu_absen' => $now,
-            'id_status_kehadiran'=> 2, // Hadir
+            'id_status_kehadiran' => 2, // Hadir
         ]);
 
         return response()->json([

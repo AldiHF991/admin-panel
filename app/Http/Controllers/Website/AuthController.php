@@ -3,17 +3,19 @@
 namespace App\Http\Controllers\Website;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
     use AuthorizesRequests;
+
+    public function landingPage()
+    {
+        return view('landing-page');
+    }
 
     public function showLogin()
     {

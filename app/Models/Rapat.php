@@ -76,8 +76,9 @@ class Rapat extends Model
             ->using(RapatPeserta::class) // <-- TAMBAHKAN INI JUGA
             ->withTimestamps();
     }
+
     public function files()
-{
-    return $this->hasMany(RapatFile::class, 'id_rapat', 'id_rapat');
-}
+    {
+        return $this->hasMany(RapatFile::class, 'id_rapat', 'id_rapat');
+    }
 }

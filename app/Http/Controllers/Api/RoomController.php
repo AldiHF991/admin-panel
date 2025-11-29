@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Cabang;
 use App\Models\Room;
 use Illuminate\Http\Request;
-use App\Models\Cabang;
 
 class RoomController extends Controller
 {
@@ -29,7 +29,7 @@ class RoomController extends Controller
             $tanggal = $request->tanggal;
             $waktuStart = $request->waktu_start;
             // Waktu selesai bersifat opsional, jika tidak ada, anggap rapat berlangsung 1 jam.
-            $waktuEnd = $request->waktu_end ?? date('H:i:s', strtotime($waktuStart . ' +1 hour'));
+            $waktuEnd = $request->waktu_end ?? date('H:i:s', strtotime($waktuStart.' +1 hour'));
 
             foreach ($rooms as $room) {
                 // Cek apakah ada rapat yang tumpang tindih di ruangan ini
@@ -42,15 +42,15 @@ class RoomController extends Controller
                         // Cek tumpang tindih waktu secara normal.
                         $query->where(function ($q) use ($waktuStart, $waktuEnd) {
                             $q->whereNotNull('waktu_end')
-                              ->where('waktu_start', '<', $waktuEnd)
-                              ->where('waktu_end', '>', $waktuStart);
+                                ->where('waktu_start', '<', $waktuEnd)
+                                ->where('waktu_end', '>', $waktuStart);
                         })
                         // Skenario 2: Rapat yang ada bersifat "tidak menentu" (waktu_end adalah null)
                         // Ruangan dianggap terpakai jika waktu mulai rapat baru >= waktu mulai rapat tidak menentu.
-                        ->orWhere(function ($q) use ($waktuStart) {
-                            $q->whereNull('waktu_end')
-                              ->where('waktu_start', '<=', $waktuStart);
-                        });
+                            ->orWhere(function ($q) use ($waktuStart) {
+                                $q->whereNull('waktu_end')
+                                    ->where('waktu_start', '<=', $waktuStart);
+                            });
                     })
                     ->exists(); // Cukup cek apakah ada atau tidak
 

@@ -10,6 +10,7 @@ class StatusRapat extends Model
     use HasFactory;
 
     protected $table = 'status_rapat';
+
     protected $primaryKey = 'id_status';
 
     protected $fillable = [

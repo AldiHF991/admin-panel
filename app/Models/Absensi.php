@@ -10,12 +10,21 @@ class Absensi extends Model
     use HasUuids;
 
     protected $primaryKey = 'id';
+
     protected $table = 'absensi';
 
     public $timestamps = false;
 
     protected $fillable = [
-        'id_rapat', 'attendable_id', 'attendable_type', 'waktu_absen', 'id_status_kehadiran',
+        'id_rapat',
+        'attendable_id',
+        'attendable_type',
+        'waktu_absen',
+        'id_status_kehadiran',
+        'device_id_log',
+        'device_token',
+        'user_agent',
+        'ip_address',
     ];
 
     /**

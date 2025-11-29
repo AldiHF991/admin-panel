@@ -4,8 +4,6 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -24,7 +22,7 @@ class AbsensiUpdated implements ShouldBroadcast
     /**
      * Create a new event instance.
      *
-     * @param mixed $absensi
+     * @param  mixed  $absensi
      */
     public function __construct($absensi)
     {
@@ -43,7 +41,7 @@ class AbsensiUpdated implements ShouldBroadcast
         // Mengambil id_rapat dari data absensi. Diasumsikan $this->absensi adalah collection.
         $rapatId = $this->absensi->first()->id_rapat ?? 'default';
 
-        return new Channel('Absensi.Rapat.' . $rapatId);
+        return new Channel('Absensi.Rapat.'.$rapatId);
     }
 
     /**
@@ -58,7 +56,7 @@ class AbsensiUpdated implements ShouldBroadcast
 
         // 2. Muat relasi 'division' hanya untuk item yang merupakan User.
         $this->absensi->where('attendable_type', \App\Models\User::class)
-                      ->load('attendable.division');
+            ->load('attendable.division');
 
         return ['absensi' => $this->absensi->values()];
     }

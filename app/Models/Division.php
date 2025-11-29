@@ -21,6 +21,7 @@ class Division extends Model
     {
         return $this->hasMany(User::class, 'id_division', 'id_division');
     }
+
     public function peserta()
     {
         return $this->belongsToMany(Rapat::class, 'rapat_peserta', 'id_rapat', 'id_division')
