@@ -21,16 +21,16 @@
                         </td>
                         <td class="text-end">
                             <button type="submit" class="btn btn-sm btn-warning">
-                                <i class="bi bi-save"></i>
+                                <i class="bi bi-floppy"></i>
                             </button>
                     </form>
-                    <form action="{{ route('branch.delete', $c->id) }}" method="POST" class="d-inline loading-trigger-form" onsubmit="return confirm('Menghapus Cabang akan menghapus seluruh Data Ruang nya, Apakah kamu Yakin?');">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-sm btn-danger">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </form>
+                    <button type="button" class="btn btn-sm btn-danger"
+                            data-bs-toggle="modal"
+                            data-bs-target="#deleteBranchModal"
+                            data-name="{{ $c->cabang }}"
+                            data-url="{{ route('branch.delete', $c->id) }}">
+                        <i class="bi bi-trash"></i>
+                    </button>
                     </td>
                 </tr>
             @empty

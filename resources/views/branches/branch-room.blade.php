@@ -63,7 +63,7 @@
                 <div class="row mb-3 g-2">
                     <div class="col-md-6">
                         <select name="id_cabang" class="form-select" onchange="this.form.submit()">
-                            <option value="">-- Semua Cabang --</option>
+                            <option value="">-- Pilih Cabang untuk filter --</option>
                             @foreach ($cabang as $c)
                                 <option value="{{ $c->id }}" {{ request('id_cabang') == $c->id ? 'selected' : '' }}>
                                     {{ $c->cabang }}
@@ -134,12 +134,13 @@
                                     data-status-id="{{ $room->status_ruangan_id }}">
                                 <i class="bi bi-pencil-square"></i> Edit
                             </button> 
-                            <form action="{{ route('room.delete', $room->id_room) }}" method="POST" class="d-inline loading-trigger-form" onsubmit="return confirm('Apakah Anda yakin ingin menghapus ruangan ini?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger">
-                                    <i class="bi bi-trash"></i> Hapus</button>
-                            </form>
+                            <button type="button" class="btn btn-sm btn-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteRoomModal"
+                                    data-name="{{ $room->room }}"
+                                    data-url="{{ route('room.delete', $room->id_room) }}">
+                                <i class="bi bi-trash"></i> Hapus
+                            </button>
                         </td>
                     </tr>
                     @empty
@@ -270,6 +271,53 @@
     </div>
 </div>
 
+<!-- Modal Delete Cabang -->
+<div class="modal fade" id="deleteBranchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Konfirmasi Hapus Cabang</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus cabang <strong id="delete_branch_name"></strong>?</p>
+                <p class="text-danger mb-0"><small>Perhatian: Menghapus cabang akan menghapus seluruh data ruangan yang terkait dengan cabang ini.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form id="deleteBranchForm" method="POST" class="loading-trigger-form">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Delete Ruangan -->
+<div class="modal fade" id="deleteRoomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Konfirmasi Hapus Ruangan</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus ruangan <strong id="delete_room_name"></strong>?</p>
+                    </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form id="deleteRoomForm" method="POST" class="loading-trigger-form">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -323,6 +371,54 @@ document.addEventListener('DOMContentLoaded', function () {
             form.addEventListener('submit', function() {
                 loadingOverlay.style.display = 'flex';
             });
+        });
+    }
+
+
+    // Script untuk toggle edit cabang
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-edit-branch')) {
+            const btn = e.target.closest('.btn-edit-branch');
+            const row = btn.closest('tr');
+            
+            // Toggle visibility
+            row.querySelectorAll('.branch-text').forEach(el => el.classList.add('d-none'));
+            row.querySelectorAll('.branch-input').forEach(el => el.classList.remove('d-none'));
+            
+            btn.classList.add('d-none');
+            row.querySelector('.btn-save-branch').classList.remove('d-none');
+        }
+    });
+
+    // Script untuk modal delete cabang
+    const deleteBranchModal = document.getElementById('deleteBranchModal');
+    if (deleteBranchModal) {
+        deleteBranchModal.addEventListener('show.bs.modal', event => {
+            const button = event.relatedTarget;
+            const branchName = button.getAttribute('data-name');
+            const deleteUrl = button.getAttribute('data-url');
+
+            const modalBranchName = deleteBranchModal.querySelector('#delete_branch_name');
+            const deleteForm = deleteBranchModal.querySelector('#deleteBranchForm');
+
+            modalBranchName.textContent = branchName;
+            deleteForm.action = deleteUrl;
+        });
+    }
+
+    // Script untuk modal delete ruangan
+    const deleteRoomModal = document.getElementById('deleteRoomModal');
+    if (deleteRoomModal) {
+        deleteRoomModal.addEventListener('show.bs.modal', event => {
+            const button = event.relatedTarget;
+            const roomName = button.getAttribute('data-name');
+            const deleteUrl = button.getAttribute('data-url');
+
+            const modalRoomName = deleteRoomModal.querySelector('#delete_room_name');
+            const deleteForm = deleteRoomModal.querySelector('#deleteRoomForm');
+
+            modalRoomName.textContent = roomName;
+            deleteForm.action = deleteUrl;
         });
     }
 });

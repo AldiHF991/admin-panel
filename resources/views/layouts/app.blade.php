@@ -117,25 +117,38 @@
             </div>
         </div>
 
-        <!-- Dashboard -->
-        <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
-            <i class="bi bi-speedometer2 me-2"></i> <span class="sidebar-link-text">Dashboard</span>
-        </a>
+        @if(Auth::user()->id_role == 2)
+            <!-- PIC Sidebar -->
+            <a href="{{ route('pic.meetings.index') }}" class="{{ request()->routeIs('pic.*') ? 'active' : '' }}">
+                <i class="bi bi-speedometer2 me-2"></i> <span class="sidebar-link-text">Dashboard</span>
+            </a>
+        @else
+            <!-- Admin Sidebar -->
+            <!-- Dashboard -->
+            <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <i class="bi bi-speedometer2 me-2"></i> <span class="sidebar-link-text">Dashboard</span>
+            </a>
 
-        <!-- Account Management -->
-        <a href="{{ route('userManagement') }}" class="{{ request()->routeIs('userManagement') ? 'active' : '' }}">
-            <i class="bi bi-people-fill me-2"></i> <span class="sidebar-link-text">Account Management</span>
-        </a>
+            <!-- Account Management -->
+            <a href="{{ route('userManagement') }}" class="{{ request()->routeIs('userManagement') ? 'active' : '' }}">
+                <i class="bi bi-people-fill me-2"></i> <span class="sidebar-link-text">Account Management</span>
+            </a>
 
-        <!-- Cabang & Ruang -->
-        <a href="{{ route('branch') }}" class="{{ request()->routeIs('branch*') ? 'active' : '' }}">
-            <i class="bi bi-building me-2"></i> <span class="sidebar-link-text">Cabang & Ruang</span>
-        </a>
+            <!-- Cabang & Ruang -->
+            <a href="{{ route('branch') }}" class="{{ request()->routeIs('branch*') ? 'active' : '' }}">
+                <i class="bi bi-building me-2"></i> <span class="sidebar-link-text">Cabang & Ruang</span>
+            </a>
 
-        <!-- Manajemen Rapat -->
-        <a href="{{ route('meetings.index') }}" class="{{ request()->routeIs('meetings.*') ? 'active' : '' }}">
-            <i class="bi bi-calendar-event me-2"></i> <span class="sidebar-link-text">Manajemen Rapat</span>
-        </a>
+            <!-- Manajemen Rapat -->
+            <a href="{{ route('meetings.index') }}" class="{{ request()->routeIs('meetings.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-event me-2"></i> <span class="sidebar-link-text">Manajemen Rapat</span>
+            </a>
+
+            <!-- Guest Management -->
+            <a href="{{ route('guests.index') }}" class="{{ request()->routeIs('guests.*') ? 'active' : '' }}">
+                <i class="bi bi-person-badge me-2"></i> <span class="sidebar-link-text">Guest Management</span>
+            </a>
+        @endif
 
         <!-- Tombol Toggle Sidebar -->
         <div id="sidebarToggle" class="sidebar-toggle">

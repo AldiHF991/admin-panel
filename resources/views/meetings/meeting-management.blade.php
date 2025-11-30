@@ -27,19 +27,10 @@
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Manajemen Rapat</h5>
             {{-- PERBAIKAN: Tooltip untuk tombol disabled --}}
-            @if(!request('id_user_pic'))
-                {{-- Bungkus dengan span untuk menampilkan tooltip saat disabled --}}
-                <span class="d-inline-block" tabindex="0" data-bs-toggle="tooltip" title="Silahkan memilih PIC terlebih dahulu">
-                    <button class="btn btn-light btn-sm" type="button" disabled style="pointer-events: none;">
-                        <i class="bi bi-plus-circle me-1"></i> Tambah Rapat
-                    </button>
-                </span>
-            @else
-                {{-- Tombol normal jika PIC sudah dipilih --}}
-                <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addRapatModal">
-                    <i class="bi bi-plus-circle me-1"></i> Tambah Rapat
-                </button>
-            @endif
+            {{-- Tombol Tambah Rapat Selalu Aktif --}}
+            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addRapatModal">
+                <i class="bi bi-plus-circle me-1"></i> Tambah Rapat
+            </button>
         </div>
         <div class="card-body">
             <form action="{{ route('meetings.index') }}" method="GET" id="filter-form">
@@ -186,29 +177,29 @@
                 {{-- TAMBAHAN: Hidden input untuk menangkap PIC dari filter --}}
                 <input type="hidden" name="id_user_pic_from_filter" value="{{ request('id_user_pic') }}">
                 <div class="mb-3">
-                    <label for="add_judul" class="form-label">Judul Rapat</label>
+                    <label for="add_judul" class="form-label">Judul Rapat <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="add_judul" name="judul" required>
                     <div class="invalid-feedback">Judul rapat tidak boleh kosong.</div>
                 </div>
                 <div class="mb-3">
-                    <label for="add_id_user_pengaju" class="form-label">PIC</label>
+                    <label for="add_id_user_pengaju" class="form-label">PIC <span class="text-danger">*</span></label>
                     <select class="form-select" id="add_id_user_pengaju" name="id_user_pengaju" required> {{-- ID disesuaikan --}}
                         <option value="">-- Pilih PIC --</option>
                         @foreach($pics as $pic)
-                            <option value="{{ $pic->id_user }}">{{ $pic->name }}</option>
+                            <option value="{{ $pic->id_user }}" {{ request('id_user_pic') == $pic->id_user ? 'selected' : '' }}>{{ $pic->name }}</option>
                         @endforeach
                     </select>
                     <div class="invalid-feedback">Silakan pilih PIC.</div>
                 </div>
                 <div class="mb-3">
-                    <label for="add_tanggal" class="form-label">Tanggal</label>
+                    <label for="add_tanggal" class="form-label">Tanggal <span class="text-danger">*</span></label>
                     {{-- Mengembalikan ke input date asli --}}
                     <input type="date" class="form-control date-input" id="add_tanggal" name="tanggal" required>
                     <div class="invalid-feedback">Tanggal tidak boleh kosong.</div>
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="add_waktu_start" class="form-label">Waktu Mulai</label>
+                        <label for="add_waktu_start" class="form-label">Waktu Mulai <span class="text-danger">*</span></label>
                         {{-- Mengembalikan ke input time asli --}}
                         <input type="time" class="form-control time-input" id="add_waktu_start" name="waktu_start" required>
                         <div class="invalid-feedback">Waktu mulai tidak boleh kosong atau di masa lampau.</div>
@@ -222,7 +213,7 @@
                 </div>
                 <div class="row">
                               <div class="col-md-6 mb-3">
-                        <label for="add_id_cabang" class="form-label">Cabang</label>
+                        <label for="add_id_cabang" class="form-label">Cabang <span class="text-danger">*</span></label>
                         <select class="form-select" id="add_id_cabang" name="id_cabang" required>
                             <option value="">-- Pilih Cabang --</option>
                             @foreach($cabangs as $cabang)
@@ -232,7 +223,7 @@
                         <div class="invalid-feedback">Silakan pilih cabang.</div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="add_id_room" class="form-label">Ruangan</label>
+                        <label for="add_id_room" class="form-label">Ruangan <span class="text-danger">*</span></label>
                         <select class="form-select room-select" id="add_id_room" name="id_room" required disabled>
                             <option value="">-- Pilih Ruangan --</option>
                             {{-- Opsi ruangan akan diisi oleh JavaScript --}}
@@ -525,7 +516,7 @@
             rooms.forEach(room => {
                 const option = new Option(room.room, room.id_room);
                 // Akses status_ruangan_id dari relasi statusRuangan
-                option.dataset.statusId = room.status_ruangan ? room.status_ruangan.id_status : room.status_ruangan_id;
+                option.dataset.statusId = room.status_ruangan ? room.status_ruangan.id : room.status_ruangan_id;
                 option.dataset.roomName = room.room;
                 roomSelect.add(option);
             });
@@ -535,8 +526,6 @@
                 roomSelect.value = originalRoomId;
             }
             
-            // Cek apakah tanggal dan waktu sudah diisi
-            const modal = roomSelect.closest('.modal');
             const dateInput = modal.querySelector('.date-input');
             const startTimeInput = modal.querySelector('.time-input[name="waktu_start"]');
             
@@ -669,7 +658,7 @@
         const inputs = form.querySelectorAll('[required]');
         inputs.forEach(input => {
             if (!input.value.trim() && !input.disabled) {
-                showError(input, `Kolom ${input.previousElementSibling.textContent} tidak boleh kosong.`);
+                showError(input, `Kolom ${input.previousElementSibling.textContent.replace('*', '').trim()} tidak boleh kosong.`);
                 isValid = false;
             }
         });
@@ -776,9 +765,7 @@
             currentFilesList.innerHTML = ''; // Kosongkan list setelah data didapat
             if (files && files.length > 0) {
                 files.forEach(file => {
-                    const li = document.createElement('li');
-                    li.className = 'list-group-item d-flex justify-content-between align-items-center';
-                    li.dataset.fileId = file.id_file;
+                                 li.dataset.fileId = file.id_file;
 
                     // Membuat link untuk file
                     const fileLink = document.createElement('a');
@@ -790,7 +777,7 @@
                     // PERBAIKAN: Tambahkan ikon di sebelah nama file
                     // Fungsi getFileIcon sudah ada dari implementasi sebelumnya
                     const iconHTML = getFileIcon(file.file_type || '');
-                    fileLink.innerHTML = `${iconHTML} ${file.file_name}`;
+                    fileLink.innerHTML = `${iconHTML} ${file.file_name}`;   
 
                     // Membuat tombol hapus
                     const deleteBtn = document.createElement('button');
@@ -833,31 +820,9 @@
         }
     };
 
-    // Event listener untuk modal tambah
-    addModalEl.addEventListener('show.bs.modal', function() {
-        const form = addModalEl.querySelector('form');
-        form.reset();
-    });
 
-    // Event listener untuk modal tambah
-    addModalEl.addEventListener('show.bs.modal', function() {
-        const form = addModalEl.querySelector('form');
-        form.reset();
-        
-        const roomSelect = addModalEl.querySelector('.room-select');
-        roomSelect.innerHTML = '<option value="">-- Pilih Ruangan --</option>';
-        roomSelect.disabled = true;
-        
-        addModalEl.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
-        addModalEl.querySelector('.room-help-text').style.display = 'block';
 
-        // Reset input file
-        document.getElementById('add_files').value = '';
-        // Reset list file
-        const addFilesList = document.getElementById('add-files-list');
-        addFilesList.innerHTML = '';
 
-    });
 
     // SKRIP BARU: Menampilkan file yang dipilih di modal "Tambah Rapat"
     const addFilesInput = document.getElementById('add_files');
@@ -1005,11 +970,7 @@
     });
 
     // Reset daftar file saat modal ditutup atau dibuka
-    addModalEl.addEventListener('show.bs.modal', function() {
-        addFileDataTransfer = new DataTransfer();
-        addFileInput.value = '';
-        renderFileList(addFileList, addFileDataTransfer);
-    });
+
 
     editModalEl.addEventListener('show.bs.modal', function() {
         // Reset hanya untuk file baru, bukan file yang sudah ada

@@ -27,6 +27,7 @@ Route::get('/meetings/{rapat}/guest/logout', [RapatController::class, 'logoutGue
 // Route untuk download file, perlu di luar middleware admin agar semua user terotentikasi bisa akses
 Route::middleware('auth')->group(function () {
     Route::get('/meetings/files/{file}', [RapatController::class, 'downloadFile'])->name('meetings.downloadFile');
+    Route::get('/cabang/{cabang}/rooms', [RapatController::class, 'getRoomsByCabang'])->name('cabang.rooms');
 });
 
 // Admin routes (perlu admin)
@@ -62,7 +63,10 @@ Route::middleware([AdminWebsiteMiddleware::class])->group(function () {
     Route::post('admin/room/edit', [AdminController::class, 'updateRoom'])->name('room.edit');
     Route::delete('admin/room/{id}/delete', [AdminController::class, 'deleteRoom'])->name('room.delete');
 
-    Route::get('/cabang/{cabang}/rooms', [RapatController::class, 'getRoomsByCabang'])->name('cabang.rooms');
+
+    // Guest Management Routes
+    Route::get('/admin/guests', [GuestController::class, 'index'])->name('guests.index');
+    Route::delete('/admin/guests/{id}', [GuestController::class, 'destroy'])->name('guests.destroy');
 
     // Route::get('/display-absensi/{rapatId}', function ($rapatId) {
     //     // Ambil data absensi yang sudah ada untuk rapat ini
@@ -75,4 +79,22 @@ Route::middleware([AdminWebsiteMiddleware::class])->group(function () {
     // })->name('absensi.display');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+});
+
+// PIC Routes
+Route::middleware(['auth', \App\Http\Middleware\PicWebsiteMiddleware::class])->group(function () {
+    Route::get('/pic/dashboard', [\App\Http\Controllers\Website\PicController::class, 'dashboard'])->name('pic.dashboard');
+    Route::get('/pic/meetings', [\App\Http\Controllers\Website\PicController::class, 'index'])->name('pic.meetings.index');
+    Route::get('/pic/meetings/create', [\App\Http\Controllers\Website\PicController::class, 'create'])->name('pic.meetings.create');
+    Route::post('/pic/meetings', [\App\Http\Controllers\Website\PicController::class, 'store'])->name('pic.meetings.store');
+    Route::get('/pic/meetings/{rapat}', [\App\Http\Controllers\Website\PicController::class, 'show'])->name('pic.meetings.show');
+    Route::delete('/pic/meetings/{id}', [\App\Http\Controllers\Website\PicController::class, 'destroy'])->name('pic.meetings.destroy');
+    
+    // Additional features requested
+    Route::get('/pic/meetings/{rapat}/absensi', [\App\Http\Controllers\Website\PicController::class, 'showAbsensi'])->name('pic.meetings.absensi');
+    Route::get('/pic/meetings/{rapat}/qr', [\App\Http\Controllers\Website\PicController::class, 'showQrCode'])->name('pic.meetings.qr');
+    
+    // Reports
+    Route::get('/pic/reports/recent-activity', [\App\Http\Controllers\Website\PicController::class, 'showRecentActivityReport'])->name('pic.reports.recentActivity');
+    Route::get('/pic/reports/newly-created', [\App\Http\Controllers\Website\PicController::class, 'showNewlyCreatedReport'])->name('pic.reports.newlyCreated');
 });

@@ -42,6 +42,12 @@ class AuthController extends Controller
             // Regenerasi session untuk keamanan.
             $request->session()->regenerate();
 
+            // Cek role user
+            $user = Auth::user();
+            if ($user->id_role == 2) { // PIC
+                return redirect()->route('pic.dashboard');
+            }
+
             // Alihkan ke route 'dashboard' yang akan memanggil AdminController@showDashboard
             return redirect()->route('dashboard');
         }

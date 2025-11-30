@@ -97,7 +97,7 @@
 
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center no-print">
-                <a href="{{ route('dashboard') }}" class="btn btn-sm btn-outline-secondary">
+                <a href="{{ route($backRoute ?? 'dashboard') }}" class="btn btn-sm btn-outline-secondary">
                     <i class="bi bi-arrow-left me-1"></i> Kembali ke Dashboard
                 </a>
                 <div class="no-print">

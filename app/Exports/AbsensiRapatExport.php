@@ -32,10 +32,17 @@ class AbsensiRapatExport implements FromCollection, ShouldAutoSize, WithHeadings
     public function headings(): array
     {
         return [
-            'Nama Peserta',
-            'Email',
+            'ID',
+            'ID Rapat',
+            'ID User',
+            'Attendable ID',
+            'Attendable Type',
+            'ID Status Kehadiran',
             'Waktu Absen',
-            'Divisi',
+            'Device ID Log',
+            'Device Token',
+            'User Agent',
+            'IP Address',
         ];
     }
 
@@ -46,12 +53,18 @@ class AbsensiRapatExport implements FromCollection, ShouldAutoSize, WithHeadings
      */
     public function map($absensi): array
     {
-        // Menggunakan null-safe operator (?->) untuk keamanan jika relasi user atau division tidak ada
         return [
-            $absensi->user?->name ?? 'N/A',
-            $absensi->user?->email ?? 'N/A',
+            $absensi->id,
+            $absensi->id_rapat,
+            $absensi->id_user, // Nullable in DB
+            $absensi->attendable_id,
+            $absensi->attendable_type,
+            $absensi->id_status_kehadiran,
             $absensi->waktu_absen,
-            $absensi->user?->division?->division_name ?? 'N/A',
+            $absensi->device_id_log,
+            $absensi->device_token,
+            $absensi->user_agent,
+            $absensi->ip_address,
         ];
     }
 }

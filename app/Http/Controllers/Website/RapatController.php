@@ -254,9 +254,12 @@ class RapatController extends Controller
         // 2. Ambil data absensi untuk rapat ini, sertakan data user dan divisi.
         // Ini mirip dengan getAbsensiRapat, tapi dengan lebih banyak relasi.
         $absensi = Absensi::where('id_rapat', $id)
-            ->with('user:id_user,name,email,id_division', 'user.division:id_division,division_name')
+            ->with('attendable')
             ->orderBy('waktu_absen', 'asc')
             ->get();
+            
+        // Load division for User attendables
+        $absensi->where('attendable_type', User::class)->load('attendable.division');
 
         // 3. Buat nama file yang deskriptif agar tidak bingung
         // contoh: laporan-absensi-rapat-koordinasi-2023-10-27.xlsx
