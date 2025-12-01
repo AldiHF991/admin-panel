@@ -249,6 +249,57 @@
     </div>
 </div>
 
+</div>
+
+<!-- Modal Detail Rapat -->
+<div class="modal fade" id="meetingDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="modalJudul">Detail Rapat</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="small text-muted text-uppercase fw-bold">Judul Rapat</label>
+                    <h5 id="modalJudulRapat" class="fw-bold text-dark"></h5>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="small text-muted text-uppercase fw-bold">Tanggal</label>
+                        <p id="modalTanggal" class="mb-0 fw-medium"></p>
+                    </div>
+                    <div class="col-6">
+                        <label class="small text-muted text-uppercase fw-bold">Waktu</label>
+                        <p id="modalWaktu" class="mb-0 fw-medium"></p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="small text-muted text-uppercase fw-bold">Ruangan</label>
+                        <p id="modalRuangan" class="mb-0 fw-medium"></p>
+                    </div>
+                    <div class="col-6">
+                        <label class="small text-muted text-uppercase fw-bold">Pengaju</label>
+                        <p id="modalPengaju" class="mb-0 fw-medium"></p>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-muted text-uppercase fw-bold">Deskripsi</label>
+                    <p id="modalDeskripsi" class="mb-0 text-secondary"></p>
+                </div>
+                <div class="mb-0">
+                    <label class="small text-muted text-uppercase fw-bold">Status</label>
+                    <div><span id="modalStatus" class="badge rounded-pill"></span></div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
@@ -309,5 +360,43 @@
 
     setInterval(updateClock, 1000);
     updateClock(); // Initial call
+
+    // Fungsi untuk menampilkan modal detail rapat
+    window.showMeetingDetail = function(rapat) {
+        document.getElementById('modalJudulRapat').textContent = rapat.judul;
+        
+        // Format Tanggal
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const date = new Date(rapat.tanggal);
+        document.getElementById('modalTanggal').textContent = date.toLocaleDateString('id-ID', dateOptions);
+
+        // Format Waktu
+        const start = rapat.waktu_start.substring(0, 5);
+        const end = rapat.waktu_end ? rapat.waktu_end.substring(0, 5) : '?';
+        document.getElementById('modalWaktu').textContent = `${start} - ${end} WIB`;
+
+        document.getElementById('modalRuangan').textContent = rapat.room ? rapat.room.room : 'N/A';
+        document.getElementById('modalPengaju').textContent = rapat.pengaju ? rapat.pengaju.name : 'N/A';
+        document.getElementById('modalDeskripsi').textContent = rapat.desc || '-';
+
+        // Status Badge
+        const statusSpan = document.getElementById('modalStatus');
+        const statusText = rapat.status ? rapat.status.status_rapat : 'N/A';
+        statusSpan.textContent = statusText;
+        
+        let statusClass = 'bg-secondary';
+        switch(statusText.toLowerCase()) {
+            case 'diterima': statusClass = 'bg-success'; break;
+            case 'ditolak': statusClass = 'bg-danger'; break;
+            case 'menunggu': 
+            case 'menunggu persetujuan': statusClass = 'bg-warning'; break;
+            case 'berlangsung': statusClass = 'bg-primary'; break;
+        }
+        statusSpan.className = `badge rounded-pill ${statusClass}`;
+
+        // Show Modal
+        const modal = new bootstrap.Modal(document.getElementById('meetingDetailModal'));
+        modal.show();
+    };
 </script>
 @endpush

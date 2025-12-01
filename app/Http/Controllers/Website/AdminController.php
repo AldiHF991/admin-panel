@@ -31,6 +31,7 @@ class AdminController extends Controller
         // Mengambil semua data rapat dari 3 hari terakhir
         $rapatTigaHariTerakhir = Rapat::with(['pengaju', 'status', 'room'])
             ->where('tanggal', '>=', now()->subDays(3)->toDateString())
+            ->whereIn('id_status', [1, 4]) // Filter: Diterima (1) & Berlangsung (4)
             ->orderBy('tanggal', 'desc')
             ->orderBy('waktu_start', 'desc')
             ->get();
@@ -60,6 +61,7 @@ class AdminController extends Controller
         // Mengambil semua data rapat dari 3 hari terakhir
         $rapatTigaHariTerakhir = Rapat::with(['pengaju', 'status', 'room'])
             ->where('tanggal', '>=', now()->subDays(3)->toDateString())
+            ->whereIn('id_status', [1, 4]) // Filter: Diterima (1) & Berlangsung (4)
             ->orderBy('tanggal', 'desc')
             ->orderBy('waktu_start', 'desc')
             ->get();

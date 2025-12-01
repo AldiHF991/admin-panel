@@ -92,7 +92,7 @@
                     </thead>
                     <tbody>
                         @forelse ($meetings as $rapat)
-                            <tr>
+                            <tr id="rapat-row-{{ $rapat->id_rapat }}" class="{{ session('highlight_id') == $rapat->id_rapat ? 'highlight-row' : '' }}">
                                 <td>{{ $meetings->firstItem() + $loop->index }}</td>
                                 <td>{{ $rapat->judul }}</td>
                                 <td>{{ $rapat->cabang ? $rapat->cabang->cabang : 'N/A' }}</td>
@@ -283,6 +283,19 @@
     </div>
 </div>
 
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const highlightId = "{{ session('highlight_id') }}";
+        if (highlightId) {
+            const row = document.getElementById('rapat-row-' + highlightId);
+            if (row) {
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    });
+</script>
+@endpush
 @endsection
 
 @push('styles')

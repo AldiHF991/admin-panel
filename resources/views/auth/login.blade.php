@@ -149,6 +149,13 @@
 
         .icon-input input {
             padding-left: 2.5rem;
+            padding-right: 2.5rem;
+        }
+
+        .icon-input .toggle-password {
+            left: auto;
+            right: 12px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -183,7 +190,8 @@
             </div>
             <div class="mb-3 icon-input">
                 <i class="bi bi-lock-fill"></i>
-                <input type="password" name="password" class="form-control" placeholder="Password" required>
+                <input type="password" name="password" class="form-control" placeholder="Password" required id="password">
+                <i class="bi bi-eye-fill toggle-password" id="togglePassword"></i>
             </div>
             <button type="submit" class="btn btn-primary w-100 py-2">Masuk</button>
         </form>
@@ -257,6 +265,19 @@
         // Show loading overlay on form submit
         document.querySelector('form').addEventListener('submit', function() {
             document.getElementById('loading-overlay').classList.remove('d-none');
+        });
+
+        // Toggle Password Visibility
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#password');
+
+        togglePassword.addEventListener('click', function (e) {
+            // toggle the type attribute
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            // toggle the eye slash icon
+            this.classList.toggle('bi-eye-fill');
+            this.classList.toggle('bi-eye-slash-fill');
         });
     </script>
 </body>

@@ -8,20 +8,26 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script>
-        // Skrip ini mencegah "flicker" dengan menerapkan state sidebar sebelum render.
-        // Jika di localStorage tersimpan 'true', class 'sidebar-collapsed' akan ditambahkan ke <html>
-        // sebelum browser menggambar halaman, sehingga tidak ada animasi saat load.
         (localStorage.getItem('sidebarCollapsed') === 'true') && document.documentElement.classList.add('sidebar-collapsed');
     </script>
     <style>
+        html, body {
+            height: 100%;
+            overflow-x: hidden; /* cegah geser horizontal */
+        }
+
         body {
             background-color: #f8f9fa;
+            margin: 0;
         }
+
         .sidebar {
             width: 250px;
             min-height: 100vh;
             background-color: #0d6efd;
-            position: relative; /* Diperlukan untuk positioning toggle */
+            position: relative; /* untuk toggle */
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar a {
@@ -29,7 +35,7 @@
             display: block;
             padding: 10px 20px;
             text-decoration: none;
-            white-space: nowrap; /* Mencegah teks turun baris */
+            white-space: nowrap;
         }
         .sidebar a:hover {
             background-color: #0b5ed7;
@@ -37,15 +43,21 @@
         .sidebar .active {
             background-color: #0a58ca;
         }
+
+        /* BAGIAN KANAN: navbar (atas), main scroll, footer (bawah) */
         .content-wrapper {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: 100vh;      /* tinggi selalu = viewport */
+            overflow: hidden;   /* jangan biarkan scroll di wrapper, hanya di main */
         }
+
         main {
-            flex-grow: 1;
-            overflow-y: auto;
+            flex: 1 1 auto;     /* ambil ruang di tengah */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;   /* YANG DISCROLL HANYA MAIN */
         }
 
         /* Transisi Halus */
@@ -53,30 +65,33 @@
             transition: all 0.3s ease-in-out;
         }
 
-        /* State Sidebar saat diperkecil (collapsed) */
-        /* Diterapkan oleh JS saat diklik, atau oleh class di <html> saat load */
+        /* Sidebar collapsed */
         .sidebar-collapsed .sidebar, .sidebar.collapsed {
             width: 80px;
         }
 
         .sidebar-collapsed .sidebar .sidebar-brand-text,
         .sidebar-collapsed .sidebar .sidebar-link-text,
-        .sidebar.collapsed .sidebar-brand-text, .sidebar.collapsed .sidebar-link-text {
+        .sidebar.collapsed .sidebar-brand-text,
+        .sidebar.collapsed .sidebar-link-text {
             display: none;
         }
 
-        .sidebar-collapsed .sidebar .sidebar-brand, .sidebar.collapsed .sidebar-brand {
+        .sidebar-collapsed .sidebar .sidebar-brand,
+        .sidebar.collapsed .sidebar-brand {
             justify-content: center;
         }
 
-        .sidebar-collapsed .sidebar a i, .sidebar.collapsed a i {
-            font-size: 1.5rem; /* Perbesar ikon saat sidebar kecil */
+        .sidebar-collapsed .sidebar a i,
+        .sidebar.collapsed a i {
+            font-size: 1.5rem;
         }
+
         /* Tombol Toggle Sidebar Baru */
         .sidebar-toggle {
             position: absolute;
             top: 50%;
-            right: -15px; /* Menonjol keluar dari sidebar */
+            right: -15px;
             transform: translateY(-50%);
             width: 30px;
             height: 30px;
@@ -98,7 +113,8 @@
         .sidebar-toggle i {
             transition: transform 0.3s ease;
         }
-        .sidebar-collapsed .sidebar .sidebar-toggle i, .sidebar.collapsed .sidebar-toggle i {
+        .sidebar-collapsed .sidebar .sidebar-toggle i,
+        .sidebar.collapsed .sidebar-toggle i {
             transform: rotate(180deg);
         }
     </style>
@@ -119,36 +135,43 @@
 
         @if(Auth::user()->id_role == 2)
             <!-- PIC Sidebar -->
-            <a href="{{ route('pic.meetings.index') }}" class="{{ request()->routeIs('pic.*') ? 'active' : '' }}">
+            <a href="{{ route('pic.dashboard') }}" class="{{ request()->routeIs('pic.dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2 me-2"></i> <span class="sidebar-link-text">Dashboard</span>
+            </a>
+            <a href="{{ route('pic.meetings.index') }}" class="{{ request()->routeIs('pic.meetings.index') ? 'active' : '' }}">
+                <i class="bi bi-list-ul me-2"></i> <span class="sidebar-link-text">List Rapat</span>
+            </a>
+            <a href="{{ route('pic.meetings.create') }}" class="{{ request()->routeIs('pic.meetings.create') ? 'active' : '' }}">
+                <i class="bi bi-plus-square me-2"></i> <span class="sidebar-link-text">Ajukan Rapat</span>
             </a>
         @else
             <!-- Admin Sidebar -->
-            <!-- Dashboard -->
             <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2 me-2"></i> <span class="sidebar-link-text">Dashboard</span>
             </a>
-
-            <!-- Account Management -->
             <a href="{{ route('userManagement') }}" class="{{ request()->routeIs('userManagement') ? 'active' : '' }}">
                 <i class="bi bi-people-fill me-2"></i> <span class="sidebar-link-text">Account Management</span>
             </a>
-
-            <!-- Cabang & Ruang -->
             <a href="{{ route('branch') }}" class="{{ request()->routeIs('branch*') ? 'active' : '' }}">
                 <i class="bi bi-building me-2"></i> <span class="sidebar-link-text">Cabang & Ruang</span>
             </a>
-
-            <!-- Manajemen Rapat -->
             <a href="{{ route('meetings.index') }}" class="{{ request()->routeIs('meetings.*') ? 'active' : '' }}">
                 <i class="bi bi-calendar-event me-2"></i> <span class="sidebar-link-text">Manajemen Rapat</span>
             </a>
-
-            <!-- Guest Management -->
             <a href="{{ route('guests.index') }}" class="{{ request()->routeIs('guests.*') ? 'active' : '' }}">
                 <i class="bi bi-person-badge me-2"></i> <span class="sidebar-link-text">Guest Management</span>
             </a>
         @endif
+
+        <!-- Logout Button -->
+        <div class="mt-auto p-3 mb-4">
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="btn btn-danger w-100 d-flex align-items-center justify-content-center">
+                    <i class="bi bi-box-arrow-right me-2"></i> <span class="sidebar-link-text">Logout</span>
+                </button>
+            </form>
+        </div>
 
         <!-- Tombol Toggle Sidebar -->
         <div id="sidebarToggle" class="sidebar-toggle">
@@ -159,9 +182,9 @@
     <!-- Content Area -->
     <div class="content-wrapper">
 
-        <!-- Navbar atas -->
+        <!-- Navbar atas (tetap di atas, tidak ikut scroll main) -->
         <nav class="navbar navbar-light bg-white shadow-sm px-4">
-            <div class="container-fluid d-flex justify-content-end"> <!-- Tombol hamburger dihapus dari sini -->
+            <div class="container-fluid d-flex justify-content-end">
                 <div class="dropdown">
                     <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle"
                        id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
@@ -185,15 +208,17 @@
             </div>
         </nav>
 
-        <!-- Page Content -->
-        <main class="p-4">
-            @yield('content')
-        </main>
+        <!-- Page Content: HANYA BAGIAN INI YANG DISCROLL -->
+        <main class="p-4 d-flex flex-column">
+            <div class="flex-grow-1">
+                @yield('content')
+            </div>
 
-        <!-- Footer -->
-        <footer class="text-center py-3 border-top text-secondary small">
-            © {{ date('Y') }} Sistem Absensi Rapat — All Rights Reserved.
-        </footer>
+            <!-- Footer: tetap menempel di bawah -->
+            <footer class="text-end py-3 border-top text-secondary small w-100 mt-auto" style="text-align: right !important;">
+                © {{ date('Y') }} Sistem Absensi Rapat — All Rights Reserved.
+            </footer>
+        </main>
     </div>
 
 </div>
@@ -207,8 +232,6 @@
         const sidebarToggle = document.getElementById('sidebarToggle');
         const isCollapsed = () => localStorage.getItem('sidebarCollapsed') === 'true';
 
-        // Fungsi untuk sinkronisasi state (menghapus class di <html> dan menambah di .sidebar)
-        // Ini diperlukan agar animasi klik tetap berfungsi setelah load halaman.
         const syncSidebarState = () => {
             if (isCollapsed()) {
                 htmlEl.classList.remove('sidebar-collapsed');
@@ -221,7 +244,6 @@
             localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
         });
 
-        // Panggil fungsi sinkronisasi setelah event loop pertama selesai
         setTimeout(syncSidebarState, 0);
     })();
 </script>

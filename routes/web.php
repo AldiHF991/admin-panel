@@ -28,6 +28,7 @@ Route::get('/meetings/{rapat}/guest/logout', [RapatController::class, 'logoutGue
 Route::middleware('auth')->group(function () {
     Route::get('/meetings/files/{file}', [RapatController::class, 'downloadFile'])->name('meetings.downloadFile');
     Route::get('/cabang/{cabang}/rooms', [RapatController::class, 'getRoomsByCabang'])->name('cabang.rooms');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
 // Admin routes (perlu admin)
@@ -78,7 +79,6 @@ Route::middleware([AdminWebsiteMiddleware::class])->group(function () {
     //     return view('absensi-display', ['rapatId' => $rapatId, 'initialAbsensi' => $initialAbsensi]);
     // })->name('absensi.display');
 
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
 // PIC Routes

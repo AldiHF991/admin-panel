@@ -55,6 +55,7 @@ class PicController extends Controller
 
         $rapatTigaHariTerakhir = Rapat::with(['room', 'pengaju', 'status'])
             ->where('tanggal', '>=', \Carbon\Carbon::now()->subDays(3)->format('Y-m-d'))
+            ->whereIn('id_status', [1, 4]) // Filter: Diterima (1) & Berlangsung (4)
             ->orderBy('tanggal', 'asc')
             ->orderBy('waktu_start', 'asc')
             ->get();
@@ -99,9 +100,9 @@ class PicController extends Controller
     {
         $cabangs = Cabang::all();
         $rooms = Room::all();
-        // Assuming we might need status list, though usually new meetings have a default status
+        $allRapats = Rapat::all(); // Needed for availability check
         
-        return view('pic.meetings.create', compact('cabangs', 'rooms'));
+        return view('pic.meetings.create', compact('cabangs', 'rooms', 'allRapats'));
     }
 
     public function store(Request $request)
@@ -127,7 +128,6 @@ class PicController extends Controller
         $rapat->desc = $request->desc;
         $rapat->id_user_pengaju = Auth::id();
         $rapat->id_status = 3; // Default status: Menunggu (Baru Diajukan)
-        $rapat->id_user_pic = Auth::id(); 
 
         $rapat->save();
 
@@ -143,7 +143,7 @@ class PicController extends Controller
             }
         }
 
-        return redirect()->route('pic.meetings.index')->with('success', 'Rapat berhasil diajukan.');
+        return redirect()->route('pic.meetings.index')->with('success', 'Rapat berhasil diajukan.')->with('highlight_id', $rapat->id_rapat);
     }
 
     public function show(Rapat $rapat)
@@ -230,6 +230,7 @@ class PicController extends Controller
         // Mengambil semua data rapat dari 3 hari terakhir
         $rapatTigaHariTerakhir = Rapat::with(['pengaju', 'status', 'room'])
             ->where('tanggal', '>=', \Carbon\Carbon::now()->subDays(3)->toDateString())
+            ->whereIn('id_status', [1, 4]) // Filter: Diterima (1) & Berlangsung (4)
             ->orderBy('tanggal', 'desc')
             ->orderBy('waktu_start', 'desc')
             ->get();
