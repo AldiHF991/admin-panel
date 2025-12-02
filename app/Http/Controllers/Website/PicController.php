@@ -10,6 +10,9 @@ use App\Models\StatusRapat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Models\User;
+use App\Notifications\NewMeetingNotification;
+use Illuminate\Support\Facades\Notification;
 
 class PicController extends Controller
 {
@@ -115,7 +118,7 @@ class PicController extends Controller
             'waktu_start' => 'required',
             'waktu_end' => 'required|after:waktu_start',
             'desc' => 'nullable|string',
-            'files.*' => 'nullable|file|max:5120', // Max 5MB per file
+            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480', // Max 5MB per file
         ]);
 
         $rapat = new Rapat();
@@ -131,14 +134,27 @@ class PicController extends Controller
 
         $rapat->save();
 
+        // Kirim Notifikasi ke Admin
+        $admins = User::where('id_role', 1)->get();
+        if ($admins->count() > 0) {
+            Notification::send($admins, new NewMeetingNotification($rapat, Auth::user()->nama));
+        }
+
+        // Handle File Uploads
         // Handle File Uploads
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $path = $file->store('rapat_files', 'public');
+                // Samakan logic penyimpanan dengan RapatController (Admin)
+                // Simpan ke 'storage/app/public/rapat_files/{id}'
+                // Path di DB akan tersimpan sebagai 'public/rapat_files/{id}/{filename}'
+                // Ini penting agar Storage::download() di RapatController (yang pakai default disk local) bisa menemukannya.
+                $path = $file->store('public/rapat_files/'.$rapat->id_rapat);
+                
                 $rapat->files()->create([
                     'file_name' => $file->getClientOriginalName(),
                     'file_path' => $path,
-                    'file_type' => $file->getMimeType(),
+                    'file_type' => $file->getMimeType(), // atau getClientMimeType()
+                    'file_size' => $file->getSize(), // Tambahkan file_size agar konsisten
                 ]);
             }
         }
@@ -150,30 +166,44 @@ class PicController extends Controller
     {
         // Ensure the user owns this meeting
         if ($rapat->id_user_pengaju != Auth::id()) {
+            if (request()->ajax()) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
             abort(403);
         }
 
+        // Eagerly load all required relationships
         $rapat->load(['room', 'status', 'cabang', 'pengaju']);
 
         if (request()->ajax()) {
-            return response()->json([
-                'judul' => $rapat->judul,
-                'status' => $rapat->status->status_rapat ?? '-',
-                'status_class' => $rapat->id_status == 1 ? 'bg-success' : ($rapat->id_status == 2 ? 'bg-danger' : 'bg-warning'),
-                'cabang' => $rapat->cabang->cabang ?? '-',
-                'room' => $rapat->room->room ?? '-',
-                'tanggal' => $rapat->tanggal,
-                'waktu' => $rapat->waktu_start . ' - ' . $rapat->waktu_end,
-                'desc' => $rapat->desc ?? '-',
-                'pengaju' => $rapat->pengaju->name ?? '-',
-                'urls' => [
-                    'absensi' => route('pic.meetings.absensi', $rapat->id_rapat),
-                    'qr' => route('pic.meetings.qr', $rapat->id_rapat),
-                ]
-            ]);
+            try {
+                $response = [
+                    'judul' => $rapat->judul ?? '-',
+                    'status' => $rapat->status ? $rapat->status->status_rapat : '-',
+                    'status_class' => $rapat->id_status == 1 ? 'bg-success' : ($rapat->id_status == 2 ? 'bg-danger' : 'bg-warning'),
+                    'rejection_note' => $rapat->rejection_note,
+                    'cabang' => $rapat->cabang ? $rapat->cabang->cabang : '-',
+                    'room' => $rapat->room ? $rapat->room->room : '-',
+                    'tanggal' => $rapat->tanggal ?? '-',
+                    'waktu' => ($rapat->waktu_start ?? '') . ' - ' . ($rapat->waktu_end ?? ''),
+                    'desc' => $rapat->desc ?? '-',
+                    'pengaju' => $rapat->pengaju ? ($rapat->pengaju->nama ?? $rapat->pengaju->name ?? '-') : '-',
+                    'urls' => [
+                        'absensi' => route('pic.meetings.absensi', $rapat->id_rapat),
+                        'qr' => route('pic.meetings.qr', $rapat->id_rapat),
+                    ]
+                ];
+                
+                \Log::info('PicController::show response', $response);
+                
+                return response()->json($response);
+            } catch (\Exception $e) {
+                \Log::error('Error in PicController::show: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+                return response()->json(['error' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+            }
         }
 
-        return view('pic.meetings.show', compact('rapat'));
+        return redirect()->route('pic.meetings.index');
     }
 
     public function destroy($id)
@@ -195,6 +225,31 @@ class PicController extends Controller
         return redirect()->route('pic.meetings.index')->with('success', 'Rapat berhasil dihapus.');
     }
     
+    /**
+     * Mark meeting as finished
+     */
+    public function finishMeeting(Rapat $rapat)
+    {
+        // Ensure the user owns this meeting
+        if ($rapat->id_user_pengaju != Auth::id()) {
+            abort(403);
+        }
+
+        // Only allow finishing if status is "Berlangsung" (ID 4)
+        if ($rapat->id_status != 4) {
+            return back()->with('error', 'Hanya rapat yang sedang berlangsung yang dapat diselesaikan.');
+        }
+
+        // Update status to "Selesai" (ID 5)
+        $rapat->id_status = 5;
+        $rapat->save();
+
+        // Note: Room availability is automatically determined by checking meeting status and time
+        // No need to manually update room status as it's based on active meetings
+
+        return redirect()->route('pic.meetings.index')->with('success', 'Rapat berhasil diselesaikan. Ruangan kini tersedia kembali.');
+    }
+    
     // Reuse logic for Absensi and QR Code
     // Ideally these should be in a service or trait, but for now we can duplicate or call if appropriate.
     // Since RapatController methods might be protected by Admin middleware, we should implement them here or ensure routes use this controller.
@@ -205,9 +260,15 @@ class PicController extends Controller
             abort(403);
         }
         
-        $absensi = $rapat->absensi()->with('user')->get();
+        // Load absensi with polymorphic attendable relationship
+        $absensi = $rapat->absensi()->with('attendable')->get();
+        
+        // Load division for User attendables only
+        $absensi->where('attendable_type', \App\Models\User::class)->load('attendable.division');
+        
         return view('pic.meetings.absensi', compact('rapat', 'absensi'));
     }
+
 
     public function showQrCode(Rapat $rapat)
     {
@@ -215,12 +276,55 @@ class PicController extends Controller
             abort(403);
         }
         
-        // Generate QR Code content (e.g., link to guest login or attendance)
-        // Assuming the same logic as Admin
-        $url = route('meetings.guestLogin', $rapat->id_rapat);
-        $qrCode = QrCode::size(300)->generate($url);
+        // Only allow QR code access for ongoing meetings (status = 4)
+        if ($rapat->id_status != 4) {
+            return redirect()->route('pic.meetings.index')
+                ->with('error', 'QR Code Absensi hanya tersedia untuk rapat yang sedang berlangsung.');
+        }
+        
+        return view('pic.meetings.qr', compact('rapat'));
+    }
 
-        return view('pic.meetings.qr', compact('rapat', 'qrCode'));
+    public function showGuestQr(Rapat $rapat)
+    {
+        if ($rapat->id_user_pengaju != Auth::id()) {
+            abort(403);
+        }
+        
+        // Only allow guest QR access for ongoing meetings (status = 4)
+        if ($rapat->id_status != 4) {
+            return redirect()->route('pic.meetings.index')
+                ->with('error', 'QR Mode Tamu hanya tersedia untuk rapat yang sedang berlangsung.');
+        }
+        
+        // Membuat URL untuk halaman login tamu
+        $guestUrl = route('meetings.guestLogin', $rapat->id_rapat);
+
+        // Mengembalikan view dengan data yang diperlukan
+        return view('pic.meetings.guest-qr', compact('rapat', 'guestUrl'));
+    }
+
+    /**
+     * Mengembalikan SVG QR Code untuk rapat tertentu.
+     * Digunakan untuk pembaruan AJAX di halaman display QR.
+     */
+    public function getQrCodeSvg(Rapat $rapat)
+    {
+        if ($rapat->id_user_pengaju != Auth::id()) {
+            abort(403);
+        }
+        
+        // Only generate QR for ongoing meetings (status = 4)
+        if ($rapat->id_status != 4) {
+            abort(403, 'QR Code only available for ongoing meetings');
+        }
+        
+        // Pastikan rapat memiliki token
+        $token = $rapat->current_qr_token ?? 'invalid-token';
+
+        $svg = QrCode::size(400)->generate($token);
+
+        return response($svg)->header('Content-Type', 'image/svg+xml');
     }
 
     public function showRecentActivityReport()

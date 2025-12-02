@@ -25,6 +25,7 @@ class Rapat extends Model
         'id_user_pengaju',
         'desc',
         'id_user_pic',
+        'rejection_note',
     ];
 
     public function cabang()

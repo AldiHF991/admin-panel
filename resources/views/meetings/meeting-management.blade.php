@@ -392,6 +392,25 @@
         </div>
     </div>
 </div>
+
+{{-- MODAL BARU: Konfirmasi Hapus File --}}
+<div class="modal fade" id="deleteFileConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-trash me-2"></i>Konfirmasi Hapus File</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus file ini? Tindakan ini tidak dapat dibatalkan.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteFileBtn">Hapus</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('styles')
@@ -765,7 +784,9 @@
             currentFilesList.innerHTML = ''; // Kosongkan list setelah data didapat
             if (files && files.length > 0) {
                 files.forEach(file => {
-                                 li.dataset.fileId = file.id_file;
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between align-items-center file-item-actions';
+                    li.dataset.fileId = file.id_file;
 
                     // Membuat link untuk file
                     const fileLink = document.createElement('a');
@@ -801,23 +822,44 @@
     });
 
     // Fungsi untuk menghapus file via AJAX
-    window.deleteFile = async function(fileId, listItemElement) {
-        if (!confirm('Anda yakin ingin menghapus file ini? Aksi ini tidak dapat dibatalkan.')) return;
+    // Fungsi untuk menghapus file via AJAX (Updated with Modal)
+    window.deleteFile = function(fileId, listItemElement) {
+        const deleteModalEl = document.getElementById('deleteFileConfirmModal');
+        const deleteModal = new bootstrap.Modal(deleteModalEl);
+        const confirmBtn = document.getElementById('confirmDeleteFileBtn');
 
-        try {
-            const response = await fetch(`{{ url('meetings/files') }}/${fileId}`, {
-                method: 'DELETE',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-            });
-            const result = await response.json();
-            if (result.success) {
-                listItemElement.remove(); // Hapus item dari list di UI
-                alert('File berhasil dihapus.');
-            } else { throw new Error(result.message); }
-        } catch (error) {
-            console.error('Error deleting file:', error);
-            alert('Gagal menghapus file. Silakan coba lagi.');
-        }
+        // Simpan data ke tombol konfirmasi
+        confirmBtn.onclick = async function() {
+            try {
+                // Tampilkan loading state di tombol
+                const originalBtnText = this.innerHTML;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menghapus...';
+                this.disabled = true;
+
+                const response = await fetch(`{{ url('meetings/files') }}/${fileId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    listItemElement.remove(); // Hapus item dari list di UI
+                    deleteModal.hide(); // Tutup modal
+                    // alert('File berhasil dihapus.'); // Opsional: bisa diganti dengan toast atau dihapus saja agar lebih seamless
+                } else { 
+                    throw new Error(result.message); 
+                }
+            } catch (error) {
+                console.error('Error deleting file:', error);
+                alert('Gagal menghapus file. Silakan coba lagi.');
+            } finally {
+                // Reset tombol
+                this.innerHTML = 'Hapus';
+                this.disabled = false;
+            }
+        };
+
+        deleteModal.show();
     };
 
 
@@ -921,9 +963,16 @@
         const oversizedFiles = [];
 
         // Tambahkan file baru ke DataTransfer yang sudah ada
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'];
+        const invalidTypeFiles = [];
+
         Array.from(this.files).forEach(file => {
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+
             if (file.size > maxFileSize) {
                 oversizedFiles.push(file.name);
+            } else if (!allowedExtensions.includes(fileExtension)) {
+                invalidTypeFiles.push(file.name);
             } else {
                 addFileDataTransfer.items.add(file);
             }
@@ -931,8 +980,15 @@
         this.files = addFileDataTransfer.files; // Update input dengan file gabungan
         renderFileList(addFileList, addFileDataTransfer);
 
+        let errorMessage = '';
         if (oversizedFiles.length > 0) {
-            const errorMessage = `Beberapa file melebihi batas 5MB dan tidak akan diunggah: ${oversizedFiles.join(', ')}.`;
+            errorMessage += `File terlalu besar (>5MB): ${oversizedFiles.join(', ')}. `;
+        }
+        if (invalidTypeFiles.length > 0) {
+            errorMessage += `Tipe file tidak didukung: ${invalidTypeFiles.join(', ')}. `;
+        }
+
+        if (errorMessage) {
             this.classList.add('is-invalid');
             errorElement.textContent = errorMessage;
             errorElement.style.display = 'block';
@@ -951,9 +1007,16 @@
         const oversizedFiles = [];
 
         // Tambahkan file baru ke DataTransfer yang sudah ada
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'];
+        const invalidTypeFiles = [];
+
         Array.from(this.files).forEach(file => {
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+
             if (file.size > maxFileSize) {
                 oversizedFiles.push(file.name);
+            } else if (!allowedExtensions.includes(fileExtension)) {
+                invalidTypeFiles.push(file.name);
             } else {
                 editFileDataTransfer.items.add(file);
             }
@@ -961,8 +1024,15 @@
         this.files = editFileDataTransfer.files; // Update input dengan file gabungan
         renderFileList(editFileList, editFileDataTransfer);
 
+        let errorMessage = '';
         if (oversizedFiles.length > 0) {
-            const errorMessage = `Beberapa file melebihi batas 5MB dan tidak akan diunggah: ${oversizedFiles.join(', ')}.`;
+            errorMessage += `File terlalu besar (>5MB): ${oversizedFiles.join(', ')}. `;
+        }
+        if (invalidTypeFiles.length > 0) {
+            errorMessage += `Tipe file tidak didukung: ${invalidTypeFiles.join(', ')}. `;
+        }
+
+        if (errorMessage) {
             this.classList.add('is-invalid');
             errorElement.textContent = errorMessage;
             errorElement.style.display = 'block';

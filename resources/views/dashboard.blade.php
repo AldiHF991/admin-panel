@@ -249,7 +249,7 @@
     </div>
 </div>
 
-</div>
+
 
 <!-- Modal Detail Rapat -->
 <div class="modal fade" id="meetingDetailModal" tabindex="-1" aria-hidden="true">

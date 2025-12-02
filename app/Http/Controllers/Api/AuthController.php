@@ -63,6 +63,8 @@ class AuthController extends Controller
         $v = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string',
+            'device_id' => 'required|string',
+            'device_name' => 'required|string',
         ]);
 
         if ($v->fails()) {
@@ -74,6 +76,22 @@ class AuthController extends Controller
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
+
+        // Cek Device ID
+        if ($user->device_id && $user->device_id !== $request->device_id) {
+            return response()->json([
+                'message' => 'Akun ini sudah terhubung dengan perangkat lain. Silakan hubungi admin untuk reset perangkat.',
+            ], 403);
+        }
+
+        // Update Device Info jika belum ada atau jika login dari device yang sama
+        if (!$user->device_id) {
+            $user->device_id = $request->device_id;
+            $user->device_name = $request->device_name;
+        }
+        
+        $user->last_login_at = now();
+        $user->save();
 
         // PERBAIKAN: Muat relasi dengan eager loading
         $user->load(['role', 'division']);
@@ -98,6 +116,9 @@ class AuthController extends Controller
                 'division' => $user->division ? $user->division->division_name : null,
                 'created_at' => $user->created_at,
                 'updated_at' => $user->updated_at,
+                'device_id' => $user->device_id,
+                'device_name' => $user->device_name,
+                'last_login_at' => $user->last_login_at,
             ],
         ]);
     }

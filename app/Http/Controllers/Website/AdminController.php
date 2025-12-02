@@ -377,4 +377,27 @@ class AdminController extends Controller
         }
     }
     // END CABANG & RUANG MANAGEMENT
+
+    public function markNotificationAsRead($id)
+    {
+        $notification = auth()->user()->notifications()->findOrFail($id);
+        $notification->markAsRead();
+
+        // Redirect logic based on role
+        if (auth()->user()->id_role == 2) { // PIC
+            if (isset($notification->data['meeting_id'])) {
+                return redirect()->route('pic.meetings.show', $notification->data['meeting_id']);
+            }
+            return redirect()->route('pic.dashboard');
+        }
+
+        // Admin redirect
+        return redirect()->route('meetings.index', ['search' => $notification->data['title']]);
+    }
+
+    public function markAllNotificationsAsRead(Request $request)
+    {
+        auth()->user()->unreadNotifications->markAsRead();
+        return response()->json(['success' => true]);
+    }
 }

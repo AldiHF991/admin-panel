@@ -23,7 +23,7 @@ class User extends Authenticatable
         'id_role',
         'id_division',
         'username',
-        'name',
+        'nama', // Sesuai dengan migrasi database
         'email',
         'phone',
         'gender',

@@ -114,7 +114,7 @@ class RapatController extends Controller
             'waktu_end' => 'nullable|after:waktu_start',
             'id_user_pengaju' => 'required|exists:users,id_user',
             'desc' => 'nullable|string|max:255',
-            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,txt|max:5120', // Maks 5MB per file
+            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',// Maks 5MB per file
         ]);
 
         // Set status default ke 'Diterima' karena dibuat oleh Admin
@@ -159,7 +159,7 @@ class RapatController extends Controller
             'waktu_end' => 'nullable|after:waktu_start',
             'desc' => 'nullable|string|max:255',
             'id_status' => 'required|exists:status_rapat,id_status',
-            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,txt|max:5120', // Maks 5MB per file
+            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480', // Maks 5MB per file
         ]);
 
         $rapat->update($validatedData);
@@ -432,6 +432,29 @@ class RapatController extends Controller
      */
     public function downloadFile(RapatFile $file)
     {
+        // 1. Cek Otorisasi: User Login ATAU Guest yang valid untuk rapat ini
+        $isAuthorized = false;
+
+        if (\Illuminate\Support\Facades\Auth::check()) {
+            $isAuthorized = true;
+        } else {
+            // Cek sesi guest
+            $guestId = session('guest_id');
+            $rapatId = session('rapat_id');
+            
+            // Pastikan guest sedang login di sesi rapat yang SAMA dengan file ini
+            if ($guestId && $rapatId && $rapatId == $file->id_rapat) {
+                $isAuthorized = true;
+            }
+        }
+
+        if (!$isAuthorized) {
+            // Jika tidak punya akses, redirect ke login atau 403
+            // Karena ini akses file, 403 atau 404 lebih tepat untuk keamanan, tapi user minta "terpental ke login" diperbaiki.
+            // Kita return 403 Forbidden.
+            abort(403, 'Anda tidak memiliki izin untuk mengunduh file ini.');
+        }
+
         // Pengecekan keberadaan file tetap penting untuk keamanan.
         // $file->file_path berisi path relatif dari 'storage/app/', contoh: 'public/rapat_files/...'
         if (! Storage::exists($file->file_path)) {
@@ -442,5 +465,73 @@ class RapatController extends Controller
         // Metode ini menangani path secara internal dan lebih aman daripada response()->download(storage_path(...)).
         // Argumen pertama adalah path dari storage, argumen kedua adalah nama file yang akan dilihat pengguna.
         return Storage::download($file->file_path, $file->file_name);
+    }
+    /**
+     * Menerima pengajuan rapat (Set status ke Diterima / 1).
+     */
+    public function accept(Rapat $rapat)
+    {
+        try {
+            $rapat->update(['id_status' => 1]); // 1 = Diterima
+            
+            // Tandai notifikasi terkait sebagai sudah dibaca (untuk admin)
+            $notification = auth()->user()->notifications()
+                ->where('data->meeting_id', $rapat->id_rapat)
+                ->first();
+                
+            if ($notification) {
+                $notification->markAsRead();
+            }
+            
+            // Kirim notifikasi ke PIC bahwa rapat diterima
+            if ($rapat->id_user_pengaju) {
+                $pic = User::find($rapat->id_user_pengaju);
+                if ($pic) {
+                    $pic->notify(new \App\Notifications\MeetingStatusNotification($rapat, 'Rapat Diterima'));
+                }
+            }
+            
+            return back()->with('success', 'Rapat berhasil diterima.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menerima rapat: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Menolak pengajuan rapat (Set status ke Ditolak / 2).
+     */
+    public function reject(Request $request, Rapat $rapat)
+    {
+        try {
+            $request->validate([
+                'rejection_note' => 'nullable|string|max:255',
+            ]);
+
+            $rapat->update([
+                'id_status' => 2, // 2 = Ditolak
+                'rejection_note' => $request->rejection_note,
+            ]); 
+            
+            // Tandai notifikasi terkait sebagai sudah dibaca (untuk admin)
+            $notification = auth()->user()->notifications()
+                ->where('data->meeting_id', $rapat->id_rapat)
+                ->first();
+                
+            if ($notification) {
+                $notification->markAsRead();
+            }
+            
+            // Kirim notifikasi ke PIC bahwa rapat ditolak
+            if ($rapat->id_user_pengaju) {
+                $pic = User::find($rapat->id_user_pengaju);
+                if ($pic) {
+                    $pic->notify(new \App\Notifications\MeetingStatusNotification($rapat, 'Rapat Ditolak', $request->rejection_note));
+                }
+            }
+            
+            return back()->with('success', 'Rapat berhasil ditolak.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menolak rapat: ' . $e->getMessage());
+        }
     }
 }

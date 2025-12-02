@@ -26,10 +26,16 @@ Route::get('/meetings/{rapat}/guest/logout', [RapatController::class, 'logoutGue
 
 // Route untuk download file, perlu di luar middleware admin agar semua user terotentikasi bisa akses
 Route::middleware('auth')->group(function () {
-    Route::get('/meetings/files/{file}', [RapatController::class, 'downloadFile'])->name('meetings.downloadFile');
     Route::get('/cabang/{cabang}/rooms', [RapatController::class, 'getRoomsByCabang'])->name('cabang.rooms');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    
+    // Notification Routes
+    Route::get('/notifications/{id}/read', [AdminController::class, 'markNotificationAsRead'])->name('notifications.read');
+    Route::post('/notifications/mark-all-read', [AdminController::class, 'markAllNotificationsAsRead'])->name('notifications.markAllRead');
 });
+
+// Route untuk download file, bisa diakses oleh user auth maupun guest yang valid
+Route::get('/meetings/files/{file}', [RapatController::class, 'downloadFile'])->name('meetings.downloadFile');
 
 // Admin routes (perlu admin)
 Route::middleware([AdminWebsiteMiddleware::class])->group(function () {
@@ -40,11 +46,14 @@ Route::middleware([AdminWebsiteMiddleware::class])->group(function () {
     Route::get('/admin/reports', [AdminController::class, 'showReports'])->name('reports');
     Route::get('/admin/reports/recent-activity', [AdminController::class, 'showRecentActivityReport'])->name('reports.recentActivity');
     Route::get('/admin/reports/newly-created', [AdminController::class, 'showNewlyCreatedReport'])->name('reports.newlyCreated');
+    Route::get('/admin/reports/newly-created', [AdminController::class, 'showNewlyCreatedReport'])->name('reports.newlyCreated');
 
     // Routes untuk RapatController
     Route::post('/meetings', [RapatController::class, 'store'])->name('meetings.store');
     Route::put('/meetings/{rapat}', [RapatController::class, 'update'])->name('meetings.update');
     Route::delete('/meetings/{id}', [RapatController::class, 'destroy'])->name('meetings.destroy');
+    Route::post('/meetings/{rapat}/accept', [RapatController::class, 'accept'])->name('meetings.accept');
+    Route::post('/meetings/{rapat}/reject', [RapatController::class, 'reject'])->name('meetings.reject');
     Route::get('/meetings/{rapat}/qr', [RapatController::class, 'showQrCode'])->name('meetings.showQr');
     Route::get('/meetings/{rapat}/qr-code', [RapatController::class, 'getQrCodeSvg'])->name('meetings.getQrCodeSvg');
     Route::get('/meetings/{rapat}/absensi', [RapatController::class, 'showAbsensi'])->name('meetings.showAbsensi');
@@ -93,6 +102,9 @@ Route::middleware(['auth', \App\Http\Middleware\PicWebsiteMiddleware::class])->g
     // Additional features requested
     Route::get('/pic/meetings/{rapat}/absensi', [\App\Http\Controllers\Website\PicController::class, 'showAbsensi'])->name('pic.meetings.absensi');
     Route::get('/pic/meetings/{rapat}/qr', [\App\Http\Controllers\Website\PicController::class, 'showQrCode'])->name('pic.meetings.qr');
+    Route::get('/pic/meetings/{rapat}/guest-qr', [\App\Http\Controllers\Website\PicController::class, 'showGuestQr'])->name('pic.meetings.guestQr');
+    Route::get('/pic/meetings/{rapat}/qr-svg', [\App\Http\Controllers\Website\PicController::class, 'getQrCodeSvg'])->name('pic.meetings.getQrCodeSvg');
+    Route::post('/pic/meetings/{rapat}/finish', [\App\Http\Controllers\Website\PicController::class, 'finishMeeting'])->name('pic.meetings.finish');
     
     // Reports
     Route::get('/pic/reports/recent-activity', [\App\Http\Controllers\Website\PicController::class, 'showRecentActivityReport'])->name('pic.reports.recentActivity');

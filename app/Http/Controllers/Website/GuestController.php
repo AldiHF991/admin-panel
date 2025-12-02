@@ -43,15 +43,21 @@ class GuestController extends Controller
     {
         try {
             $guest = Guest::findOrFail($id);
-            // Absensi will be deleted via database cascade if configured, 
-            // otherwise we might need $guest->absensi()->delete();
-            // Assuming standard setup or manual cleanup:
-            $guest->absensi()->delete();
-            $guest->delete();
+            
+            // PERMINTAAN USER: "Reset" berarti menghapus device_id/token di absensi
+            // agar data tamu tetap tercatat tapi device bisa dipakai lagi atau tamu bisa login ulang (tergantung logika)
+            // Kita set device_token menjadi NULL pada semua record absensi terkait tamu ini.
+            foreach ($guest->absensi as $absen) {
+                $absen->device_token = null;
+                $absen->save();
+            }
 
-            return redirect()->route('guest.index')->with('success', 'Data tamu berhasil direset (dihapus).');
+            // Jangan hapus data guest atau absensi secara fisik
+            // $guest->delete(); 
+
+            return redirect()->route('guests.index')->with('success', 'Device ID tamu berhasil direset. Data absensi tetap tersimpan.');
         } catch (\Exception $e) {
-            return redirect()->route('guest.index')->with('error', 'Gagal menghapus data tamu: ' . $e->getMessage());
+            return redirect()->route('guests.index')->with('error', 'Gagal mereset data tamu: ' . $e->getMessage());
         }
     }
 }

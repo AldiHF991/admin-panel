@@ -301,8 +301,8 @@
                             <input type="text" class="form-control" id="jabatan" name="jabatan" required>
                         </div>
                         <div class="mb-3">
-                            <label for="nomor" class="form-label">Nomor WhatsApp (Opsional)</label>
-                            <input type="tel" class="form-control" id="nomor" name="nomor" placeholder="Contoh: 081234567890">
+                            <label for="nomor" class="form-label">Nomor WhatsApp <span class="text-danger">*</span></label>
+                            <input type="tel" class="form-control" id="nomor" name="nomor" placeholder="Contoh: 081234567890" required>
                         </div>
                     </form>
                 </div>

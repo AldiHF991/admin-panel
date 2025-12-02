@@ -184,7 +184,61 @@
 
         <!-- Navbar atas (tetap di atas, tidak ikut scroll main) -->
         <nav class="navbar navbar-light bg-white shadow-sm px-4">
-            <div class="container-fluid d-flex justify-content-end">
+            <div class="container-fluid d-flex justify-content-end align-items-center">
+                @if(Auth::check() && (Auth::user()->id_role == 1 || Auth::user()->id_role == 2))
+                    <div class="dropdown me-3">
+                        <a href="#" class="text-decoration-none text-dark position-relative" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-bell fs-5"></i>
+                            @if(Auth::user()->unreadNotifications->count() > 0)
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                                    {{ Auth::user()->unreadNotifications->count() }}
+                                    <span class="visually-hidden">unread messages</span>
+                                </span>
+                            @endif
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="notificationDropdown" style="width: 320px; max-height: 400px; overflow-y: auto;">
+                            <li><h6 class="dropdown-header bg-primary text-white mb-2">Notifikasi Baru</h6></li>
+                            @forelse(Auth::user()->notifications()->latest()->take(10)->get() as $notification)
+                                <li>
+                                    <div class="dropdown-item py-2 d-flex align-items-start {{ $notification->read_at ? 'opacity-75' : '' }}" style="white-space: normal; cursor: default; {{ $notification->read_at ? 'background-color: #f8f9fa;' : '' }}">
+                                        <a class="flex-grow-1 text-decoration-none text-dark" href="{{ route('notifications.read', $notification->id) }}">
+                                            <div class="d-flex align-items-start">
+                                                <div class="flex-shrink-0 me-2">
+                                                    <i class="bi bi-calendar-check {{ $notification->read_at ? 'text-secondary' : 'text-primary' }}"></i>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1 small {{ $notification->read_at ? 'fw-normal' : 'fw-bold' }}">{{ $notification->data['title'] ?? 'Notifikasi' }}</h6>
+                                                    <p class="mb-1 small text-muted text-wrap">{{ $notification->data['message'] ?? '' }}</p>
+                                                    @if(isset($notification->data['note']))
+                                                        <p class="mb-1 small text-danger fw-bold">Alasan: {{ $notification->data['note'] }}</p>
+                                                    @endif
+                                                    <small class="text-muted" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i>{{ $notification->created_at->diffForHumans() }}</small>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        {{-- Tombol Aksi HANYA untuk Admin (Role 1) --}}
+                                        @if(Auth::user()->id_role == 1 && isset($notification->data['meeting_id']) && is_null($notification->read_at))
+                                            <div class="d-flex flex-column ms-2 gap-1">
+                                                <form action="{{ route('meetings.accept', $notification->data['meeting_id']) }}" method="POST">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-success p-0 d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 24px; height: 24px;" title="Terima" onclick="return confirm('Apakah Anda yakin ingin menerima rapat ini?')">
+                                                        <i class="bi bi-check"></i>
+                                                    </button>
+                                                </form>
+                                                <button type="button" class="btn btn-sm btn-danger p-0 d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 24px; height: 24px;" title="Tolak" onclick="openRejectionModal('{{ route('meetings.reject', $notification->data['meeting_id']) }}')">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                            @empty
+                                <li><div class="dropdown-item text-center text-muted small py-3">Tidak ada notifikasi</div></li>
+                            @endforelse
+                        </ul>
+                    </div>
+                @endif
                 <div class="dropdown">
                     <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle"
                        id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
@@ -223,6 +277,31 @@
 
 </div>
 
+<!-- Rejection Modal -->
+<div class="modal fade" id="rejectionModal" tabindex="-1" aria-labelledby="rejectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="rejectionForm" method="POST" action="">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rejectionModalLabel">Tolak Pengajuan Rapat</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="rejection_note" class="form-label">Alasan Penolakan</label>
+                        <textarea class="form-control" id="rejection_note" name="rejection_note" rows="3" required placeholder="Contoh: Ruangan tidak tersedia, jadwal bentrok, dll."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger">Tolak Rapat</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 @stack('scripts')
 <script>
@@ -246,6 +325,38 @@
 
         setTimeout(syncSidebarState, 0);
     })();
+
+    function openRejectionModal(url) {
+        const form = document.getElementById('rejectionForm');
+        form.action = url;
+        const modal = new bootstrap.Modal(document.getElementById('rejectionModal'));
+        modal.show();
+    }
+
+    // Auto-mark notifications as read for PIC when dropdown is opened
+    @if(Auth::check() && Auth::user()->id_role == 2)
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        if (notificationDropdown) {
+            notificationDropdown.addEventListener('show.bs.dropdown', function () {
+                const badge = this.querySelector('.badge');
+                if (badge) {
+                    // Hide badge immediately
+                    badge.style.display = 'none';
+                    
+                    // Send AJAX request to mark all as read
+                    fetch('{{ route("notifications.markAllRead") }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(response => {
+                        if (!response.ok) console.error('Failed to mark notifications as read');
+                    }).catch(error => console.error('Error:', error));
+                }
+            });
+        }
+    @endif
 </script>
 </body>
 </html>

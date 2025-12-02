@@ -25,10 +25,10 @@
 
     <div class="card shadow-sm border-0">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Dashboard Rapat PIC</h5>
-            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addRapatModal">
+            <h5 class="mb-0">List Rapat</h5>
+            <a href="{{ route('pic.meetings.create') }}" class="btn btn-light btn-sm">
                 <i class="bi bi-plus-circle me-1"></i> Tambah Rapat
-            </button>
+            </a>
         </div>
         <div class="card-body">
             <form action="{{ route('pic.meetings.index') }}" method="GET" id="filter-form">
@@ -119,7 +119,18 @@
                                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ $rapat->id_rapat }}">
                                             <li><a class="dropdown-item btn-detail-meeting" href="#" data-id="{{ $rapat->id_rapat }}" data-bs-toggle="modal" data-bs-target="#detailRapatModal"><i class="bi bi-eye me-2"></i>Detail</a></li>
                                             <li><a class="dropdown-item" href="{{ route('pic.meetings.absensi', $rapat->id_rapat) }}"><i class="bi bi-person-check me-2"></i>Absensi</a></li>
-                                            <li><a class="dropdown-item" href="{{ route('pic.meetings.qr', $rapat->id_rapat) }}"><i class="bi bi-qr-code me-2"></i>QR Code</a></li>
+                                            @if($rapat->id_status == 4)
+                                                <li><a class="dropdown-item" href="{{ route('pic.meetings.qr', $rapat->id_rapat) }}" target="_blank"><i class="bi bi-qr-code me-2"></i>QR Code Absensi</a></li>
+                                                <li><a class="dropdown-item" href="{{ route('pic.meetings.guestQr', $rapat->id_rapat) }}" target="_blank"><i class="bi bi-person-square me-2"></i>QR Mode Tamu</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <button type="button" class="dropdown-item text-success btn-finish-meeting" 
+                                                            data-rapat-id="{{ $rapat->id_rapat }}" 
+                                                            data-rapat-judul="{{ $rapat->judul }}">
+                                                        <i class="bi bi-check-circle me-2"></i>Selesai
+                                                    </button>
+                                                </li>
+                                            @endif
                                             @if($rapat->id_status == 3)
                                                 <li>
                                                     <form action="{{ route('pic.meetings.destroy', $rapat->id_rapat) }}" method="POST" class="d-inline delete-meeting-form">
@@ -247,6 +258,10 @@
                             <th>Status</th>
                             <td><span class="badge" id="detail-status"></span></td>
                         </tr>
+                        <tr id="row-rejection-note" style="display: none;">
+                            <th class="text-danger">Alasan Penolakan</th>
+                            <td id="detail-rejection-note" class="text-danger"></td>
+                        </tr>
                         <tr>
                             <th>Cabang</th>
                             <td id="detail-cabang"></td>
@@ -278,6 +293,40 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Finish Meeting Confirmation Modal --}}
+<div class="modal fade" id="finishMeetingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-check-circle me-2"></i>Selesaikan Rapat</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Apakah Anda yakin ingin menyelesaikan rapat berikut?</p>
+                <h6 class="text-primary mt-3 mb-3" id="finish-meeting-title"></h6>
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Setelah rapat diselesaikan:
+                    <ul class="mb-0 mt-2">
+                        <li>Status akan berubah menjadi "Selesai"</li>
+                        <li>Ruangan akan tersedia kembali</li>
+                        <li>QR Code tidak lagi dapat diakses</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form id="finish-meeting-form" method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle me-2"></i>Ya, Selesaikan
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -334,16 +383,18 @@
 
     // --- FUNGSI UNTUK AUTO-REFRESH RUANGAN BERDASARKAN CABANG ---
     async function updateRoomOptions(cabangSelect, roomSelect) {
+        console.log('updateRoomOptions triggered');
         const cabangId = cabangSelect.value;
         
         roomSelect.innerHTML = '<option value="">-- Pilih Ruangan --</option>';
         roomSelect.disabled = true;
         
-        const modal = roomSelect.closest('.modal');
+        const modal = document.getElementById('addRapatModal'); // Explicitly get modal
         const helpText = modal.querySelector('.room-help-text');
         if (helpText) {
             helpText.textContent = 'Memuat ruangan...';
             helpText.style.display = 'block';
+            helpText.className = 'form-text text-muted room-help-text'; // Reset class
         }
         
         if (!cabangId) {
@@ -352,7 +403,8 @@
         }
 
         try {
-            const response = await fetch(`{{ url('/cabang') }}/${cabangId}/rooms`);
+            const url = "{{ route('cabang.rooms', ':id') }}".replace(':id', cabangId);
+            const response = await fetch(url);
             if (!response.ok) throw new Error('Gagal mengambil data ruangan');
             
             const rooms = await response.json();
@@ -520,9 +572,11 @@
     });
 
     ['add_tanggal', 'add_waktu_start', 'add_waktu_end'].forEach(id => {
-        document.getElementById(id).addEventListener('change', function() {
-            checkRoomAvailability(addModalEl);
-        });
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', () => checkRoomAvailability(addModalEl));
+            el.addEventListener('input', () => checkRoomAvailability(addModalEl)); // Add input event
+        }
     });
 
     addModalEl.addEventListener('show.bs.modal', function() {
@@ -594,10 +648,16 @@
         errorElement.style.display = 'none';
         this.classList.remove('is-invalid');
         const oversizedFiles = [];
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'];
+        const invalidTypeFiles = [];
 
         Array.from(this.files).forEach(file => {
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+
             if (file.size > maxFileSize) {
                 oversizedFiles.push(file.name);
+            } else if (!allowedExtensions.includes(fileExtension)) {
+                invalidTypeFiles.push(file.name);
             } else {
                 addFileDataTransfer.items.add(file);
             }
@@ -605,8 +665,15 @@
         this.files = addFileDataTransfer.files;
         renderFileList(addFileList, addFileDataTransfer);
 
+        let errorMessage = '';
         if (oversizedFiles.length > 0) {
-            const errorMessage = `Beberapa file melebihi batas 5MB dan tidak akan diunggah: ${oversizedFiles.join(', ')}.`;
+            errorMessage += `File terlalu besar (>5MB): ${oversizedFiles.join(', ')}. `;
+        }
+        if (invalidTypeFiles.length > 0) {
+            errorMessage += `Tipe file tidak didukung: ${invalidTypeFiles.join(', ')}. `;
+        }
+
+        if (errorMessage) {
             this.classList.add('is-invalid');
             errorElement.textContent = errorMessage;
             errorElement.style.display = 'block';
@@ -658,7 +725,6 @@
             });
         });
     }
-    }
 
     // --- DETAIL RAPAT MODAL LOGIC ---
     const detailModalEl = document.getElementById('detailRapatModal');
@@ -675,18 +741,45 @@
             content.style.display = 'none';
 
             // Fetch data
-            fetch(`{{ url('/pic/meetings') }}/${rapatId}`, {
+            const url = "{{ route('pic.meetings.show', ':id') }}".replace(':id', rapatId);
+            console.log('Fetching meeting details from:', url);
+            
+            fetch(url, {
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Received data:', data);
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
                 document.getElementById('detail-judul').textContent = data.judul;
                 
                 const statusBadge = document.getElementById('detail-status');
                 statusBadge.textContent = data.status;
                 statusBadge.className = `badge ${data.status_class}`;
+
+                // Handle Rejection Note
+                const rejectionRow = document.getElementById('row-rejection-note');
+                const rejectionNote = document.getElementById('detail-rejection-note');
+                
+                if (data.status === 'Ditolak' && data.rejection_note) {
+                    rejectionNote.textContent = data.rejection_note;
+                    rejectionRow.style.display = 'table-row';
+                } else {
+                    rejectionRow.style.display = 'none';
+                }
 
                 document.getElementById('detail-cabang').textContent = data.cabang;
                 document.getElementById('detail-room').textContent = data.room;
@@ -703,10 +796,46 @@
             })
             .catch(error => {
                 console.error('Error fetching meeting details:', error);
-                modalBody.innerHTML = '<div class="alert alert-danger">Gagal memuat detail rapat.</div>';
+                loading.style.display = 'none';
+                modalBody.innerHTML = '<div class="alert alert-danger">Gagal memuat detail rapat: ' + error.message + '</div>';
             });
         });
     }
-});
+
+
+    // --- FINISH MEETING MODAL LOGIC ---
+    const finishModalEl = document.getElementById('finishMeetingModal');
+    const finishForm = document.getElementById('finish-meeting-form');
+    const finishTitle = document.getElementById('finish-meeting-title');
+
+    if (finishModalEl && finishForm && finishTitle) {
+        document.querySelectorAll('.btn-finish-meeting').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Finish button clicked');
+                
+                const rapatId = this.getAttribute('data-rapat-id');
+                const rapatJudul = this.getAttribute('data-rapat-judul');
+                
+                console.log('Rapat ID:', rapatId);
+                console.log('Rapat Judul:', rapatJudul);
+                
+                // Update modal content
+                finishTitle.textContent = rapatJudul;
+                
+                // Build action URL
+                const baseUrl = '{{ route("pic.meetings.finish", ":id") }}';
+                finishForm.action = baseUrl.replace(':id', rapatId);
+                
+                // Show modal using Bootstrap 5 method
+                const modal = new bootstrap.Modal(finishModalEl);
+                modal.show();
+            });
+        });
+    } else {
+        console.error('Finish meeting modal elements not found');
+    }
+
+  }); // End of DOMContentLoaded
 </script>
 @endpush

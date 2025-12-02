@@ -44,7 +44,7 @@
             justify-content: center;
             font-family: "Poppins", sans-serif;
             position: relative;
-            overflow: hidden;
+            overflow-y: auto; /* Allow scrolling */
             padding: 2rem;
         }
 
@@ -393,10 +393,24 @@
                 <i class="bi bi-box-arrow-in-right"></i>
                 Kembali ke Login
             </a>
-            <a href="{{ route('guest') }}" class="btn-secondary-custom">
-                <i class="bi bi-house"></i>
-                Halaman Utama
-            </a>
+            @auth
+                @if(auth()->user()->id_role == 2)
+                    <a href="{{ route('pic.dashboard') }}" class="btn-secondary-custom">
+                        <i class="bi bi-speedometer2"></i>
+                        Dashboard
+                    </a>
+                @else
+                    <a href="{{ route('dashboard') }}" class="btn-secondary-custom">
+                        <i class="bi bi-speedometer2"></i>
+                        Dashboard
+                    </a>
+                @endif
+            @else
+                <a href="{{ route('landingPage') }}" class="btn-secondary-custom">
+                    <i class="bi bi-house"></i>
+                    Halaman Utama
+                </a>
+            @endauth
         </div>
     </div>
 

@@ -92,6 +92,7 @@
                         <div class="mb-4">
                             <label for="files" class="form-label fw-bold">Upload File (Opsional)</label>
                             <input class="form-control" type="file" id="files" name="files[]" multiple>
+                            <div id="files-error" class="invalid-feedback" style="display: none;"></div>
                             <div class="form-text text-muted">
                                 Format yang didukung: PDF, DOC, DOCX, PPT, PPTX, JPG, PNG. Maksimal 5MB per file.
                             </div>
@@ -185,7 +186,8 @@ document.addEventListener('DOMContentLoaded', function () {
         roomHelpText.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"></div> Memuat ruangan...';
 
         try {
-            const response = await fetch(`{{ url('/cabang') }}/${cabangId}/rooms`);
+            const url = "{{ route('cabang.rooms', ':id') }}".replace(':id', cabangId);
+            const response = await fetch(url);
             if (!response.ok) throw new Error('Gagal mengambil data ruangan');
             
             const rooms = await response.json();
@@ -276,17 +278,86 @@ document.addEventListener('DOMContentLoaded', function () {
     endTimeInput.addEventListener('change', checkRoomAvailability);
 
     // File Upload Preview
+    // File Upload Preview & Validation
     const fileInput = document.getElementById('files');
     const fileList = document.getElementById('file-list');
+    const filesError = document.getElementById('files-error');
+    let fileDataTransfer = new DataTransfer();
 
-    fileInput.addEventListener('change', function() {
+    function renderFileList() {
         fileList.innerHTML = '';
-        Array.from(this.files).forEach(file => {
+        Array.from(fileDataTransfer.files).forEach((file, index) => {
             const div = document.createElement('div');
-            div.className = 'badge bg-light text-dark border me-2 mb-2 p-2';
-            div.innerHTML = `<i class="bi bi-file-earmark me-1"></i> ${file.name} <small class="text-muted">(${Math.round(file.size/1024)} KB)</small>`;
+            div.className = 'badge bg-light text-dark border me-2 mb-2 p-2 d-inline-flex align-items-center';
+            div.innerHTML = `
+                <i class="bi bi-file-earmark me-2"></i> 
+                ${file.name} <small class="text-muted ms-1">(${Math.round(file.size/1024)} KB)</small>
+                <button type="button" class="btn-close ms-2" aria-label="Remove" style="font-size: 0.5em;"></button>
+            `;
+            
+            // Add remove functionality
+            div.querySelector('.btn-close').addEventListener('click', function() {
+                const newFiles = new DataTransfer();
+                Array.from(fileDataTransfer.files).forEach((f, i) => {
+                    if (i !== index) newFiles.items.add(f);
+                });
+                fileDataTransfer = newFiles;
+                fileInput.files = newFiles.files;
+                renderFileList();
+            });
+
             fileList.appendChild(div);
         });
+    }
+
+    fileInput.addEventListener('change', function() {
+        const maxFileSize = 20 * 1024 * 1024; // 20MB
+        const allowedExtensions = [
+        'jpg', 'jpeg', 'png', 'gif',
+        'pdf',
+        'doc', 'docx',
+        'ppt', 'pptx',
+        'xls', 'xlsx', 'csv',
+        'txt',
+        'zip', 'rar', '7z',
+        'mp4', 'mkv', 'mp3', 'wav',
+        'odt', 'ods'
+        ];
+        const oversizedFiles = [];
+        const invalidTypeFiles = [];
+
+        filesError.style.display = 'none';
+        filesError.textContent = '';
+        this.classList.remove('is-invalid');
+
+        Array.from(this.files).forEach(file => {
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+
+            if (file.size > maxFileSize) {
+                oversizedFiles.push(file.name);
+            } else if (!allowedExtensions.includes(fileExtension)) {
+                invalidTypeFiles.push(file.name);
+            } else {
+                fileDataTransfer.items.add(file);
+            }
+        });
+
+        this.files = fileDataTransfer.files;
+        renderFileList();
+
+        let errorMessage = '';
+        if (oversizedFiles.length > 0) {
+            errorMessage += `File terlalu besar (>5MB): ${oversizedFiles.join(', ')}. `;
+        }
+        if (invalidTypeFiles.length > 0) {
+            errorMessage += `Tipe file tidak didukung: ${invalidTypeFiles.join(', ')}. `;
+        }
+
+        if (errorMessage) {
+            this.classList.add('is-invalid');
+            filesError.textContent = errorMessage;
+            filesError.style.display = 'block';
+        }
     });
 
     // Form Validation
