@@ -53,104 +53,106 @@
                 </div>
             </form>
 
-            <table class="table table-hover mt-3">
-                <thead class="table-primary">
-                    <tr>
-                        <th>#</th>
-                        <th>
-                            {{-- Link untuk sorting berdasarkan judul --}}
-                            <a href="{{ route('meetings.index', array_merge(request()->query(), ['sort' => 'judul', 'direction' => ($sort === 'judul' && $direction === 'asc') ? 'desc' : 'asc'])) }}" class="text-decoration-none text-black">
-                                Judul
-                                @if ($sort === 'judul')
-                                    <i class="bi {{ $direction === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
-                                @else
-                                    {{-- Ikon default jika kolom lain yang diurutkan --}}
-                                    <i class="bi bi-sort-alpha-down"></i>
-                                @endif
-                            </a>
-                        </th>
-                        <th>Cabang</th>
-                        <th>Ruangan</th>
-                        <th>Tanggal</th>
-                        <th>Waktu</th>
-                        <th>Status</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="meetingsTableBody">
-                    @forelse ($rapats as $rapat)
-                        <tr data-rapat-id="{{ $rapat->id_rapat }}">
-                            {{-- PERBAIKAN: Penomoran yang benar untuk paginasi --}}
-                            @if ($rapats instanceof \Illuminate\Pagination\AbstractPaginator)
-                                <td>{{ $rapats->firstItem() + $loop->index }}</td>
-                            @else
-                                <td>{{ $loop->iteration }}</td>
-                            @endif
-                            <td>{{ $rapat->judul }}</td>
-                            <td>{{ $rapat->cabang ? $rapat->cabang->cabang : 'N/A' }}</td>
-                            <td>{{ $rapat->room ? $rapat->room->room : 'N/A' }}</td>
-                            <td>{{ \Carbon\Carbon::parse($rapat->tanggal)->translatedFormat(    'd/m/Y') }}</td>
-                            <td>{{ substr($rapat->waktu_start, 0, 5) }} - {{ $rapat->waktu_end ? substr($rapat->waktu_end, 0, 5) : 'Selesai tidak menentu' }}</td>
-                            <td>
-                                @php
-                                    $statusText = $rapat->status ? $rapat->status->status_rapat : 'N/A';
-                                    $statusClass = 'bg-secondary'; // Warna default
-                                    switch (strtolower($statusText)) {
-                                        case 'diterima':
-                                            $statusClass = 'bg-success';
-                                            break;
-                                        case 'ditolak':
-                                            $statusClass = 'bg-danger';
-                                            break;
-                                        case 'menunggu':
-                                            $statusClass = 'bg-warning text-dark';
-                                            break;
-                                        case 'berlangsung':
-                                            $statusClass = 'bg-primary';
-                                            break;
-                                        case 'selesai':
-                                            $statusClass = 'bg-dark';
-                                            break;
-                                    }
-                                @endphp
-                                <span class="badge {{ $statusClass }}">{{ $statusText }}</span></td>
-                            <td>
-                                <div class="dropdown">
-                                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton{{ $rapat->id_rapat }}" data-bs-toggle="dropdown" aria-expanded="false">Aksi</button>
-                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ $rapat->id_rapat }}">
-                                        <li><a class="dropdown-item edit-btn" href="#" data-bs-toggle="modal" data-bs-target="#editRapatModal" data-rapat='{{ json_encode($rapat) }}'><i class="bi bi-pencil-square me-2"></i>Edit</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('meetings.showAbsensi', $rapat->id_rapat) }}" target="_blank"><i class="bi bi-person-check me-2"></i>Absensi</a></li>
-                                        {{-- PERUBAHAN: Link QR Code diubah untuk memicu modal --}}
-                                        @php
-                                            $statusTextForQr = $rapat->status ? $rapat->status->status_rapat : 'N/A';
-                                        @endphp
-                                        <li>
-                                            <a class="dropdown-item qr-code-btn" href="#" data-qr-url="{{ route('meetings.showQr', $rapat->id_rapat) }}" data-rapat-status="{{ $statusTextForQr }}">
-                                                <i class="bi bi-qr-code me-2"></i>QR Code
-                                            </a>
-                                        </li>
-                                        {{-- PERUBAHAN: Link Guest Mode diubah untuk menampilkan halaman QR --}}
-                                        <li><a class="dropdown-item" href="{{ route('meetings.showGuestQr', $rapat->id_rapat) }}" target="_blank"><i class="bi bi-person-badge me-2"></i>Guest Mode</a></li>
-                                        <li>
-                                            <form action="{{ route('meetings.destroy', $rapat->id_rapat) }}" method="POST" class="d-inline delete-meeting-form">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Anda yakin ingin menghapus rapat ini?')"><i class="bi bi-trash me-2"></i>Hapus</button>
-                                            </form>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
+            <div class="table-responsive">
+                <table class="table table-hover mt-3">
+                    <thead class="table-primary">
                         <tr>
-                            <td colspan="8" class="text-center text-muted">
-                                Tidak ada data rapat yang cocok dengan filter.
-                            </td>
+                            <th>#</th>
+                            <th>
+                                {{-- Link untuk sorting berdasarkan judul --}}
+                                <a href="{{ route('meetings.index', array_merge(request()->query(), ['sort' => 'judul', 'direction' => ($sort === 'judul' && $direction === 'asc') ? 'desc' : 'asc'])) }}" class="text-decoration-none text-black">
+                                    Judul
+                                    @if ($sort === 'judul')
+                                        <i class="bi {{ $direction === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
+                                    @else
+                                        {{-- Ikon default jika kolom lain yang diurutkan --}}
+                                        <i class="bi bi-sort-alpha-down"></i>
+                                    @endif
+                                </a>
+                            </th>
+                            <th>Cabang</th>
+                            <th>Ruangan</th>
+                            <th>Tanggal</th>
+                            <th>Waktu</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
                         </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody id="meetingsTableBody">
+                        @forelse ($rapats as $rapat)
+                            <tr data-rapat-id="{{ $rapat->id_rapat }}">
+                                {{-- PERBAIKAN: Penomoran yang benar untuk paginasi --}}
+                                @if ($rapats instanceof \Illuminate\Pagination\AbstractPaginator)
+                                    <td>{{ $rapats->firstItem() + $loop->index }}</td>
+                                @else
+                                    <td>{{ $loop->iteration }}</td>
+                                @endif
+                                <td>{{ $rapat->judul }}</td>
+                                <td>{{ $rapat->cabang ? $rapat->cabang->cabang : 'N/A' }}</td>
+                                <td>{{ $rapat->room ? $rapat->room->room : 'N/A' }}</td>
+                                <td>{{ \Carbon\Carbon::parse($rapat->tanggal)->translatedFormat(    'd/m/Y') }}</td>
+                                <td>{{ substr($rapat->waktu_start, 0, 5) }} - {{ $rapat->waktu_end ? substr($rapat->waktu_end, 0, 5) : 'Selesai tidak menentu' }}</td>
+                                <td>
+                                    @php
+                                        $statusText = $rapat->status ? $rapat->status->status_rapat : 'N/A';
+                                        $statusClass = 'bg-secondary'; // Warna default
+                                        switch (strtolower($statusText)) {
+                                            case 'diterima':
+                                                $statusClass = 'bg-success';
+                                                break;
+                                            case 'ditolak':
+                                                $statusClass = 'bg-danger';
+                                                break;
+                                            case 'menunggu':
+                                                $statusClass = 'bg-warning text-dark';
+                                                break;
+                                            case 'berlangsung':
+                                                $statusClass = 'bg-primary';
+                                                break;
+                                            case 'selesai':
+                                                $statusClass = 'bg-dark';
+                                                break;
+                                        }
+                                    @endphp
+                                    <span class="badge {{ $statusClass }}">{{ $statusText }}</span></td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton{{ $rapat->id_rapat }}" data-bs-toggle="dropdown" aria-expanded="false" data-bs-boundary="viewport" data-bs-popper-config='{"strategy":"fixed"}'>Aksi</button>
+                                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ $rapat->id_rapat }}">
+                                            <li><a class="dropdown-item edit-btn" href="#" data-bs-toggle="modal" data-bs-target="#editRapatModal" data-rapat='{{ json_encode($rapat) }}'><i class="bi bi-pencil-square me-2"></i>Edit</a></li>
+                                            <li><a class="dropdown-item" href="{{ route('meetings.showAbsensi', $rapat->id_rapat) }}" target="_blank"><i class="bi bi-person-check me-2"></i>Absensi</a></li>
+                                            {{-- PERUBAHAN: Link QR Code diubah untuk memicu modal --}}
+                                            @php
+                                                $statusTextForQr = $rapat->status ? $rapat->status->status_rapat : 'N/A';
+                                            @endphp
+                                            <li>
+                                                <a class="dropdown-item qr-code-btn" href="#" data-qr-url="{{ route('meetings.showQr', $rapat->id_rapat) }}" data-rapat-status="{{ $statusTextForQr }}">
+                                                    <i class="bi bi-qr-code me-2"></i>QR Code
+                                                </a>
+                                            </li>
+                                            {{-- PERUBAHAN: Link Guest Mode diubah untuk menampilkan halaman QR --}}
+                                            <li><a class="dropdown-item" href="{{ route('meetings.showGuestQr', $rapat->id_rapat) }}" target="_blank"><i class="bi bi-person-badge me-2"></i>Guest Mode</a></li>
+                                            <li>
+                                                <form action="{{ route('meetings.destroy', $rapat->id_rapat) }}" method="POST" class="d-inline delete-meeting-form">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Anda yakin ingin menghapus rapat ini?')"><i class="bi bi-trash me-2"></i>Hapus</button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">
+                                    Tidak ada data rapat yang cocok dengan filter.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
 
             {{-- Tampilkan Paginasi jika data adalah instance Paginator --}}
             @if ($rapats instanceof \Illuminate\Pagination\AbstractPaginator)
@@ -237,15 +239,37 @@
                     <label for="add_desc" class="form-label">Deskripsi (Opsional)</label>
                     <textarea class="form-control" id="add_desc" name="desc" rows="2"></textarea>
                 </div>
-                {{-- TAMBAHAN: Field Upload Dokumen --}}
+                {{-- TAMBAHAN: Field Upload Dokumen Berdasarkan Kategori --}}
                 <div class="mb-3">
-                    <label for="add_files" class="form-label">Dokumen Pendukung (Opsional)</label>
-                    <input class="form-control" type="file" id="add_files" name="files[]" multiple>
+                    <label class="form-label fw-bold">Upload Dokumen</label>
+                    
+                    <div class="mb-2">
+                        <label for="add_files_materi" class="form-label small">Materi</label>
+                        <input class="form-control form-control-sm" type="file" id="add_files_materi" name="files_materi[]" multiple>
+                        <ul class="list-group mt-1" id="add-files-materi-list"></ul>
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="add_files_notulensi" class="form-label small">Notulensi</label>
+                        <input class="form-control form-control-sm" type="file" id="add_files_notulensi" name="files_notulensi[]" multiple>
+                        <ul class="list-group mt-1" id="add-files-notulensi-list"></ul>
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="add_files_dokumentasi" class="form-label small">Dokumentasi</label>
+                        <input class="form-control form-control-sm" type="file" id="add_files_dokumentasi" name="files_dokumentasi[]" multiple>
+                        <ul class="list-group mt-1" id="add-files-dokumentasi-list"></ul>
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="add_files_lainnya" class="form-label small">Dokumen Pendukung Lainnya</label>
+                        <input class="form-control form-control-sm" type="file" id="add_files_lainnya" name="files_lainnya[]" multiple>
+                        <ul class="list-group mt-1" id="add-files-lainnya-list"></ul>
+                    </div>
+
                     {{-- Elemen untuk menampilkan pesan error ukuran file --}}
                     <div id="add-files-error" class="invalid-feedback" style="display: none;"></div>
-                    <small class="form-text text-muted">Bisa pilih lebih dari satu file (Ctrl+Klik). Tipe: jpg, png, pdf, doc, docx, ppt, pptx, txt. Maks 5MB/file.</small>
-                    {{-- VISUALISASI FILE BARU --}}
-                    <ul class="list-group mt-2" id="add-files-list"></ul>
+                    <small class="form-text text-muted">Bisa pilih lebih dari satu file (Ctrl+Klik). Tipe: jpg, png, pdf, doc, docx, ppt, pptx, txt. Maks 20MB/file.</small>
                 </div>
             </div>
             <div class="modal-footer">
@@ -330,19 +354,39 @@
                 </div>
                 {{-- TAMBAHAN: Field Upload Dokumen & Daftar File --}}
                 <div class="mb-3">
-                    <label for="edit_files" class="form-label">Tambah Dokumen Pendukung (Opsional)</label>
-                    <input class="form-control" type="file" id="edit_files" name="files[]" multiple>
+                    <label class="form-label fw-bold">Dokumen Pendukung</label>
+                    
+                    <div class="mb-3 p-2 border rounded bg-light">
+                        <label for="edit_files_materi" class="form-label small fw-bold text-primary">Materi</label>
+                        <input class="form-control form-control-sm mb-1" type="file" id="edit_files_materi" name="files_materi[]" multiple>
+                        <ul class="list-group mb-2" id="edit-files-materi-list"></ul> <!-- Preview New -->
+                        <ul class="list-group" id="existing-files-materi-list"></ul> <!-- Existing -->
+                    </div>
+
+                    <div class="mb-3 p-2 border rounded bg-light">
+                        <label for="edit_files_notulensi" class="form-label small fw-bold text-success">Notulensi</label>
+                        <input class="form-control form-control-sm mb-1" type="file" id="edit_files_notulensi" name="files_notulensi[]" multiple>
+                        <ul class="list-group mb-2" id="edit-files-notulensi-list"></ul> <!-- Preview New -->
+                        <ul class="list-group" id="existing-files-notulensi-list"></ul> <!-- Existing -->
+                    </div>
+
+                    <div class="mb-3 p-2 border rounded bg-light">
+                        <label for="edit_files_dokumentasi" class="form-label small fw-bold text-info">Dokumentasi</label>
+                        <input class="form-control form-control-sm mb-1" type="file" id="edit_files_dokumentasi" name="files_dokumentasi[]" multiple>
+                        <ul class="list-group mb-2" id="edit-files-dokumentasi-list"></ul> <!-- Preview New -->
+                        <ul class="list-group" id="existing-files-dokumentasi-list"></ul> <!-- Existing -->
+                    </div>
+
+                    <div class="mb-3 p-2 border rounded bg-light">
+                        <label for="edit_files_lainnya" class="form-label small fw-bold text-secondary">Dokumen Pendukung Lainnya</label>
+                        <input class="form-control form-control-sm mb-1" type="file" id="edit_files_lainnya" name="files_lainnya[]" multiple>
+                        <ul class="list-group mb-2" id="edit-files-lainnya-list"></ul> <!-- Preview New -->
+                        <ul class="list-group" id="existing-files-lainnya-list"></ul> <!-- Existing -->
+                    </div>
+
                     {{-- Elemen untuk menampilkan pesan error ukuran file --}}
                     <div id="edit-files-error" class="invalid-feedback" style="display: none;"></div>
-                    {{-- VISUALISASI FILE BARU (EDIT) --}}
-                    <ul class="list-group mt-2" id="edit-files-list"></ul>
-                    <small class="form-text text-muted">File baru akan ditambahkan, tidak menimpa file lama.</small>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Dokumen Saat Ini:</label>
-                    <ul class="list-group" id="current-files-list">
-                        {{-- Daftar file akan diisi oleh JavaScript --}}
-                    </ul>
+                    <small class="form-text text-muted">File baru akan ditambahkan. Klik ikon sampah untuk menghapus file lama.</small>
                 </div>
 
             </div>
@@ -753,12 +797,15 @@
         const button = event.relatedTarget;
         const rapat = JSON.parse(button.getAttribute('data-rapat'));
         const form = document.getElementById('editRapatForm');
-        const currentFilesList = document.getElementById('current-files-list');
-
+        
+        // Restore missing logic
         const cabangSelect = document.getElementById('edit_id_cabang');
         const roomSelect = document.getElementById('edit_id_room');
 
+        console.log('Setting form action for rapat:', rapat.id_rapat); // DEBUG
         form.action = `{{ url('meetings') }}/${rapat.id_rapat}`;
+        console.log('Form action set to:', form.action); // DEBUG
+        
         document.getElementById('edit_id_rapat').value = rapat.id_rapat;
         document.getElementById('edit_judul').value = rapat.judul;
         document.getElementById('edit_tanggal').value = rapat.tanggal;
@@ -774,49 +821,85 @@
             checkRoomAvailability(editModalEl);
         });
 
-        // PERBAIKAN: Ambil dan tampilkan file secara dinamis
-        currentFilesList.innerHTML = '<li class="list-group-item text-muted">Memuat dokumen...</li>';
+        // PERBAIKAN: Ambil dan tampilkan file secara dinamis berdasarkan kategori
+        // 1. Reset semua list file
+        const listMateri = document.getElementById('existing-files-materi-list');
+        const listNotulensi = document.getElementById('existing-files-notulensi-list');
+        const listDokumentasi = document.getElementById('existing-files-dokumentasi-list');
+        const listLainnya = document.getElementById('existing-files-lainnya-list');
+
+        [listMateri, listNotulensi, listDokumentasi, listLainnya].forEach(list => {
+            if(list) list.innerHTML = '<li class="list-group-item text-muted small py-1">Memuat...</li>';
+        });
+
         try {
             const response = await fetch(`{{ url('meetings') }}/${rapat.id_rapat}/files`);
             if (!response.ok) throw new Error('Gagal memuat file.');
             const files = await response.json();
 
-            currentFilesList.innerHTML = ''; // Kosongkan list setelah data didapat
+            // Kosongkan list sebelum mengisi
+            [listMateri, listNotulensi, listDokumentasi, listLainnya].forEach(list => {
+                if(list) list.innerHTML = '';
+            });
+
             if (files && files.length > 0) {
                 files.forEach(file => {
                     const li = document.createElement('li');
-                    li.className = 'list-group-item d-flex justify-content-between align-items-center file-item-actions';
+                    li.className = 'list-group-item d-flex justify-content-between align-items-center file-item-actions small py-1';
                     li.dataset.fileId = file.id_file;
 
-                    // Membuat link untuk file
+                    // Link File
                     const fileLink = document.createElement('a');
-                    // PERBAIKAN: Gunakan route yang benar untuk download, bukan direct asset.
                     const downloadUrl = `{{ route('meetings.downloadFile', ['file' => ':fileId']) }}`.replace(':fileId', file.id_file);
                     fileLink.href = downloadUrl;
                     fileLink.target = '_blank';
-                    fileLink.rel = 'noopener noreferrer'; // Keamanan tambahan
-                    // PERBAIKAN: Tambahkan ikon di sebelah nama file
-                    // Fungsi getFileIcon sudah ada dari implementasi sebelumnya
+                    fileLink.rel = 'noopener noreferrer';
+                    
                     const iconHTML = getFileIcon(file.file_type || '');
-                    fileLink.innerHTML = `${iconHTML} ${file.file_name}`;   
+                    fileLink.innerHTML = `${iconHTML} ${file.file_name}`;
+                    
+                    li.appendChild(fileLink);
 
-                    // Membuat tombol hapus
+                    // Tombol Hapus
                     const deleteBtn = document.createElement('button');
                     deleteBtn.type = 'button';
-                    deleteBtn.className = 'btn btn-danger btn-sm';
+                    deleteBtn.className = 'btn btn-outline-danger btn-sm py-0 px-1 border-0';
                     deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
                     deleteBtn.onclick = () => deleteFile(file.id_file, li);
 
-                    li.appendChild(fileLink);
                     li.appendChild(deleteBtn);
-                    currentFilesList.appendChild(li);
+
+                    // Masukkan ke list yang sesuai berdasarkan id_categories
+                    switch(parseInt(file.id_categories)) {
+                        case 1:
+                            if(listMateri) listMateri.appendChild(li);
+                            break;
+                        case 2:
+                            if(listNotulensi) listNotulensi.appendChild(li);
+                            break;
+                        case 3:
+                            if(listDokumentasi) listDokumentasi.appendChild(li);
+                            break;
+                        case 4:
+                            if(listLainnya) listLainnya.appendChild(li);
+                            break;
+                        default:
+                            // Jika tidak ada kategori (file lama), masukkan ke Lainnya atau buat list umum?
+                            // Untuk saat ini masukkan ke Lainnya sebagai fallback
+                            if(listLainnya) listLainnya.appendChild(li);
+                    }
                 });
             } else {
-                currentFilesList.innerHTML = '<li class="list-group-item text-muted">Tidak ada dokumen.</li>';
+                // Opsional: Tampilkan pesan "Tidak ada file" jika kosong
+                // [listMateri, listNotulensi, listDokumentasi, listLainnya].forEach(list => {
+                //    if(list && list.children.length === 0) list.innerHTML = '<li class="list-group-item text-muted small py-1">Tidak ada file.</li>';
+                // });
             }
         } catch (error) {
             console.error('Error fetching files:', error);
-            currentFilesList.innerHTML = '<li class="list-group-item text-danger">Gagal memuat dokumen.</li>';
+            [listMateri, listNotulensi, listDokumentasi, listLainnya].forEach(list => {
+                if(list) list.innerHTML = '<li class="list-group-item text-danger small py-1">Gagal memuat.</li>';
+            });
         }
 
     });
@@ -866,39 +949,6 @@
 
 
 
-    // SKRIP BARU: Menampilkan file yang dipilih di modal "Tambah Rapat"
-    const addFilesInput = document.getElementById('add_files');
-    const addFilesList = document.getElementById('add-files-list');
-
-    addFilesInput.addEventListener('change', function() {
-        // Kosongkan daftar file sebelumnya
-        addFilesList.innerHTML = '';
-
-        if (this.files.length > 0) {
-            // Iterasi melalui file yang dipilih dan tampilkan di list
-            Array.from(this.files).forEach(file => {
-                const li = document.createElement('li');
-                li.className = 'list-group-item list-group-item-info d-flex justify-content-between align-items-center';
-                
-                // Tampilkan nama dan tipe file
-                const fileInfo = document.createElement('span');
-                fileInfo.textContent = `${file.name} (${file.type || 'Tipe tidak diketahui'})`;
-                
-                li.appendChild(fileInfo);
-                addFilesList.appendChild(li);
-            });
-        }
-    });
-
-    // SKRIP DISEMPURNAKAN: Logika untuk pratinjau dan hapus file sebelum unggah
-    const addFileInput = document.getElementById('add_files');
-    const addFileList = document.getElementById('add-files-list');
-    let addFileDataTransfer = new DataTransfer();
-
-    const editFileInput = document.getElementById('edit_files');
-    const editFileList = document.getElementById('edit-files-list');
-    let editFileDataTransfer = new DataTransfer();
-
     // Fungsi untuk mendapatkan ikon berdasarkan tipe file
     function getFileIcon(fileType) {
         if (fileType.includes('pdf')) return '<i class="bi bi-file-earmark-pdf text-danger me-2"></i>';
@@ -908,145 +958,116 @@
         return '<i class="bi bi-file-earmark-text text-secondary me-2"></i>';
     }
 
-    // Fungsi terpusat untuk merender daftar file
-    function renderFileList(fileListElement, dataTransfer) {
-        fileListElement.innerHTML = ''; // Kosongkan list
-        if (dataTransfer.files.length === 0) return;
+    // Fungsi Generic untuk Preview File
+    function setupFilePreview(inputId, listId) {
+        const input = document.getElementById(inputId);
+        const list = document.getElementById(listId);
+        let dataTransfer = new DataTransfer();
 
-        Array.from(dataTransfer.files).forEach((file, index) => {
-            const li = document.createElement('li');
-            li.className = 'list-group-item list-group-item-light d-flex justify-content-between align-items-center';
+        if (!input || !list) return;
 
-            const fileInfo = document.createElement('span');
-            fileInfo.innerHTML = `${getFileIcon(file.type)} ${file.name}`;
+        input.addEventListener('change', function() {
+            const maxFileSize = 20 * 1024 * 1024; // 20MB
+            const errorElement = input.closest('.mb-3').querySelector('.invalid-feedback'); // Cari error element terdekat
 
-            const deleteBtn = document.createElement('button');
-            deleteBtn.type = 'button';
-            deleteBtn.className = 'btn btn-outline-danger btn-sm';
-            deleteBtn.innerHTML = '<i class="bi bi-x-lg"></i>';
-            deleteBtn.onclick = () => {
-                // Hapus file dari DataTransfer berdasarkan index
-                const newFiles = new DataTransfer();
-                Array.from(dataTransfer.files).forEach((f, i) => {
-                    if (i !== index) {
-                        newFiles.items.add(f);
-                    }
-                });
-                
-                // Perbarui DataTransfer yang relevan
-                if (fileListElement.id === 'add-files-list') {
-                    addFileDataTransfer = newFiles;
-                    addFileInput.files = newFiles.files; // Update input file
-                    renderFileList(addFileList, addFileDataTransfer);
+            // Reset status error
+            if (errorElement) {
+                errorElement.textContent = '';
+                errorElement.style.display = 'none';
+            }
+            this.classList.remove('is-invalid');
+
+            const oversizedFiles = [];
+            const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt', 'xls', 'xlsx', 'zip', 'rar', '7z', 'mp4', 'mp3', 'wav'];
+            const invalidTypeFiles = [];
+
+            Array.from(this.files).forEach(file => {
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+
+                if (file.size > maxFileSize) {
+                    oversizedFiles.push(file.name);
+                } else if (!allowedExtensions.includes(fileExtension)) {
+                    invalidTypeFiles.push(file.name);
                 } else {
-                    editFileDataTransfer = newFiles;
-                    editFileInput.files = newFiles.files; // Update input file
-                    renderFileList(editFileList, editFileDataTransfer);
+                    dataTransfer.items.add(file);
                 }
-            };
+            });
 
-            li.appendChild(fileInfo);
-            li.appendChild(deleteBtn);
-            fileListElement.appendChild(li);
+            this.files = dataTransfer.files; // Update input dengan file gabungan
+            renderList();
+
+            let errorMessage = '';
+            if (oversizedFiles.length > 0) {
+                errorMessage += `File terlalu besar (>20MB): ${oversizedFiles.join(', ')}. `;
+            }
+            if (invalidTypeFiles.length > 0) {
+                errorMessage += `Tipe file tidak didukung: ${invalidTypeFiles.join(', ')}. `;
+            }
+
+            if (errorMessage && errorElement) {
+                this.classList.add('is-invalid');
+                errorElement.textContent = errorMessage;
+                errorElement.style.display = 'block';
+            }
         });
+
+        function renderList() {
+            list.innerHTML = '';
+            if (dataTransfer.files.length === 0) return;
+
+            Array.from(dataTransfer.files).forEach((file, index) => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item list-group-item-light d-flex justify-content-between align-items-center small py-1';
+
+                const fileInfo = document.createElement('span');
+                fileInfo.innerHTML = `${getFileIcon(file.type)} ${file.name}`;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'btn btn-outline-danger btn-sm py-0 px-1';
+                deleteBtn.innerHTML = '<i class="bi bi-x"></i>';
+                deleteBtn.onclick = () => {
+                    const newFiles = new DataTransfer();
+                    Array.from(dataTransfer.files).forEach((f, i) => {
+                        if (i !== index) newFiles.items.add(f);
+                    });
+                    dataTransfer = newFiles;
+                    input.files = newFiles.files;
+                    renderList();
+                };
+
+                li.appendChild(fileInfo);
+                li.appendChild(deleteBtn);
+                list.appendChild(li);
+            });
+        }
+        
+        // Return reset function to be used later
+        return () => {
+            dataTransfer = new DataTransfer();
+            input.value = '';
+            renderList();
+        };
     }
 
-    // Event listener untuk input file di modal "Tambah Rapat"
-    addFileInput.addEventListener('change', function() {
-        const maxFileSize = 5 * 1024 * 1024; // 5MB
-        const errorElement = document.getElementById('add-files-error');
+    // Setup Preview untuk semua input file
+    const resetAddMateri = setupFilePreview('add_files_materi', 'add-files-materi-list');
+    const resetAddNotulensi = setupFilePreview('add_files_notulensi', 'add-files-notulensi-list');
+    const resetAddDokumentasi = setupFilePreview('add_files_dokumentasi', 'add-files-dokumentasi-list');
+    const resetAddLainnya = setupFilePreview('add_files_lainnya', 'add-files-lainnya-list');
 
-        // Reset status error setiap kali ada perubahan
-        errorElement.textContent = '';
-        errorElement.style.display = 'none';
-        this.classList.remove('is-invalid');
-        const oversizedFiles = [];
-
-        // Tambahkan file baru ke DataTransfer yang sudah ada
-        const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'];
-        const invalidTypeFiles = [];
-
-        Array.from(this.files).forEach(file => {
-            const fileExtension = file.name.split('.').pop().toLowerCase();
-
-            if (file.size > maxFileSize) {
-                oversizedFiles.push(file.name);
-            } else if (!allowedExtensions.includes(fileExtension)) {
-                invalidTypeFiles.push(file.name);
-            } else {
-                addFileDataTransfer.items.add(file);
-            }
-        });
-        this.files = addFileDataTransfer.files; // Update input dengan file gabungan
-        renderFileList(addFileList, addFileDataTransfer);
-
-        let errorMessage = '';
-        if (oversizedFiles.length > 0) {
-            errorMessage += `File terlalu besar (>5MB): ${oversizedFiles.join(', ')}. `;
-        }
-        if (invalidTypeFiles.length > 0) {
-            errorMessage += `Tipe file tidak didukung: ${invalidTypeFiles.join(', ')}. `;
-        }
-
-        if (errorMessage) {
-            this.classList.add('is-invalid');
-            errorElement.textContent = errorMessage;
-            errorElement.style.display = 'block';
-        }
-    });
-
-    // Event listener untuk input file di modal "Edit Rapat"
-    editFileInput.addEventListener('change', function() {
-        const maxFileSize = 5 * 1024 * 1024; // 5MB
-        const errorElement = document.getElementById('edit-files-error');
-
-        // Reset status error setiap kali ada perubahan
-        errorElement.textContent = '';
-        errorElement.style.display = 'none';
-        this.classList.remove('is-invalid');
-        const oversizedFiles = [];
-
-        // Tambahkan file baru ke DataTransfer yang sudah ada
-        const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt'];
-        const invalidTypeFiles = [];
-
-        Array.from(this.files).forEach(file => {
-            const fileExtension = file.name.split('.').pop().toLowerCase();
-
-            if (file.size > maxFileSize) {
-                oversizedFiles.push(file.name);
-            } else if (!allowedExtensions.includes(fileExtension)) {
-                invalidTypeFiles.push(file.name);
-            } else {
-                editFileDataTransfer.items.add(file);
-            }
-        });
-        this.files = editFileDataTransfer.files; // Update input dengan file gabungan
-        renderFileList(editFileList, editFileDataTransfer);
-
-        let errorMessage = '';
-        if (oversizedFiles.length > 0) {
-            errorMessage += `File terlalu besar (>5MB): ${oversizedFiles.join(', ')}. `;
-        }
-        if (invalidTypeFiles.length > 0) {
-            errorMessage += `Tipe file tidak didukung: ${invalidTypeFiles.join(', ')}. `;
-        }
-
-        if (errorMessage) {
-            this.classList.add('is-invalid');
-            errorElement.textContent = errorMessage;
-            errorElement.style.display = 'block';
-        }
-    });
+    const resetEditMateri = setupFilePreview('edit_files_materi', 'edit-files-materi-list');
+    const resetEditNotulensi = setupFilePreview('edit_files_notulensi', 'edit-files-notulensi-list');
+    const resetEditDokumentasi = setupFilePreview('edit_files_dokumentasi', 'edit-files-dokumentasi-list');
+    const resetEditLainnya = setupFilePreview('edit_files_lainnya', 'edit-files-lainnya-list');
 
     // Reset daftar file saat modal ditutup atau dibuka
-
-
     editModalEl.addEventListener('show.bs.modal', function() {
-        // Reset hanya untuk file baru, bukan file yang sudah ada
-        editFileDataTransfer = new DataTransfer();
-        editFileInput.value = '';
-        renderFileList(editFileList, editFileDataTransfer);
+        // Reset input file baru
+        resetEditMateri();
+        resetEditNotulensi();
+        resetEditDokumentasi();
+        resetEditLainnya();
     });
 
 

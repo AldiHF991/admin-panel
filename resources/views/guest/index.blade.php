@@ -32,72 +32,86 @@
                 </div>
             </form>
 
-            <table class="table table-hover mt-3">
-                <thead class="table-primary">
-                    <tr>
-                        <th>#</th>
-                        <th>
-                            @php
-                                $nextDirection = (request('sort') === 'nama' && request('direction') === 'asc') ? 'desc' : 'asc';
-                            @endphp
-                            <a href="{{ route('guests.index', array_merge(request()->query(), ['sort' => 'nama', 'direction' => $nextDirection])) }}" class="text-decoration-none text-black">
-                                Nama
-                                @if (request('sort') === 'nama')
-                                    <i class="bi {{ request('direction') === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
+            <div class="table-responsive">
+                <table class="table table-hover mt-3">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>#</th>
+                            <th>
+                                @php
+                                    $nextDirection = (request('sort') === 'nama' && request('direction') === 'asc') ? 'desc' : 'asc';
+                                @endphp
+                                <a href="{{ route('guests.index', array_merge(request()->query(), ['sort' => 'nama', 'direction' => $nextDirection])) }}" class="text-decoration-none text-black">
+                                    Nama
+                                    @if (request('sort') === 'nama')
+                                        <i class="bi {{ request('direction') === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
+                                    @else
+                                        <i class="bi bi-sort-alpha-down"></i>
+                                    @endif
+                                </a>
+                            </th>
+                            <th>Jabatan</th>
+                            <th>Asal Instansi</th>
+                            <th>Nomor</th>
+                            <th>Device Token</th>
+                            <th>
+                                @php
+                                    $nextCreatedAtDirection = (request('sort') === 'created_at' && request('direction') === 'asc') ? 'desc' : 'asc';
+                                @endphp
+                                <a href="{{ route('guests.index', array_merge(request()->query(), ['sort' => 'created_at', 'direction' => $nextCreatedAtDirection])) }}" class="text-decoration-none text-black">
+                                    Tanggal Dibuat
+                                    @if (request('sort') === 'created_at')
+                                        <i class="bi {{ request('direction') === 'asc' ? 'bi-sort-numeric-down' : 'bi-sort-numeric-up' }}"></i>
+                                    @else
+                                        <i class="bi bi-sort-numeric-down-alt text-muted"></i>
+                                    @endif
+                                </a>
+                            </th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($guests as $guest)
+                        <tr>
+                            <td>{{ $loop->iteration + ($guests->currentPage() - 1) * $guests->perPage() }}</td>
+                            <td>{{ $guest->nama }}</td>
+                            <td>{{ $guest->jabatan }}</td>
+                            <td>{{ $guest->asal_instansi }}</td>
+                            <td>{{ $guest->nomor ?? '-' }}</td>
+                            <td>
+                                @if($guest->absensi->isNotEmpty() && $guest->absensi->first()->device_token)
+                                    <span class="badge bg-info text-dark" title="{{ $guest->absensi->first()->device_token }}">
+                                        {{ Str::limit($guest->absensi->first()->device_token, 20) }}
+                                    </span>
                                 @else
-                                    <i class="bi bi-sort-alpha-down"></i>
+                                    <span class="text-muted">-</span>
                                 @endif
-                            </a>
-                        </th>
-                        <th>Jabatan</th>
-                        <th>Asal Instansi</th>
-                        <th>Nomor</th>
-                        <th>Device Token</th>
-                        <th>Tanggal Dibuat</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($guests as $guest)
-                    <tr>
-                        <td>{{ $loop->iteration + ($guests->currentPage() - 1) * $guests->perPage() }}</td>
-                        <td>{{ $guest->nama }}</td>
-                        <td>{{ $guest->jabatan }}</td>
-                        <td>{{ $guest->asal_instansi }}</td>
-                        <td>{{ $guest->nomor ?? '-' }}</td>
-                        <td>
-                            @if($guest->absensi->isNotEmpty() && $guest->absensi->first()->device_token)
-                                <span class="badge bg-info text-dark" title="{{ $guest->absensi->first()->device_token }}">
-                                    {{ Str::limit($guest->absensi->first()->device_token, 20) }}
-                                </span>
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
-                        </td>
-                        <td>{{ $guest->created_at ? $guest->created_at->format('d/m/Y H:i') : '-' }}</td>
-                        <td>
-                            <form action="{{ route('guests.destroy', $guest->id_guest) }}" method="POST" class="d-inline delete-form">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda yakin ingin mereset (menghapus) data tamu ini? Tamu harus mendaftar ulang jika ingin login kembali.')">
-                                    <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="7" class="text-center text-muted">
-                            @if(request()->has('search') && request('search') != '')
-                                Tidak ada tamu yang cocok dengan pencarian.
-                            @else
-                                Belum ada data tamu.
-                            @endif
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                            </td>
+                            <td>{{ $guest->created_at ? $guest->created_at->format('d/m/Y H:i') : '-' }}</td>
+                            <td>
+                                <form action="{{ route('guests.destroy', $guest->id_guest) }}" method="POST" class="d-inline delete-form">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Apakah Anda yakin ingin mereset (menghapus) data tamu ini? Tamu harus mendaftar ulang jika ingin login kembali.')">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">
+                                @if(request()->has('search') && request('search') != '')
+                                    Tidak ada tamu yang cocok dengan pencarian.
+                                @else
+                                    Belum ada data tamu.
+                                @endif
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
 
             <div class="d-flex justify-content-end">
                 @if ($guests instanceof \Illuminate\Pagination\AbstractPaginator)

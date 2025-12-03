@@ -98,11 +98,20 @@ class AdminController extends Controller
         $sort = $request->input('sort', 'created_at'); // Default sort by creation date
         $direction = $request->input('direction', 'desc'); // Default direction descending
 
-        // 3. Siapkan query user
-        $usersQuery = User::with(['role', 'division']);
+        // 3. Siapkan query user with joins for sorting
+    $usersQuery = User::select('users.*')
+        ->leftJoin('role', 'users.id_role', '=', 'role.id_role')
+        ->leftJoin('division', 'users.id_division', '=', 'division.id_division')
+        ->with(['role', 'division']);
 
-        // Terapkan pengurutan
-        $usersQuery->orderBy($sort, $direction);
+    // Terapkan pengurutan
+    if ($sort === 'role') {
+        $usersQuery->orderBy('role.role', $direction);
+    } elseif ($sort === 'division') {
+        $usersQuery->orderBy('division.division_name', $direction);
+    } else {
+        $usersQuery->orderBy('users.' . $sort, $direction);
+    }
         // 4. Terapkan filter berdasarkan role jika ada
         if ($selectedRoleId) {
             $usersQuery->where('id_role', $selectedRoleId);

@@ -52,26 +52,63 @@
                 </div>
             </form>
 
+            <div class="table-responsive">
             <table class="table table-hover mt-3">
                 <thead class="table-primary">
                     <tr>
                         <th>#</th>
                         <th>
                             @php
-                                $nextDirection = (request('sort') === 'name' && request('direction') === 'asc') ? 'desc' : 'asc';
+                                $nextNameDirection = (request('sort') === 'name' && request('direction') === 'asc') ? 'desc' : 'asc';
                             @endphp
-                            <a href="{{ route('userManagement', array_merge(request()->query(), ['sort' => 'name', 'direction' => $nextDirection])) }}" class="text-decoration-none text-black">
+                            <a href="{{ route('userManagement', array_merge(request()->query(), ['sort' => 'name', 'direction' => $nextNameDirection])) }}" class="text-decoration-none text-black">
                                 Nama
                                 @if (request('sort') === 'name')
                                     <i class="bi {{ request('direction') === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
                                 @else
-                                    <i class="bi bi-sort-alpha-down"></i>
+                                    <i class="bi bi-sort-alpha-down-alt text-muted"></i>
                                 @endif
                             </a>
                         </th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Divisi</th>
+                        <th>
+                            @php
+                                $nextEmailDirection = (request('sort') === 'email' && request('direction') === 'asc') ? 'desc' : 'asc';
+                            @endphp
+                            <a href="{{ route('userManagement', array_merge(request()->query(), ['sort' => 'email', 'direction' => $nextEmailDirection])) }}" class="text-decoration-none text-black">
+                                Email
+                                @if (request('sort') === 'email')
+                                    <i class="bi {{ request('direction') === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
+                                @else
+                                    <i class="bi bi-sort-alpha-down-alt text-muted"></i>
+                                @endif
+                            </a>
+                        </th>
+                        <th>
+                            @php
+                                $nextRoleDirection = (request('sort') === 'role' && request('direction') === 'asc') ? 'desc' : 'asc';
+                            @endphp
+                            <a href="{{ route('userManagement', array_merge(request()->query(), ['sort' => 'role', 'direction' => $nextRoleDirection])) }}" class="text-decoration-none text-black">
+                                Role
+                                @if (request('sort') === 'role')
+                                    <i class="bi {{ request('direction') === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
+                                @else
+                                    <i class="bi bi-sort-alpha-down-alt text-muted"></i>
+                                @endif
+                            </a>
+                        </th>
+                        <th>
+                            @php
+                                $nextDivDirection = (request('sort') === 'division' && request('direction') === 'asc') ? 'desc' : 'asc';
+                            @endphp
+                            <a href="{{ route('userManagement', array_merge(request()->query(), ['sort' => 'division', 'direction' => $nextDivDirection])) }}" class="text-decoration-none text-black">
+                                Divisi
+                                @if (request('sort') === 'division')
+                                    <i class="bi {{ request('direction') === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up' }}"></i>
+                                @else
+                                    <i class="bi bi-sort-alpha-down-alt text-muted"></i>
+                                @endif
+                            </a>
+                        </th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -118,6 +155,7 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
 
             {{-- Pagination tidak diubah --}}
             <div class="d-flex justify-content-end">

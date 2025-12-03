@@ -28,7 +28,7 @@ class GuestController extends Controller
         $direction = $request->get('direction', 'asc');
         
         // Handle sorting by related columns if needed, but for now basic sorting
-        if (in_array($sort, ['nama', 'asal_instansi', 'jabatan'])) {
+        if (in_array($sort, ['nama', 'asal_instansi', 'jabatan', 'created_at'])) {
             $query->orderBy($sort, $direction);
         } else {
             $query->orderBy('created_at', 'desc');

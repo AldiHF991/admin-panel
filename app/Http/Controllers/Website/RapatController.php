@@ -179,7 +179,11 @@ class RapatController extends Controller
             'waktu_end' => 'nullable|after:waktu_start',
             'id_user_pengaju' => 'required|exists:users,id_user',
             'desc' => 'nullable|string|max:255',
-            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',// Maks 5MB per file
+            // Validasi untuk setiap kategori file
+            'files_materi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_notulensi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_dokumentasi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_lainnya.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
         ]);
 
         // Set status default ke 'Diterima' karena dibuat oleh Admin
@@ -187,19 +191,28 @@ class RapatController extends Controller
 
         $rapat = Rapat::create($validatedData);
 
-        // Proses upload file jika ada
-        if ($request->hasFile('files')) {
-            foreach ($request->file('files') as $file) {
-                $path = $file->store('public/rapat_files/'.$rapat->id_rapat);
-                RapatFile::create([
-                    'id_rapat' => $rapat->id_rapat,
-                    'file_path' => $path,
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_type' => $file->getClientMimeType(),
-                    'file_size' => $file->getSize(),
-                ]);
+        // Helper function untuk upload file
+        $uploadFiles = function ($files, $categoryId) use ($rapat) {
+            if ($files) {
+                foreach ($files as $file) {
+                    $path = $file->store('public/rapat_files/'.$rapat->id_rapat);
+                    RapatFile::create([
+                        'id_rapat' => $rapat->id_rapat,
+                        'file_path' => $path,
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_type' => $file->getClientMimeType(),
+                        'file_size' => $file->getSize(),
+                        'id_categories' => $categoryId,
+                    ]);
+                }
             }
-        }
+        };
+
+        // Proses upload untuk setiap kategori
+        $uploadFiles($request->file('files_materi'), 1);
+        $uploadFiles($request->file('files_notulensi'), 2);
+        $uploadFiles($request->file('files_dokumentasi'), 3);
+        $uploadFiles($request->file('files_lainnya'), 4);
 
         // Redirect kembali ke halaman manajemen dengan query string PIC yang sama
         $redirectUrl = route('meetings.index');
@@ -225,24 +238,37 @@ class RapatController extends Controller
             'waktu_end' => 'nullable|after:waktu_start',
             'desc' => 'nullable|string|max:255',
             'id_status' => 'required|exists:status_rapat,id_status',
-            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480', // Maks 5MB per file
+            // Validasi untuk setiap kategori file
+            'files_materi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_notulensi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_dokumentasi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_lainnya.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
         ]);
 
         $rapat->update($validatedData);
 
-        // Proses upload file baru jika ada
-        if ($request->hasFile('files')) {
-            foreach ($request->file('files') as $file) {
-                $path = $file->store('public/rapat_files/'.$rapat->id_rapat);
-                RapatFile::create([
-                    'id_rapat' => $rapat->id_rapat,
-                    'file_path' => $path,
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_type' => $file->getClientMimeType(),
-                    'file_size' => $file->getSize(),
-                ]);
+        // Helper function untuk upload file
+        $uploadFiles = function ($files, $categoryId) use ($rapat) {
+            if ($files) {
+                foreach ($files as $file) {
+                    $path = $file->store('public/rapat_files/'.$rapat->id_rapat);
+                    RapatFile::create([
+                        'id_rapat' => $rapat->id_rapat,
+                        'file_path' => $path,
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_type' => $file->getClientMimeType(),
+                        'file_size' => $file->getSize(),
+                        'id_categories' => $categoryId,
+                    ]);
+                }
             }
-        }
+        };
+
+        // Proses upload file baru jika ada
+        $uploadFiles($request->file('files_materi'), 1);
+        $uploadFiles($request->file('files_notulensi'), 2);
+        $uploadFiles($request->file('files_dokumentasi'), 3);
+        $uploadFiles($request->file('files_lainnya'), 4);
 
         // Redirect kembali ke halaman manajemen dengan query string PIC yang sama
         $redirectUrl = route('meetings.index');
@@ -358,6 +384,7 @@ class RapatController extends Controller
                 'file_path' => str_replace('public/', '', $file->file_path),
                 // TAMBAHAN: Sertakan tipe file untuk ikon di frontend
                 'file_type' => $file->file_type,
+                'id_categories' => $file->id_categories, // Sertakan kategori
             ];
         });
 

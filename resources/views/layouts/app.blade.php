@@ -29,6 +29,7 @@
             position: relative; /* untuk toggle */
             display: flex;
             flex-direction: column;
+            z-index: 20; /* Ensure sidebar is above content */
         }
 
         .sidebar a {
@@ -106,6 +107,7 @@
             border: 2px solid white;
             box-shadow: 0 2px 5px rgba(0,0,0,0.15);
             transition: all 0.3s ease;
+            z-index: 21; /* Ensure toggle is above sidebar */
         }
         .sidebar-toggle:hover {
             background-color: #0a58ca;
@@ -118,9 +120,44 @@
         .sidebar.collapsed .sidebar-toggle i {
             transform: rotate(180deg);
         }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -250px;
+                height: 100vh;
+                z-index: 1050;
+                transition: left 0.3s ease-in-out;
+            }
+            .sidebar.mobile-open {
+                left: 0;
+            }
+            .sidebar-toggle {
+                display: none; /* Hide desktop toggle on mobile */
+            }
+            .mobile-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0,0,0,0.5);
+                z-index: 1040;
+            }
+            .mobile-overlay.show {
+                display: block;
+            }
+        }
     </style>
 </head>
 <body>
+
+<body>
+
+<div class="mobile-overlay" id="mobileOverlay"></div>
 
 <div class="d-flex">
 
@@ -188,7 +225,13 @@
 
         <!-- Navbar atas (tetap di atas, tidak ikut scroll main) -->
         <nav class="navbar navbar-light bg-white shadow-sm px-4">
-            <div class="container-fluid d-flex justify-content-end align-items-center">
+            <div class="container-fluid d-flex justify-content-between align-items-center">
+                <!-- Mobile Toggle Button -->
+                <button class="btn btn-link d-md-none me-3 text-dark p-0" id="mobileSidebarToggle">
+                    <i class="bi bi-list fs-1"></i>
+                </button>
+
+                <div class="d-flex align-items-center ms-auto">
                 @if(Auth::check() && (Auth::user()->id_role == 1 || Auth::user()->id_role == 2))
                     <div class="dropdown me-3">
                         <a href="#" class="text-decoration-none text-dark position-relative" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -262,6 +305,7 @@
                             </form>
                         </li>
                     </ul>
+                </div>
                 </div>
             </div>
         </nav>
@@ -344,6 +388,25 @@
         });
 
         setTimeout(syncSidebarState, 0);
+        setTimeout(syncSidebarState, 0);
+
+        // Mobile Sidebar Logic
+        const mobileToggle = document.getElementById('mobileSidebarToggle');
+        const mobileOverlay = document.getElementById('mobileOverlay');
+
+        if (mobileToggle) {
+            mobileToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('mobile-open');
+                mobileOverlay.classList.toggle('show');
+            });
+        }
+
+        if (mobileOverlay) {
+            mobileOverlay.addEventListener('click', function() {
+                sidebar.classList.remove('mobile-open');
+                mobileOverlay.classList.remove('show');
+            });
+        }
     })();
 
     function openRejectionModal(url) {

@@ -50,7 +50,7 @@
         {{-- TABEL UNTUK KARYAWAN INTERNAL --}}
         <div class="mb-12">
             <h2 class="text-2xl font-semibold text-gray-700 mb-4">Peserta Internal (<span id="internal-attendance-count">0</span>)</h2>
-            <div class="bg-white shadow-md rounded-lg overflow-y-auto" style="max-height: 40vh;">
+            <div class="bg-white shadow-md rounded-lg overflow-y-auto overflow-x-auto" style="max-height: 40vh;">
                 <table class="min-w-full leading-normal">
                     <thead>
                         <tr>
@@ -70,7 +70,7 @@
         {{-- TABEL UNTUK TAMU --}}
         <div>
             <h2 class="text-2xl font-semibold text-gray-700 mb-4">Peserta Tamu (<span id="guest-attendance-count">0</span>)</h2>
-            <div class="bg-white shadow-md rounded-lg overflow-y-auto" style="max-height: 40vh;">
+            <div class="bg-white shadow-md rounded-lg overflow-y-auto overflow-x-auto" style="max-height: 40vh;">
                 <table class="min-w-full leading-normal">
                     <thead>
                         <tr>
