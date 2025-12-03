@@ -3,8 +3,10 @@
 use App\Http\Controllers\Website\AdminController;
 use App\Http\Controllers\Website\AuthController;
 use App\Http\Controllers\Website\GuestController;
+use App\Http\Controllers\Website\PicController;
 use App\Http\Controllers\Website\RapatController;
 use App\Http\Middleware\AdminWebsiteMiddleware;
+use App\Http\Middleware\PicWebsiteMiddleware;
 use App\Http\Middleware\VerifyGuestWebsiteMiddleware;
 use App\Models\Rapat;
 use Illuminate\Support\Facades\Route;
@@ -49,8 +51,13 @@ Route::middleware([AdminWebsiteMiddleware::class])->group(function () {
     Route::get('/admin/reports/newly-created', [AdminController::class, 'showNewlyCreatedReport'])->name('reports.newlyCreated');
 
     // Routes untuk RapatController
-    Route::post('/meetings', [RapatController::class, 'store'])->name('meetings.store');
-    Route::put('/meetings/{rapat}', [RapatController::class, 'update'])->name('meetings.update');
+    Route::get('/dashboard/tables', [RapatController::class, 'dashboardTables'])->name('dashboard.tables');
+    Route::get('/meetings/incoming', [RapatController::class, 'incoming'])->name('meetings.incoming');
+    Route::get('/meetings/incoming/data', [RapatController::class, 'getIncomingData'])->name('meetings.incoming.data');
+    Route::resource('meetings', RapatController::class)->parameters([
+        'meetings' => 'rapat'
+    ]);
+    // Route::put('/meetings/{rapat}', [RapatController::class, 'update'])->name('meetings.update'); // Redundant with resource
     Route::delete('/meetings/{id}', [RapatController::class, 'destroy'])->name('meetings.destroy');
     Route::post('/meetings/{rapat}/accept', [RapatController::class, 'accept'])->name('meetings.accept');
     Route::post('/meetings/{rapat}/reject', [RapatController::class, 'reject'])->name('meetings.reject');
@@ -91,13 +98,14 @@ Route::middleware([AdminWebsiteMiddleware::class])->group(function () {
 });
 
 // PIC Routes
-Route::middleware(['auth', \App\Http\Middleware\PicWebsiteMiddleware::class])->group(function () {
-    Route::get('/pic/dashboard', [\App\Http\Controllers\Website\PicController::class, 'dashboard'])->name('pic.dashboard');
-    Route::get('/pic/meetings', [\App\Http\Controllers\Website\PicController::class, 'index'])->name('pic.meetings.index');
-    Route::get('/pic/meetings/create', [\App\Http\Controllers\Website\PicController::class, 'create'])->name('pic.meetings.create');
-    Route::post('/pic/meetings', [\App\Http\Controllers\Website\PicController::class, 'store'])->name('pic.meetings.store');
-    Route::get('/pic/meetings/{rapat}', [\App\Http\Controllers\Website\PicController::class, 'show'])->name('pic.meetings.show');
-    Route::delete('/pic/meetings/{id}', [\App\Http\Controllers\Website\PicController::class, 'destroy'])->name('pic.meetings.destroy');
+Route::middleware(['auth', PicWebsiteMiddleware::class])->group(function () {
+    Route::get('/pic/dashboard', [PicController::class, 'dashboard'])->name('pic.dashboard');
+    Route::get('/pic/dashboard/tables', [PicController::class, 'dashboardTables'])->name('pic.dashboard.tables');
+    Route::get('/pic/meetings', [PicController::class, 'index'])->name('pic.meetings.index');
+    Route::get('/pic/meetings/create', [PicController::class, 'create'])->name('pic.meetings.create');
+    Route::post('/pic/meetings', [PicController::class, 'store'])->name('pic.meetings.store');
+    Route::get('/pic/meetings/{rapat}', [PicController::class, 'show'])->name('pic.meetings.show');
+    Route::delete('/pic/meetings/{id}', [PicController::class, 'destroy'])->name('pic.meetings.destroy');
     
     // Additional features requested
     Route::get('/pic/meetings/{rapat}/absensi', [\App\Http\Controllers\Website\PicController::class, 'showAbsensi'])->name('pic.meetings.absensi');
@@ -109,4 +117,8 @@ Route::middleware(['auth', \App\Http\Middleware\PicWebsiteMiddleware::class])->g
     // Reports
     Route::get('/pic/reports/recent-activity', [\App\Http\Controllers\Website\PicController::class, 'showRecentActivityReport'])->name('pic.reports.recentActivity');
     Route::get('/pic/reports/newly-created', [\App\Http\Controllers\Website\PicController::class, 'showNewlyCreatedReport'])->name('pic.reports.newlyCreated');
+
+    // File Management
+    Route::post('/pic/meetings/{rapat}/files', [\App\Http\Controllers\Website\PicController::class, 'storeFile'])->name('pic.meetings.storeFile');
+    Route::delete('/pic/meetings/files/{file}', [\App\Http\Controllers\Website\PicController::class, 'destroyFile'])->name('pic.meetings.destroyFile');
 });

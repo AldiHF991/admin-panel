@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'Admin Panel' }} | BBWS Brantas</title>
+    <title>{{ $title ?? 'Admin Panel' }} | Simrapel Brantas</title>
     <link rel="icon" href="{{ asset('images/logo_qr.png') }}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script>
         (localStorage.getItem('sidebarCollapsed') === 'true') && document.documentElement.classList.add('sidebar-collapsed');
     </script>
@@ -128,7 +129,7 @@
         <div class="p-3 border-bottom border-light d-flex align-items-center sidebar-brand">
             <img src="{{ asset('images/logo1.png') }}" alt="BBWS Brantas Logo" style="height: 40px;" class="me-3">
             <div>
-                <h4 class="fw-bold mb-0 sidebar-brand-text">BBWS Brantas</h4>
+                <h4 class="fw-bold mb-0 sidebar-brand-text">Simrapel Brantas</h4>
                 <small class="text-light sidebar-brand-text">Admin Dashboard</small>
             </div>
         </div>
@@ -155,7 +156,10 @@
             <a href="{{ route('branch') }}" class="{{ request()->routeIs('branch*') ? 'active' : '' }}">
                 <i class="bi bi-building me-2"></i> <span class="sidebar-link-text">Cabang & Ruang</span>
             </a>
-            <a href="{{ route('meetings.index') }}" class="{{ request()->routeIs('meetings.*') ? 'active' : '' }}">
+            <a href="{{ route('meetings.incoming') }}" class="{{ request()->routeIs('meetings.incoming') ? 'active' : '' }}">
+                <i class="bi bi-inbox-fill me-2"></i> <span class="sidebar-link-text">Permintaan Rapat</span>
+            </a>
+            <a href="{{ route('meetings.index') }}" class="{{ request()->routeIs('meetings.index') || request()->routeIs('meetings.create') || request()->routeIs('meetings.edit') ? 'active' : '' }}">
                 <i class="bi bi-calendar-event me-2"></i> <span class="sidebar-link-text">Manajemen Rapat</span>
             </a>
             <a href="{{ route('guests.index') }}" class="{{ request()->routeIs('guests.*') ? 'active' : '' }}">
@@ -302,6 +306,22 @@
     </div>
 </div>
 
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+    <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-info text-dark">
+            <i class="bi bi-bell-fill me-2"></i>
+            <strong class="me-auto" id="toast-title">Notifikasi Baru</strong>
+            <small>Baru saja</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            <p class="mb-1" id="toast-message"></p>
+            <p class="mb-0 text-danger fw-bold small" id="toast-note" style="display: none;"></p>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 @stack('scripts')
 <script>
@@ -356,6 +376,127 @@
                 }
             });
         }
+    @endif
+
+    // Real-time Notifications
+    @if(Auth::check())
+        document.addEventListener('DOMContentLoaded', function() {
+            const userId = "{{ Auth::user()->id_user }}";
+            console.log('Listening for notifications on channel: App.Models.User.' + userId);
+            
+            if (window.Echo) {
+                // Preload notification sound
+                const notificationSound = new Audio("{{ asset('sounds/notif_sound.mp3') }}");
+                const toastElement = document.getElementById('liveToast');
+                const toast = new bootstrap.Toast(toastElement);
+
+                window.Echo.private('App.Models.User.' + userId)
+                    .notification((notification) => {
+                        console.log('Notification received:', notification);
+                        
+                        // Play Sound
+                        notificationSound.play().catch(error => console.log('Audio play failed:', error));
+                        
+                        // Show Toast
+                        document.getElementById('toast-title').innerText = notification.title;
+                        document.getElementById('toast-message').innerText = notification.message;
+                        const toastNote = document.getElementById('toast-note');
+                        if (notification.note) {
+                            toastNote.innerText = 'Alasan: ' + notification.note;
+                            toastNote.style.display = 'block';
+                        } else {
+                            toastNote.style.display = 'none';
+                        }
+                        toast.show();
+
+                        // Update Badge
+                        const badge = document.querySelector('#notificationDropdown .badge');
+                        if (badge) {
+                            if (badge.style.display === 'none') {
+                                badge.style.display = 'block';
+                                badge.innerText = 1;
+                            } else {
+                                badge.innerText = parseInt(badge.innerText) + 1;
+                            }
+                        } else {
+                            // Create badge if it doesn't exist
+                            const dropdownLink = document.getElementById('notificationDropdown');
+                            const newBadge = document.createElement('span');
+                            newBadge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                            newBadge.style.fontSize = '0.6rem';
+                            newBadge.innerText = '1';
+                            newBadge.innerHTML += '<span class="visually-hidden">unread messages</span>';
+                            dropdownLink.appendChild(newBadge);
+                        }
+
+                        // Add to Dropdown List
+                        const dropdownMenu = document.querySelector('.dropdown-menu[aria-labelledby="notificationDropdown"]');
+                        const header = dropdownMenu.querySelector('.dropdown-header');
+                        
+                        // Remove "Tidak ada notifikasi" if exists
+                        const emptyItem = dropdownMenu.querySelector('.text-center.text-muted');
+                        if (emptyItem) {
+                            emptyItem.closest('li').remove();
+                        }
+
+                        const newItem = document.createElement('li');
+                        let actionButtons = '';
+                        
+                        // Add action buttons for Admin if meeting_id exists
+                        @if(Auth::user()->id_role == 1)
+                            if (notification.meeting_id) {
+                                actionButtons = `
+                                    <div class="d-flex flex-column ms-2 gap-1">
+                                        <form action="/meetings/${notification.meeting_id}/accept" method="POST">
+                                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-success p-0 d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 24px; height: 24px;" title="Terima" onclick="return confirm('Apakah Anda yakin ingin menerima rapat ini?')">
+                                                <i class="bi bi-check"></i>
+                                            </button>
+                                        </form>
+                                        <button type="button" class="btn btn-sm btn-danger p-0 d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 24px; height: 24px;" title="Tolak" onclick="openRejectionModal('/meetings/${notification.meeting_id}/reject')">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </div>
+                                `;
+                            }
+                        @endif
+
+                        let rejectionNote = '';
+                        if (notification.note) {
+                            rejectionNote = `<p class="mb-1 small text-danger fw-bold">Alasan: ${notification.note}</p>`;
+                        }
+
+                        newItem.innerHTML = `
+                            <div class="dropdown-item py-2 d-flex align-items-start" style="white-space: normal; cursor: default;">
+                                <a class="flex-grow-1 text-decoration-none text-dark" href="/notifications/${notification.id}/read">
+                                    <div class="d-flex align-items-start">
+                                        <div class="flex-shrink-0 me-2">
+                                            <i class="bi bi-calendar-check text-primary"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1 small fw-bold">${notification.title}</h6>
+                                            <p class="mb-1 small text-muted text-wrap">${notification.message}</p>
+                                            ${rejectionNote}
+                                            <small class="text-muted" style="font-size: 0.7rem;"><i class="bi bi-clock me-1"></i>Baru saja</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                ${actionButtons}
+                            </div>
+                        `;
+                        
+                        // Insert after header
+                        header.parentElement.after(newItem);
+                        
+                        // Insert divider
+                        const divider = document.createElement('li');
+                        divider.innerHTML = '<hr class="dropdown-divider">';
+                        newItem.after(divider);
+                    });
+            } else {
+                console.error('Laravel Echo not loaded');
+            }
+        });
     @endif
 </script>
 </body>

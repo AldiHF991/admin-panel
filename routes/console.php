@@ -14,6 +14,7 @@ Artisan::command('inspire', function () {
 
 // Menjalankan update status rapat setiap menit.
 Schedule::command(UpdateRapatStatus::class)->everyMinute();
+Schedule::command(\App\Console\Commands\UpdateOverdueMeetings::class)->everyMinute();
 
 // Menjalankan update token QR setiap 30 detik.
 // Trik ini menjalankan command setiap menit, lalu di dalam prosesnya,

@@ -51,6 +51,34 @@
         transform: translateY(-8px) scale(1.03);
         box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
     }
+
+    /* Highlight Animations */
+    /* Highlight Animations */
+    @keyframes highlightBlue {
+        0% { background-color: rgba(13, 110, 253, 0.3); }
+        100% { background-color: transparent; }
+    }
+    @keyframes highlightRed {
+        0% { background-color: rgba(220, 53, 69, 0.3); }
+        100% { background-color: transparent; }
+    }
+    @keyframes highlightGreen {
+        0% { background-color: rgba(25, 135, 84, 0.3); }
+        100% { background-color: transparent; }
+    }
+    @keyframes highlightYellow {
+        0% { background-color: rgba(255, 193, 7, 0.3); }
+        100% { background-color: transparent; }
+    }
+    @keyframes highlightGrey {
+        0% { background-color: rgba(108, 117, 125, 0.3); }
+        100% { background-color: transparent; }
+    }
+    .highlight-blue { animation: highlightBlue 2s ease-out; }
+    .highlight-red { animation: highlightRed 2s ease-out; }
+    .highlight-green { animation: highlightGreen 2s ease-out; }
+    .highlight-yellow { animation: highlightYellow 2s ease-out; }
+    .highlight-grey { animation: highlightGrey 2s ease-out; }
 </style>
 
 <div class="card border-0 shadow-sm mb-4">
@@ -67,46 +95,46 @@
 
 
 <div class="row g-4 mb-4">
-    <!-- Card: Total Rapat -->
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm stat-card">
-            <div class="card-body d-flex align-items-center">
-                <div class="bg-primary text-white p-3 rounded me-3">
-                    <i class="bi bi-calendar3 fs-3"></i>
-                </div>
-                <div>
-                    <h5 class="card-title mb-0">Total Rapat</h5>
-                    <h3 class="fw-bold text-primary mt-1 count-up">{{ $totalRapat ?? 0 }}</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card: Total Pengguna -->
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm stat-card">
-            <div class="card-body d-flex align-items-center">
-                <div class="bg-success text-white p-3 rounded me-3">
-                    <i class="bi bi-people-fill fs-3"></i>
-                </div>
-                <div>
-                    <h5 class="card-title mb-0">Total Pengguna</h5>
-                    <h3 class="fw-bold text-success mt-1 count-up">{{ $totalPengguna ?? 0 }}</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card: Total Cabang -->
+    <!-- Card: Menunggu Konfirmasi -->
     <div class="col-md-4">
         <div class="card border-0 shadow-sm stat-card">
             <div class="card-body d-flex align-items-center">
                 <div class="bg-warning text-white p-3 rounded me-3">
-                    <i class="bi bi-building fs-3"></i>
+                    <i class="bi bi-hourglass-split fs-3"></i>
                 </div>
                 <div>
-                    <h5 class="card-title mb-0">Total Cabang</h5>
-                    <h3 class="fw-bold text-warning mt-1 count-up">{{ $totalCabang ?? 0 }}</h3>
+                    <h5 class="card-title mb-0">Menunggu Konfirmasi</h5>
+                    <h3 class="fw-bold text-warning mt-1 count-up">{{ $totalMenunggu ?? 0 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card: Akan Datang -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm stat-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="bg-primary text-white p-3 rounded me-3">
+                    <i class="bi bi-calendar-event fs-3"></i>
+                </div>
+                <div>
+                    <h5 class="card-title mb-0">Akan Datang</h5>
+                    <h3 class="fw-bold text-primary mt-1 count-up">{{ $totalAkanDatang ?? 0 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card: Total Pengajuan Saya -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm stat-card">
+            <div class="card-body d-flex align-items-center">
+                <div class="bg-success text-white p-3 rounded me-3">
+                    <i class="bi bi-folder-check fs-3"></i>
+                </div>
+                <div>
+                    <h5 class="card-title mb-0">Total Pengajuan</h5>
+                    <h3 class="fw-bold text-success mt-1 count-up">{{ $totalPengajuan ?? 0 }}</h3>
                 </div>
             </div>
         </div>
@@ -115,138 +143,8 @@
 
 <hr class="my-4">
 
-<div class="row">
-    <!-- Kolom Kiri: Rapat Baru Dibuat -->
-    <div class="col-lg-6 mb-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Rapat Baru Dibuat (3 Hari Terakhir)</h5>
-                <a href="{{ route('reports.newlyCreated') }}" target="_blank" class="btn btn-sm btn-outline-success">
-                    <i class="bi bi-arrows-fullscreen me-1"></i> Layar Penuh
-                </a>
-            </div>
-            <div class="card-body p-0">
-                <div class="recent-activity-scroll">
-                    @forelse ($rapatBaruDibuat->groupBy(fn($item) => $item->created_at->format('Y-m-d')) as $tanggal => $rapats)
-                        <div class="mb-4">
-                            <h6 class="fw-bold text-success border-bottom pb-2 mb-3">
-                                {{ \Carbon\Carbon::parse($tanggal)->isoFormat('dddd, D MMMM Y') }}
-                            </h6>
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" style="width: 35%;">Judul Rapat</th>
-                                            <th scope="col" style="width: 20%;">Waktu</th>
-                                            <th scope="col" style="width: 15%;">Ruangan</th>
-                                            <th scope="col" style="width: 15%;">Pengaju</th>
-                                            <th scope="col" style="width: 15%;">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($rapats as $rapat)
-                                            <tr>
-                                                <td class="fw-medium">{{ $rapat->judul }}</td>
-                                                <td>{{ \Carbon\Carbon::parse($rapat->waktu_start)->format('H:i') }} - {{ \Carbon\Carbon::parse($rapat->waktu_end)->format('H:i') }} WIB</td>
-                                                <td>{{ $rapat->room->room ?? 'N/A' }}</td>
-                                                <td>{{ $rapat->pengaju->name ?? 'N/A' }}</td>
-                                                <td>
-                                                    @php
-                                                        $statusText = $rapat->status->status_rapat ?? 'N/A';
-                                                        $bgColor = 'secondary'; // Warna default
-                                                        switch (strtolower($statusText)) {
-                                                            case 'diterima': $bgColor = 'success'; break;
-                                                            case 'ditolak': $bgColor = 'danger'; break;
-                                                            case 'menunggu':
-                                                            case 'menunggu persetujuan': $bgColor = 'warning'; break;
-                                                            case 'berlangsung': $bgColor = 'primary'; break;
-                                                        }
-                                                    @endphp
-                                                    <span class="badge rounded-pill bg-{{ $bgColor }}">
-                                                        {{ $statusText }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="text-center text-muted py-4">
-                            <p class="mb-0">Tidak ada rapat yang dibuat dalam 3 hari terakhir.</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Kolom Kanan: Aktivitas Rapat Terkini -->
-    <div class="col-lg-6 mb-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Aktivitas Rapat (Jadwal Terdekat)</h5>
-                <a href="{{ route('reports.recentActivity') }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-arrows-fullscreen me-1"></i> Layar Penuh
-                </a>
-            </div>
-            <div class="card-body p-0">
-                <div class="recent-activity-scroll">
-                    @forelse ($rapatTigaHariTerakhir->groupBy('tanggal') as $tanggal => $rapats)
-                        <div class="mb-4">
-                            <h6 class="fw-bold text-primary border-bottom pb-2 mb-3">
-                                {{ \Carbon\Carbon::parse($tanggal)->isoFormat('dddd, D MMMM Y') }}
-                            </h6>
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" style="width: 35%;">Judul Rapat</th>
-                                            <th scope="col" style="width: 20%;">Waktu</th>
-                                            <th scope="col" style="width: 15%;">Ruangan</th>
-                                            <th scope="col" style="width: 15%;">Pengaju</th>
-                                            <th scope="col" style="width: 15%;">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($rapats as $rapat)
-                                            <tr>
-                                                <td class="fw-medium">{{ $rapat->judul }}</td>
-                                                <td>{{ \Carbon\Carbon::parse($rapat->waktu_start)->format('H:i') }} - {{ \Carbon\Carbon::parse($rapat->waktu_end)->format('H:i') }} WIB</td>
-                                                <td>{{ $rapat->room->room ?? 'N/A' }}</td>
-                                                <td>{{ $rapat->pengaju->name ?? 'N/A' }}</td>
-                                                <td>
-                                                    @php
-                                                        $statusText = $rapat->status->status_rapat ?? 'N/A';
-                                                        $bgColor = 'secondary'; // Warna default
-                                                        switch (strtolower($statusText)) {
-                                                            case 'diterima': $bgColor = 'success'; break;
-                                                            case 'ditolak': $bgColor = 'danger'; break;
-                                                            case 'menunggu':
-                                                            case 'menunggu persetujuan': $bgColor = 'warning'; break;
-                                                            case 'berlangsung': $bgColor = 'primary'; break;
-                                                        }
-                                                    @endphp
-                                                    <span class="badge rounded-pill bg-{{ $bgColor }}">
-                                                        {{ $statusText }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="text-center text-muted py-4">
-                            <p class="mb-0">Tidak ada aktivitas rapat dalam 3 hari terakhir.</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-    </div>
+<div id="dashboard-tables-container">
+    @include('pic.dashboard-partials')
 </div>
 
 <!-- Modal Detail Rapat -->
@@ -303,6 +201,85 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Listen for DashboardUpdate event
+        console.log('Initializing Echo listener for DashboardUpdate...');
+
+        if (window.Echo) {
+            window.Echo.private('dashboard')
+                .listen('.dashboard.update', (e) => {
+                    console.log('✅ Dashboard update received:', e);
+                    fetchDashboardTables(e.rapatId, e.statusId);
+                })
+                .error((error) => {
+                    console.error('❌ Echo Error:', error);
+                });
+            console.log('Echo listener attached.');
+        } else {
+            console.error('❌ Laravel Echo is not loaded.');
+        }
+
+        // Manual Fetch Button for Debugging
+        const debugBtn = document.createElement('button');
+        debugBtn.textContent = 'Test Fetch Tables';
+        debugBtn.className = 'btn btn-sm btn-outline-danger position-fixed bottom-0 end-0 m-3';
+        debugBtn.style.zIndex = 9999;
+        debugBtn.onclick = () => {
+            console.log('Manual fetch triggered');
+            fetchDashboardTables();
+        };
+        document.body.appendChild(debugBtn);
+
+        function fetchDashboardTables(highlightId = null, statusId = null) {
+            console.log('Fetching dashboard tables...');
+            fetch('{{ route("pic.dashboard.tables") }}')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.statusText);
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    console.log('✅ Dashboard tables updated from server.');
+                    document.getElementById('dashboard-tables-container').innerHTML = html;
+                    
+                    // Re-initialize tooltips if any
+                    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+                    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                        return new bootstrap.Tooltip(tooltipTriggerEl)
+                    });
+
+                    // Apply Highlight Animation
+                    if (highlightId && statusId) {
+                        const row = document.querySelector(`tr[data-rapat-id="${highlightId}"]`);
+                        if (row) {
+                            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            
+                            let highlightClass = '';
+                            switch (parseInt(statusId)) {
+                                case 1: highlightClass = 'highlight-green'; break; // Diterima
+                                case 2: highlightClass = 'highlight-red'; break;   // Ditolak
+                                case 3: highlightClass = 'highlight-yellow'; break; // Menunggu
+                                case 4: highlightClass = 'highlight-blue'; break;  // Berlangsung
+                                case 5: highlightClass = 'highlight-grey'; break;  // Selesai
+                            }
+
+                            if (highlightClass) {
+                                row.classList.add(highlightClass);
+                                setTimeout(() => {
+                                    row.classList.remove(highlightClass);
+                                }, 2000); // Remove after 2 seconds
+                            }
+                        }
+                    }
+                    // Re-initialize any scripts or event listeners for new content if necessary
+                    // For example, if new tables have count-up elements, re-run animateCountUp
+                    document.querySelectorAll('#dashboard-tables-container .count-up').forEach(el => {
+                        animateCountUp(el); // Re-apply count-up animation
+                    });
+                })
+                .catch(error => console.error('❌ Error fetching dashboard tables:', error));
+        }
+
         // Fungsi untuk animasi count-up yang modern
         const animateCountUp = (el) => {
             const target = parseInt(el.dataset.target || el.textContent, 10);

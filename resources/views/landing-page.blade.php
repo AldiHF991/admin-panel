@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Manajemen Rapat | BBWS Brantas</title>
+    <title>Sistem Manajemen Rapat | Simrapel Brantas</title>
     <link rel="icon" href="{{ asset('images/logo_qr.png') }}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
@@ -546,7 +546,7 @@
                     </div>
                     <div>
                         <div>Sistem Manajemen Rapat</div>
-                        <span class="nav-badge">BBWS Brantas</span>
+                        <span class="nav-badge">Simrapel Brantas</span>
                     </div>
                 </a>
 
@@ -705,7 +705,7 @@
 
     <footer class="py-3 mt-auto reveal-on-scroll reveal-delay-1">
         <div class="container text-center" style="font-size: 0.78rem; color:#9ca3af;">
-            &copy; {{ date('Y') }} BBWS Brantas &mdash; Sistem Manajemen Rapat · Magang UNTAG Surabaya 2025
+            &copy; {{ date('Y') }} Simrapel Brantas &mdash; Sistem Manajemen Rapat · Magang UNTAG Surabaya 2025
         </div>
     </footer>
 </div>

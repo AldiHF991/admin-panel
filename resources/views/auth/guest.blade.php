@@ -237,7 +237,7 @@
                 <p class="text-muted mt-2" style="font-size: 0.9rem;">Silakan isi formulir kehadiran di bawah ini.</p>
             @else
                 <h4>Selamat Datang</h4>
-                <p class="text-muted mb-0" style="font-size: 0.9rem;">Sistem Manajemen Rapat BBWS Brantas</p>
+                <p class="text-muted mb-0" style="font-size: 0.9rem;">Sistem Manajemen Rapat Simrapel Brantas</p>
             @endif
         </div>
 

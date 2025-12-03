@@ -28,16 +28,17 @@ class AdminController extends Controller
         $totalPengguna = User::count();
         $totalCabang = Cabang::count();
 
-        // Mengambil semua data rapat dari 3 hari terakhir
+        // Mengambil data untuk "Aktivitas Rapat Terkini" (Jadwal Terdekat: Hari ini s.d. 7 hari kedepan, Status Diterima/Berlangsung/Selesai)
         $rapatTigaHariTerakhir = Rapat::with(['pengaju', 'status', 'room'])
-            ->where('tanggal', '>=', now()->subDays(3)->toDateString())
-            ->whereIn('id_status', [1, 4]) // Filter: Diterima (1) & Berlangsung (4)
-            ->orderBy('tanggal', 'desc')
-            ->orderBy('waktu_start', 'desc')
+            ->whereIn('id_status', [1, 4, 5]) // Filter: Diterima (1), Berlangsung (4), Selesai (5)
+            ->whereBetween('tanggal', [now()->toDateString(), now()->addDays(7)->toDateString()])
+            ->orderBy('tanggal', 'asc')
+            ->orderBy('waktu_start', 'asc')
+            ->limit(5)
             ->get();
 
-        // TAMBAHAN: Mengambil data rapat yang baru dibuat dalam 3 hari terakhir
-        $rapatBaruDibuat = Rapat::with('pengaju') // Pastikan relasi 'userPengaju' ada di model Rapat
+        // TAMBAHAN: Mengambil data rapat yang baru dibuat (3 Hari Terakhir, Semua Status)
+        $rapatBaruDibuat = Rapat::with(['pengaju', 'status', 'room'])
             ->where('created_at', '>=', now()->subDays(3))
             ->orderBy('created_at', 'desc')
             ->get();
@@ -58,12 +59,13 @@ class AdminController extends Controller
     {
         $title = 'Laporan Aktivitas Rapat (3 Hari Terakhir)';
 
-        // Mengambil semua data rapat dari 3 hari terakhir
+        // Ambil data untuk tabel "Aktivitas Rapat Terkini" (Jadwal Terdekat: Hari ini s.d. 7 hari kedepan, Status Diterima/Berlangsung/Selesai)
         $rapatTigaHariTerakhir = Rapat::with(['pengaju', 'status', 'room'])
-            ->where('tanggal', '>=', now()->subDays(3)->toDateString())
-            ->whereIn('id_status', [1, 4]) // Filter: Diterima (1) & Berlangsung (4)
-            ->orderBy('tanggal', 'desc')
-            ->orderBy('waktu_start', 'desc')
+            ->where('tanggal', '>=', now()->toDateString())
+            ->where('tanggal', '<=', now()->addDays(7)->toDateString())
+            ->whereIn('id_status', [1, 4, 5]) // Filter: Diterima (1), Berlangsung (4), Selesai (5)
+            ->orderBy('tanggal', 'asc')
+            ->orderBy('waktu_start', 'asc')
             ->get();
 
         // Mengirim data ke view khusus laporan

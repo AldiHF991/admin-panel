@@ -20,50 +20,57 @@ class PicController extends Controller
     {
         $user = Auth::user();
         
-        // Rapat Baru Dibuat (Latest requested meetings by this user)
-        // Assuming "Rapat Baru Dibuat" for PIC means meetings they requested recently.
-        // Or should it be global? "Rapat terbaru yang telah diajukan" implies meetings requested by *anyone*?
-        // "sama seperti pada dashboardnya admin" - Admin sees ALL meetings.
-        // But PIC usually only sees their own.
-        // However, the request says "tabel aktivitas rapat terakhir, dan rapat terbaru yang telah diajukan (sama seperti pada dashboardnya admin)".
-        // If it's "same as admin", maybe they want to see global activity?
-        // But usually PIC is restricted.
-        // Let's stick to the user's data for now to be safe, or maybe all meetings if it's a "dashboard" for general info.
-        // Wait, "pic saya ingin di dashboardnya ada... rapat terbaru yang telah diajukan".
-        // If I look at the Admin dashboard code:
-        // $rapatBaruDibuat = Rapat::with(['room', 'pengaju', 'status'])->where('created_at', '>=', Carbon::now()->subDays(3))->latest()->get();
-        // $rapatTigaHariTerakhir = Rapat::with(['room', 'pengaju', 'status'])->where('tanggal', '>=', Carbon::now()->subDays(3)->format('Y-m-d'))->orderBy('tanggal', 'asc')->orderBy('waktu_start', 'asc')->get();
-        
-        // If the user wants "same as admin", I should probably show them the same data but maybe restricted to what they are allowed to see?
-        // Usually PIC only sees their own. But if they want a "dashboard", maybe they want to see room availability etc.
-        // Let's assume for now they want to see *their* meetings or *all* meetings?
-        // "rapat terbaru yang telah diajukan" -> "latest meetings requested".
-        // If I am a PIC, I might want to see if the room is busy.
-        // Let's try to fetch ALL meetings for the "Recent Activity" (so they know what's going on) but maybe only their own for "Newly Created"?
-        // Actually, "Rapat Baru Dibuat" in admin is global.
-        // Let's replicate the Admin logic but we might need to be careful about permissions.
-        // Since the user said "sama seperti pada dashboardnya admin", I will fetch global data but maybe limit actions.
-        // But wait, `PicController` usually filters by `id_user_pengaju`.
-        // If I show other people's meetings, is that a privacy issue?
-        // In many booking systems, you can see *that* a room is booked, but maybe not details.
-        // However, the Admin dashboard shows "Pengaju".
-        // Let's assume it's fine to show global data for "Activity" (Schedule) so they don't clash.
-        // And "Newly Created" might be less useful if it's global, but maybe they want to see it.
-        // I will implement it as Global for now because "sama seperti admin" is a strong hint.
+        // Statistik untuk PIC
+        // 1. Menunggu Konfirmasi (Status 3)
+        $totalMenunggu = Rapat::where('id_user_pengaju', $user->id_user)
+            ->where('id_status', 3)
+            ->count();
+
+        // 2. Akan Datang (Status 1 & 4, Tanggal >= Hari ini)
+        $totalAkanDatang = Rapat::where('id_user_pengaju', $user->id_user)
+            ->whereIn('id_status', [1, 4])
+            ->where('tanggal', '>=', \Carbon\Carbon::now()->format('Y-m-d'))
+            ->count();
+
+        // 3. Total Pengajuan Saya (Semua status)
+        $totalPengajuan = Rapat::where('id_user_pengaju', $user->id_user)->count();
         
         $rapatBaruDibuat = Rapat::with(['room', 'pengaju', 'status'])
+            ->where('id_user_pengaju', $user->id_user)
             ->where('created_at', '>=', \Carbon\Carbon::now()->subDays(3))
             ->latest()
             ->get();
 
         $rapatTigaHariTerakhir = Rapat::with(['room', 'pengaju', 'status'])
-            ->where('tanggal', '>=', \Carbon\Carbon::now()->subDays(3)->format('Y-m-d'))
-            ->whereIn('id_status', [1, 4]) // Filter: Diterima (1) & Berlangsung (4)
+            ->where('id_user_pengaju', $user->id_user)
+            ->whereIn('id_status', [1, 4, 5]) // Filter: Diterima (1), Berlangsung (4), Selesai (5)
+            ->whereBetween('tanggal', [\Carbon\Carbon::now()->toDateString(), \Carbon\Carbon::now()->addDays(7)->toDateString()])
             ->orderBy('tanggal', 'asc')
             ->orderBy('waktu_start', 'asc')
             ->get();
 
-        return view('pic.dashboard', compact('rapatBaruDibuat', 'rapatTigaHariTerakhir'));
+        return view('pic.dashboard', compact('rapatBaruDibuat', 'rapatTigaHariTerakhir', 'totalMenunggu', 'totalAkanDatang', 'totalPengajuan'));
+    }
+
+    public function dashboardTables()
+    {
+        $user = Auth::user();
+
+        $rapatBaruDibuat = Rapat::with(['room', 'pengaju', 'status'])
+            ->where('id_user_pengaju', $user->id_user)
+            ->where('created_at', '>=', \Carbon\Carbon::now()->subDays(3))
+            ->latest()
+            ->get();
+
+        $rapatTigaHariTerakhir = Rapat::with(['room', 'pengaju', 'status'])
+            ->where('id_user_pengaju', $user->id_user)
+            ->whereIn('id_status', [1, 4, 5]) // Filter: Diterima (1), Berlangsung (4), Selesai (5)
+            ->whereBetween('tanggal', [\Carbon\Carbon::now()->toDateString(), \Carbon\Carbon::now()->addDays(7)->toDateString()])
+            ->orderBy('tanggal', 'asc')
+            ->orderBy('waktu_start', 'asc')
+            ->get();
+
+        return view('pic.dashboard-partials', compact('rapatBaruDibuat', 'rapatTigaHariTerakhir'));
     }
 
     public function index(Request $request)
@@ -140,6 +147,9 @@ class PicController extends Controller
             Notification::send($admins, new NewMeetingNotification($rapat, Auth::user()->nama));
         }
 
+        // Trigger update dashboard secara realtime
+        \App\Events\DashboardUpdate::dispatch($rapat->id_rapat, $rapat->id_status);
+
         // Handle File Uploads
         // Handle File Uploads
         if ($request->hasFile('files')) {
@@ -173,7 +183,7 @@ class PicController extends Controller
         }
 
         // Eagerly load all required relationships
-        $rapat->load(['room', 'status', 'cabang', 'pengaju']);
+        $rapat->load(['room', 'status', 'cabang', 'pengaju', 'files']);
 
         if (request()->ajax()) {
             try {
@@ -188,9 +198,19 @@ class PicController extends Controller
                     'waktu' => ($rapat->waktu_start ?? '') . ' - ' . ($rapat->waktu_end ?? ''),
                     'desc' => $rapat->desc ?? '-',
                     'pengaju' => $rapat->pengaju ? ($rapat->pengaju->nama ?? $rapat->pengaju->name ?? '-') : '-',
+                    'files' => $rapat->files->map(function ($file) {
+                        return [
+                            'id_file' => $file->id_file,
+                            'file_name' => $file->file_name,
+                            'file_type' => $file->file_type,
+                            'download_url' => route('meetings.downloadFile', $file->id_file),
+                            'delete_url' => route('pic.meetings.destroyFile', $file->id_file),
+                        ];
+                    }),
                     'urls' => [
                         'absensi' => route('pic.meetings.absensi', $rapat->id_rapat),
                         'qr' => route('pic.meetings.qr', $rapat->id_rapat),
+                        'upload_file' => route('pic.meetings.storeFile', $rapat->id_rapat),
                     ]
                 ];
                 
@@ -243,6 +263,9 @@ class PicController extends Controller
         // Update status to "Selesai" (ID 5)
         $rapat->id_status = 5;
         $rapat->save();
+
+        // Trigger update dashboard secara realtime
+        \App\Events\DashboardUpdate::dispatch($rapat->id_rapat, $rapat->id_status);
 
         // Note: Room availability is automatically determined by checking meeting status and time
         // No need to manually update room status as it's based on active meetings
@@ -333,8 +356,9 @@ class PicController extends Controller
 
         // Mengambil semua data rapat dari 3 hari terakhir
         $rapatTigaHariTerakhir = Rapat::with(['pengaju', 'status', 'room'])
+            ->where('id_user_pengaju', Auth::id()) // Filter by user
             ->where('tanggal', '>=', \Carbon\Carbon::now()->subDays(3)->toDateString())
-            ->whereIn('id_status', [1, 4]) // Filter: Diterima (1) & Berlangsung (4)
+            ->whereIn('id_status', [1, 4, 5]) // Filter: Diterima (1), Berlangsung (4), Selesai (5)
             ->orderBy('tanggal', 'desc')
             ->orderBy('waktu_start', 'desc')
             ->get();
@@ -346,6 +370,7 @@ class PicController extends Controller
     public function showNewlyCreatedReport()
     {
         $rapatBaruDibuat = Rapat::with(['room', 'pengaju', 'status'])
+            ->where('id_user_pengaju', Auth::id()) // Filter by user
             ->where('created_at', '>=', \Carbon\Carbon::now()->subDays(3))
             ->orderBy('created_at', 'desc')
             ->get();
@@ -355,5 +380,69 @@ class PicController extends Controller
             'rapatBaruDibuat' => $rapatBaruDibuat,
             'backRoute' => 'pic.dashboard'
         ]);
+    }
+
+    public function storeFile(Request $request, Rapat $rapat)
+    {
+        // Ensure the user owns this meeting
+        if ($rapat->id_user_pengaju != Auth::id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'file' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480', // Max 20MB
+        ]);
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $path = $file->store('public/rapat_files/'.$rapat->id_rapat);
+            
+            $rapatFile = $rapat->files()->create([
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $path,
+                'file_type' => $file->getMimeType(),
+                'file_size' => $file->getSize(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'File berhasil diunggah.',
+                'file' => [
+                    'id_file' => $rapatFile->id_file,
+                    'file_name' => $rapatFile->file_name,
+                    'file_path' => str_replace('public/', '', $rapatFile->file_path),
+                    'file_type' => $rapatFile->file_type,
+                    'download_url' => route('meetings.downloadFile', $rapatFile->id_file),
+                    'delete_url' => route('pic.meetings.destroyFile', $rapatFile->id_file),
+                ]
+            ]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Gagal mengunggah file.'], 400);
+    }
+
+    public function destroyFile(\App\Models\RapatFile $file)
+    {
+        $rapat = $file->rapat;
+
+        // Ensure the user owns the meeting associated with this file
+        if ($rapat->id_user_pengaju != Auth::id()) {
+            abort(403);
+        }
+
+        try {
+            // Hapus file dari storage
+            \Illuminate\Support\Facades\Storage::delete($file->file_path);
+            // Hapus record dari database
+            $file->delete();
+
+            return response()->json(['success' => true, 'message' => 'File berhasil dihapus.']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus file.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

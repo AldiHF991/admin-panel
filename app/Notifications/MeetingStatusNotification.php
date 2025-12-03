@@ -6,8 +6,10 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class MeetingStatusNotification extends Notification
+class MeetingStatusNotification extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
@@ -35,7 +37,7 @@ class MeetingStatusNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'broadcast'];
     }
 
     /**
@@ -52,5 +54,20 @@ class MeetingStatusNotification extends Notification
             'status' => $this->rapat->id_status,
             'note' => $this->note,
         ];
+    }
+
+    /**
+     * Get the broadcastable representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'meeting_id' => $this->rapat->id_rapat,
+            'title' => 'Status Rapat Diperbarui',
+            'message' => $this->statusMessage . ': ' . $this->rapat->judul,
+            'status' => $this->rapat->id_status,
+            'note' => $this->note,
+            'created_at' => now()->toIso8601String(),
+        ]);
     }
 }

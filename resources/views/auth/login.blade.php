@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Login | Simrapel Brantas</title>
     <link rel="icon" href="{{ asset('images/logo_qr.png') }}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -197,7 +197,7 @@
         </form>
 
         <div class="login-footer mt-3">
-                <p class="text-muted mb-0">&copy; {{ date('Y') }} Magang UNTAG Surabaya 2025</p>
+                <p class="text-muted mb-0">&copy; {{ date('Y') }} Simrapel Brantas · Magang UNTAG Surabaya 2025</p>
         </div>
     </div>
 

@@ -286,6 +286,27 @@
                             <th>Pengaju</th>
                             <td id="detail-pengaju"></td>
                         </tr>
+                        <tr>
+                            <th>Dokumen / File</th>
+                            <td>
+                                <ul class="list-group mb-2" id="detail-files-list">
+                                    <!-- Files will be populated here -->
+                                </ul>
+                                <div class="mt-2">
+                                    <label for="upload-file-input" class="form-label small fw-bold">Upload File Baru</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="file" class="form-control" id="upload-file-input">
+                                        <button class="btn btn-outline-primary" type="button" id="btn-upload-file">
+                                            <i class="bi bi-upload"></i> Upload
+                                        </button>
+                                    </div>
+                                    <div id="upload-progress" class="progress mt-1" style="height: 5px; display: none;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <small class="text-muted" style="font-size: 0.75rem;">Maks 20MB. Format: pdf, doc, xls, ppt, jpg, png, dll.</small>
+                                </div>
+                            </td>
+                        </tr>
                     </table>
                     <div class="mt-3 text-end">
                         <a href="#" id="btn-lihat-absensi" class="btn btn-info">Lihat Absensi</a>
@@ -790,6 +811,133 @@
 
                 document.getElementById('btn-lihat-absensi').href = data.urls.absensi;
                 document.getElementById('btn-lihat-qr').href = data.urls.qr;
+
+                // Handle Files
+                const filesList = document.getElementById('detail-files-list');
+                filesList.innerHTML = '';
+                
+                if (data.files && data.files.length > 0) {
+                    data.files.forEach(file => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item d-flex justify-content-between align-items-center p-2';
+                        li.innerHTML = `
+                            <div>
+                                ${getFileIcon(file.file_type)}
+                                <a href="${file.download_url}" target="_blank" class="text-decoration-none text-dark">${file.file_name}</a>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger btn-delete-file" data-url="${file.delete_url}" title="Hapus File">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        `;
+                        filesList.appendChild(li);
+                    });
+                } else {
+                    filesList.innerHTML = '<li class="list-group-item text-muted small fst-italic">Tidak ada file lampiran.</li>';
+                }
+
+                // Setup Upload Button
+                const btnUpload = document.getElementById('btn-upload-file');
+                const fileInput = document.getElementById('upload-file-input');
+                const progressBar = document.getElementById('upload-progress').querySelector('.progress-bar');
+                const progressContainer = document.getElementById('upload-progress');
+
+                // Reset input
+                fileInput.value = '';
+                progressContainer.style.display = 'none';
+                progressBar.style.width = '0%';
+
+                // Remove old event listener (cloning node is a quick way to clear listeners)
+                const newBtnUpload = btnUpload.cloneNode(true);
+                btnUpload.parentNode.replaceChild(newBtnUpload, btnUpload);
+
+                newBtnUpload.addEventListener('click', function() {
+                    const file = fileInput.files[0];
+                    if (!file) {
+                        alert('Pilih file terlebih dahulu.');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('_token', '{{ csrf_token() }}');
+
+                    progressContainer.style.display = 'flex';
+                    progressBar.style.width = '0%';
+                    newBtnUpload.disabled = true;
+                    fileInput.disabled = true;
+
+                    axios.post(data.urls.upload_file, formData, {
+                        onUploadProgress: function(progressEvent) {
+                            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                            progressBar.style.width = percentCompleted + '%';
+                        }
+                    })
+                    .then(response => {
+                        if (response.data.success) {
+                            // Refresh modal content (re-fetch)
+                            // Or just append the new file to the list manually
+                            const newFile = response.data.file;
+                            const li = document.createElement('li');
+                            li.className = 'list-group-item d-flex justify-content-between align-items-center p-2';
+                            li.innerHTML = `
+                                <div>
+                                    ${getFileIcon(newFile.file_type)}
+                                    <a href="${newFile.download_url}" target="_blank" class="text-decoration-none text-dark">${newFile.file_name}</a>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger btn-delete-file" data-url="${newFile.delete_url}" title="Hapus File">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            `;
+                            
+                            // Remove "No files" message if exists
+                            if (filesList.querySelector('.text-muted')) {
+                                filesList.innerHTML = '';
+                            }
+                            
+                            filesList.appendChild(li);
+                            fileInput.value = '';
+                            alert('File berhasil diunggah.');
+                        } else {
+                            alert('Gagal mengunggah file: ' + response.data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Upload error:', error);
+                        alert('Terjadi kesalahan saat mengunggah file.');
+                    })
+                    .finally(() => {
+                        progressContainer.style.display = 'none';
+                        newBtnUpload.disabled = false;
+                        fileInput.disabled = false;
+                    });
+                });
+
+                // Setup Delete Buttons (Delegation)
+                filesList.onclick = function(e) {
+                    const btn = e.target.closest('.btn-delete-file');
+                    if (btn) {
+                        if (!confirm('Apakah Anda yakin ingin menghapus file ini?')) return;
+                        
+                        const url = btn.getAttribute('data-url');
+                        axios.delete(url, {
+                            data: { _token: '{{ csrf_token() }}' }
+                        })
+                        .then(response => {
+                            if (response.data.success) {
+                                btn.closest('li').remove();
+                                if (filesList.children.length === 0) {
+                                    filesList.innerHTML = '<li class="list-group-item text-muted small fst-italic">Tidak ada file lampiran.</li>';
+                                }
+                            } else {
+                                alert('Gagal menghapus file.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Delete error:', error);
+                            alert('Terjadi kesalahan saat menghapus file.');
+                        });
+                    }
+                };
 
                 loading.style.display = 'none';
                 content.style.display = 'block';

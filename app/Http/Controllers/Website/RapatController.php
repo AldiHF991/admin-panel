@@ -10,6 +10,7 @@ use App\Models\Guest;
 use App\Models\Rapat;
 use App\Models\RapatFile;
 use App\Models\User;
+use App\Events\DashboardUpdate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -18,6 +19,70 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class RapatController extends Controller
 {
+    /**
+     * Display a listing of incoming meeting requests (status = Menunggu).
+     */
+    public function incoming()
+    {
+        $meetings = Rapat::with(['room', 'status', 'pengaju'])
+            ->where('id_status', 3) // 3 = Menunggu
+            ->orderBy('created_at', 'asc') // Oldest first
+            ->get();
+
+        return view('admin.meetings.incoming', compact('meetings'));
+    }
+
+    public function getIncomingData()
+    {
+        $meetings = Rapat::with(['room', 'status', 'pengaju'])
+            ->where('id_status', 3) // 3 = Menunggu
+            ->orderBy('created_at', 'asc') // Oldest first
+            ->get();
+
+        $html = '';
+        if ($meetings->isEmpty()) {
+            $html .= '<tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            Belum ada permintaan rapat baru.
+                        </td>
+                    </tr>';
+        } else {
+            foreach ($meetings as $meeting) {
+                $html .= '<tr>
+                            <td>
+                                <div class="fw-bold">' . $meeting->judul . '</div>
+                                <small class="text-muted">' . \Carbon\Carbon::parse($meeting->tanggal)->isoFormat('dddd, D MMMM Y') . '</small>
+                            </td>
+                            <td>
+                                ' . \Carbon\Carbon::parse($meeting->waktu_start)->format('H:i') . ' - 
+                                ' . \Carbon\Carbon::parse($meeting->waktu_end)->format('H:i') . ' WIB
+                            </td>
+                            <td>' . ($meeting->room->room ?? '-') . '</td>
+                            <td>' . ($meeting->pengaju->name ?? '-') . '</td>
+                            <td>
+                                <span class="badge bg-warning text-dark">Menunggu</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-2">
+                                    <form action="' . route('meetings.accept', $meeting->id_rapat) . '" method="POST">
+                                        <input type="hidden" name="_token" value="' . csrf_token() . '">
+                                        <button type="submit" class="btn btn-success btn-sm" onclick="return confirm(\'Apakah Anda yakin ingin menerima permintaan ini?\')">
+                                            <i class="bi bi-check-lg me-1"></i> Terima
+                                        </button>
+                                    </form>
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="openRejectionModal(\'' . route('meetings.reject', $meeting->id_rapat) . '\')">
+                                        <i class="bi bi-x-lg me-1"></i> Tolak
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>';
+            }
+        }
+
+        return response()->json(['html' => $html]);
+    }
+
     public function index(Request $request)
     {
         $pics = User::where('id_role', 2)->get(); // Assuming PIC is a role
@@ -143,6 +208,7 @@ class RapatController extends Controller
         }
 
         // TAMBAHKAN 'highlight_id' ke session saat redirect
+        DashboardUpdate::dispatch($rapat->id_rapat, $rapat->id_status);
         return redirect($redirectUrl)->with('success', 'Rapat berhasil ditambahkan.')
             ->with('highlight_id', $rapat->id_rapat);
     }
@@ -185,6 +251,7 @@ class RapatController extends Controller
         }
 
         // TAMBAHKAN 'highlight_id' ke session saat redirect
+        DashboardUpdate::dispatch($rapat->id_rapat, $rapat->id_status);
         return redirect($redirectUrl)->with('success', 'Rapat berhasil diperbarui.')
             ->with('highlight_id', $rapat->id_rapat);
     }
@@ -200,6 +267,9 @@ class RapatController extends Controller
             // Hapus record file dari database (relasi sudah di-handle jika di-setting onDelete('cascade'))
             // Jika tidak, hapus manual: $rapat->files()->delete();
             $rapat->delete();
+
+            // Broadcast update dashboard
+            DashboardUpdate::dispatch();
 
             return redirect()->route('meetings.index')->with('success', 'Rapat berhasil dihapus.');
         } catch (\Exception $e) {
@@ -490,7 +560,9 @@ class RapatController extends Controller
                     $pic->notify(new \App\Notifications\MeetingStatusNotification($rapat, 'Rapat Diterima'));
                 }
             }
-            
+            $rapat->save();
+
+            DashboardUpdate::dispatch($rapat->id_rapat, $rapat->id_status);
             return back()->with('success', 'Rapat berhasil diterima.');
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal menerima rapat: ' . $e->getMessage());
@@ -528,10 +600,31 @@ class RapatController extends Controller
                     $pic->notify(new \App\Notifications\MeetingStatusNotification($rapat, 'Rapat Ditolak', $request->rejection_note));
                 }
             }
-            
+            $rapat->save();
+
+            DashboardUpdate::dispatch($rapat->id_rapat, $rapat->id_status);
             return back()->with('success', 'Rapat berhasil ditolak.');
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal menolak rapat: ' . $e->getMessage());
         }
+    }
+    public function dashboardTables()
+    {
+        // Ambil data untuk tabel "Rapat Baru Dibuat" (3 Hari Terakhir, Semua Status)
+        $rapatBaruDibuat = Rapat::with(['room', 'status', 'pengaju'])
+            ->where('created_at', '>=', now()->subDays(3))
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Ambil data untuk tabel "Aktivitas Rapat Terkini" (Jadwal Terdekat: Hari ini s.d. 7 hari kedepan, Status Diterima/Berlangsung/Selesai)
+        $rapatTigaHariTerakhir = Rapat::with(['room', 'status', 'pengaju'])
+            ->whereIn('id_status', [1, 4, 5]) // Filter: Diterima (1), Berlangsung (4), Selesai (5)
+            ->whereBetween('tanggal', [now()->toDateString(), now()->addDays(7)->toDateString()])
+            ->orderBy('tanggal', 'asc')
+            ->orderBy('waktu_start', 'asc')
+            ->limit(5)
+            ->get();
+
+        return view('admin.dashboard-partials', compact('rapatBaruDibuat', 'rapatTigaHariTerakhir'));
     }
 }

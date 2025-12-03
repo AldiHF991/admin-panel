@@ -7,7 +7,10 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NewMeetingNotification extends Notification
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Notifications\Messages\BroadcastMessage;
+
+class NewMeetingNotification extends Notification implements ShouldBroadcast
 {
     use Queueable;
 
@@ -30,7 +33,7 @@ class NewMeetingNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'broadcast'];
     }
 
     /**
@@ -47,5 +50,20 @@ class NewMeetingNotification extends Notification
             'date' => $this->meeting->tanggal,
             'message' => "PIC {$this->picName} mengajukan rapat: {$this->meeting->judul} untuk tanggal " . date('d/m/Y', strtotime($this->meeting->tanggal)),
         ];
+    }
+
+    /**
+     * Get the broadcastable representation of the notification.
+     */
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage([
+            'meeting_id' => $this->meeting->id_rapat,
+            'title' => $this->meeting->judul,
+            'pic_name' => $this->picName,
+            'date' => $this->meeting->tanggal,
+            'message' => "PIC {$this->picName} mengajukan rapat: {$this->meeting->judul} untuk tanggal " . date('d/m/Y', strtotime($this->meeting->tanggal)),
+            'created_at' => now()->toIso8601String(),
+        ]);
     }
 }
