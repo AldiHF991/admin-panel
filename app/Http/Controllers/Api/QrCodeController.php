@@ -7,6 +7,7 @@ use App\Models\Absensi;
 use App\Models\Rapat;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Events\AttendanceRecorded;
 
 class QrCodeController extends Controller
 {
@@ -65,12 +66,14 @@ class QrCodeController extends Controller
         }
 
         // Catat absensi baru
-        Absensi::create([
+        $absensi = Absensi::create([
             'id_rapat' => $rapat->id_rapat,
             'id_user' => $user->id_user,
             'waktu_absen' => $now,
             'id_status_kehadiran' => 2, // Hadir
         ]);
+
+        AttendanceRecorded::dispatch($absensi);
 
         return response()->json([
             'message' => 'Absensi berhasil! Selamat datang di rapat: '.$rapat->judul,
@@ -112,7 +115,7 @@ class QrCodeController extends Controller
 
         // --- Token VALID! ---
         // 3. Catat absensi tamu
-        Absensi::create([
+        $absensi = Absensi::create([
             'id_rapat' => $rapat->id_rapat,
             'id_user' => null, // id_user dikosongkan untuk tamu
             'guest_name' => $validatedData['guest_name'],
@@ -121,6 +124,8 @@ class QrCodeController extends Controller
             'waktu_absen' => $now,
             'id_status_kehadiran' => 2, // Hadir
         ]);
+
+        AttendanceRecorded::dispatch($absensi);
 
         return response()->json([
             'message' => 'Absensi berhasil! Selamat datang di rapat: '.$rapat->judul,

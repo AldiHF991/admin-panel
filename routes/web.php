@@ -16,6 +16,33 @@ Route::get('/', [AuthController::class, 'landingPage'])->name('landingPage');
 // Route::get('/', [GuestController::class, 'showGuest'])->name('guest');
 // Route::post('/', [GuestController::class, 'store'])->name('guest.store');
 
+Route::get('/test-websocket', function () {
+    return view('test-websocket');
+});
+
+Route::get('/trigger-test-event', function () {
+    \App\Events\TestWebSocket::dispatch('Hello from WebSocket!');
+    return 'Event dispatched!';
+});
+
+Route::get('/debug/trigger-attendance/{id}', function ($id) {
+    // Buat dummy absensi
+    $absensi = new \App\Models\Absensi();
+    $absensi->id_absensi = \Illuminate\Support\Str::uuid();
+    $absensi->id_rapat = $id;
+    $absensi->waktu_absen = now();
+    $absensi->id_status_kehadiran = 2;
+    $absensi->attendable_type = 'App\Models\Guest'; // Simulasi Guest
+    $absensi->guest_name = 'Test User ' . rand(1, 100);
+    $absensi->guest_jabatan = 'Tester';
+    $absensi->guest_instansi = 'Debug Inc';
+    
+    // Dispatch event
+    \App\Events\AttendanceRecorded::dispatch($absensi);
+    
+    return 'Attendance Event dispatched for Meeting ID: ' . $id;
+});
+
 Route::get('/adminpanel/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/adminpanel/login', [AuthController::class, 'login'])->name('login');
 

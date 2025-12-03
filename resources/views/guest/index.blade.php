@@ -66,7 +66,7 @@
                         <td>{{ $guest->asal_instansi }}</td>
                         <td>{{ $guest->nomor ?? '-' }}</td>
                         <td>
-                            @if($guest->absensi->isNotEmpty())
+                            @if($guest->absensi->isNotEmpty() && $guest->absensi->first()->device_token)
                                 <span class="badge bg-info text-dark" title="{{ $guest->absensi->first()->device_token }}">
                                     {{ Str::limit($guest->absensi->first()->device_token, 20) }}
                                 </span>

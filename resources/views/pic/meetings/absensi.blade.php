@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar Hadir Rapat</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    {{-- Auto refresh every 100 seconds --}}
-    <meta http-equiv="refresh" content="100">
+    <title>Daftar Hadir Rapat</title>
+    {{-- Websocket enabled --}}
 
     {{-- Style untuk Watermark --}}
     <style>
@@ -177,6 +176,29 @@
         document.addEventListener('DOMContentLoaded', () => {
             renderAttendance(initialData);
         });
+        // --- LOGIKA WEBSOCKET ---
+        const meetingId = "{{ $rapat->id_rapat }}";
+        
+        console.log(`Listening on channel: meeting.${meetingId}.attendance`);
+        
+        window.Echo.channel(`meeting.${meetingId}.attendance`)
+            .listen('.attendance.recorded', (e) => {
+                console.log('Attendance recorded:', e);
+                
+                // Cek apakah data sudah ada (menghindari duplikasi jika event diterima ganda)
+                const exists = initialData.some(item => item.id === e.id);
+                
+                if (!exists) {
+                    // Tambahkan data baru ke array
+                    initialData.push(e);
+                    // Render ulang tabel
+                    renderAttendance(initialData);
+                    
+                    // Mainkan suara notifikasi jika ada (opsional)
+                    // const audio = new Audio('/sounds/notif_sound.mp3');
+                    // audio.play().catch(err => console.log('Audio play failed:', err));
+                }
+            });
     </script>
 </body>
 

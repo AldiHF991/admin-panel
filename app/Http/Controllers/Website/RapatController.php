@@ -426,7 +426,7 @@ class RapatController extends Controller
         ]);
 
         // 5. Buat entri absensi untuk guest yang baru dibuat + simpan data keamanan
-        $guest->absensi()->create([
+        $absensi = $guest->absensi()->create([
             'id_rapat' => $rapat->id_rapat,
             'waktu_absen' => now(),
             'id_status_kehadiran' => 2, // 2 = Hadir (asumsi)
@@ -442,12 +442,7 @@ class RapatController extends Controller
         $request->session()->put('rapat_id', $rapat->id_rapat);
 
         // 7. Dispatch event untuk update realtime daftar absensi
-        $allAbsensi = Absensi::where('id_rapat', $rapat->id_rapat)
-            ->with('attendable')
-            ->orderBy('waktu_absen', 'asc')
-            ->get();
-
-        \App\Events\AbsensiUpdated::dispatch($allAbsensi);
+        \App\Events\AttendanceRecorded::dispatch($absensi);
 
         // 8. Redirect ke dashboard guest
         return redirect()->route('meetings.guestDashboard', [
