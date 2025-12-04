@@ -76,7 +76,7 @@
             <img src="{{ asset('images/logo_qr.png') }}" alt="Logo Perusahaan" class="print-logo">
             <div>
                 <h4 class="fw-bold mb-1">Laporan Aktivitas Rapat</h4>
-                <p class="mb-0 text-muted">Data 3 Hari Terakhir</p>
+                <p class="mb-0 text-muted">Data 7 Hari Kedepan</p>
                 <p class="mb-0 text-muted" style="font-size: 0.8rem;">
                     Dicetak pada: {{ \Carbon\Carbon::now()->isoFormat('D MMMM Y, HH:mm') }} WIB
                 </p>
@@ -85,7 +85,7 @@
 
         <div class="report-header text-center mb-4 no-print">
             <h1 class="display-6 fw-bold">Laporan Aktivitas Rapat</h1>
-            <p class="lead mb-0">Data 3 Hari Terakhir</p>
+            <p class="lead mb-0">Data 7 Hari Kedepan</p>
         </div>
 
         <div class="card border-0 shadow-sm mb-4 no-print">

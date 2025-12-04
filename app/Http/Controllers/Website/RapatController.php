@@ -484,10 +484,18 @@ class RapatController extends Controller
     public function showGuestDashboard(Rapat $rapat, $guest)
     {
         $rapat->load(['cabang', 'room', 'files']);
-        $guest = Guest::findOrFail($guest);
+    $guest = Guest::findOrFail($guest);
 
-        return view('guest.dashboard', compact('rapat', 'guest'));
-    }
+    // Group files by category
+    $groupedFiles = [
+        'materi' => $rapat->files->where('id_categories', 1),
+        'notulensi' => $rapat->files->where('id_categories', 2),
+        'dokumentasi' => $rapat->files->where('id_categories', 3),
+        'lainnya' => $rapat->files->where('id_categories', 4)->merge($rapat->files->whereNull('id_categories')),
+    ];
+
+    return view('guest.dashboard', compact('rapat', 'guest', 'groupedFiles'));
+}
 
     public function showGuestQr($id)
     {

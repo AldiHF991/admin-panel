@@ -10,7 +10,8 @@
 
 <div class="container mt-4">
 
-    @if (session('success'))
+    {{-- ALERT LAMA DIGANTI SWEETALERT --}}
+    {{-- @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -21,7 +22,7 @@
             {{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-    @endif
+    @endif --}}
 
     <div class="card shadow-sm border-0">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
@@ -119,7 +120,7 @@
                                     <div class="dropdown">
                                         <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton{{ $rapat->id_rapat }}" data-bs-toggle="dropdown" aria-expanded="false" data-bs-boundary="viewport" data-bs-popper-config='{"strategy":"fixed"}'>Aksi</button>
                                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ $rapat->id_rapat }}">
-                                            <li><a class="dropdown-item edit-btn" href="#" data-bs-toggle="modal" data-bs-target="#editRapatModal" data-rapat='{{ json_encode($rapat) }}'><i class="bi bi-pencil-square me-2"></i>Edit</a></li>
+                                            <li><a class="dropdown-item edit-btn" href="#" data-bs-toggle="modal" data-bs-target="#editRapatModal" data-rapat="{{ json_encode($rapat) }}"><i class="bi bi-pencil-square me-2"></i>Edit</a></li>
                                             <li><a class="dropdown-item" href="{{ route('meetings.showAbsensi', $rapat->id_rapat) }}" target="_blank"><i class="bi bi-person-check me-2"></i>Absensi</a></li>
                                             {{-- PERUBAHAN: Link QR Code diubah untuk memicu modal --}}
                                             @php
@@ -243,33 +244,91 @@
                 <div class="mb-3">
                     <label class="form-label fw-bold">Upload Dokumen</label>
                     
-                    <div class="mb-2">
-                        <label for="add_files_materi" class="form-label small">Materi</label>
-                        <input class="form-control form-control-sm" type="file" id="add_files_materi" name="files_materi[]" multiple>
-                        <ul class="list-group mt-1" id="add-files-materi-list"></ul>
-                    </div>
+                    <div class="row g-3 mb-4">
+                        {{-- Kategori 1: Materi --}}
+                        <div class="col-md-6">
+                            <div class="card h-100 border-primary shadow-sm upload-zone position-relative" data-target="add_files_materi" style="cursor: pointer; transition: all 0.2s;">
+                                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-file-earmark-text me-2"></i>Materi</span>
+                                    <span class="badge bg-white text-primary rounded-pill" id="count-add_files_materi">0</span>
+                                </div>
+                                <div class="card-body p-2 d-flex flex-column">
+                                    <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-add_files_materi" style="min-height: 50px;">
+                                        <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                    </ul>
+                                    <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                        <i class="bi bi-cloud-arrow-up text-primary fs-3"></i>
+                                        <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                    </div>
+                                    <input type="file" class="d-none" id="add_files_materi" name="files_materi[]" multiple>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="mb-2">
-                        <label for="add_files_notulensi" class="form-label small">Notulensi</label>
-                        <input class="form-control form-control-sm" type="file" id="add_files_notulensi" name="files_notulensi[]" multiple>
-                        <ul class="list-group mt-1" id="add-files-notulensi-list"></ul>
-                    </div>
+                        {{-- Kategori 2: Notulensi --}}
+                        <div class="col-md-6">
+                            <div class="card h-100 border-success shadow-sm upload-zone position-relative" data-target="add_files_notulensi" style="cursor: pointer; transition: all 0.2s;">
+                                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-journal-text me-2"></i>Notulensi</span>
+                                    <span class="badge bg-white text-success rounded-pill" id="count-add_files_notulensi">0</span>
+                                </div>
+                                <div class="card-body p-2 d-flex flex-column">
+                                    <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-add_files_notulensi" style="min-height: 50px;">
+                                        <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                    </ul>
+                                    <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                        <i class="bi bi-cloud-arrow-up text-success fs-3"></i>
+                                        <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                    </div>
+                                    <input type="file" class="d-none" id="add_files_notulensi" name="files_notulensi[]" multiple>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="mb-2">
-                        <label for="add_files_dokumentasi" class="form-label small">Dokumentasi</label>
-                        <input class="form-control form-control-sm" type="file" id="add_files_dokumentasi" name="files_dokumentasi[]" multiple>
-                        <ul class="list-group mt-1" id="add-files-dokumentasi-list"></ul>
-                    </div>
+                        {{-- Kategori 3: Dokumentasi --}}
+                        <div class="col-md-6">
+                            <div class="card h-100 border-info shadow-sm upload-zone position-relative" data-target="add_files_dokumentasi" style="cursor: pointer; transition: all 0.2s;">
+                                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-camera me-2"></i>Dokumentasi</span>
+                                    <span class="badge bg-white text-info rounded-pill" id="count-add_files_dokumentasi">0</span>
+                                </div>
+                                <div class="card-body p-2 d-flex flex-column">
+                                    <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-add_files_dokumentasi" style="min-height: 50px;">
+                                        <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                    </ul>
+                                    <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                        <i class="bi bi-cloud-arrow-up text-info fs-3"></i>
+                                        <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                    </div>
+                                    <input type="file" class="d-none" id="add_files_dokumentasi" name="files_dokumentasi[]" multiple>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="mb-2">
-                        <label for="add_files_lainnya" class="form-label small">Dokumen Pendukung Lainnya</label>
-                        <input class="form-control form-control-sm" type="file" id="add_files_lainnya" name="files_lainnya[]" multiple>
-                        <ul class="list-group mt-1" id="add-files-lainnya-list"></ul>
+                        {{-- Kategori 4: Lainnya --}}
+                        <div class="col-md-6">
+                            <div class="card h-100 border-secondary shadow-sm upload-zone position-relative" data-target="add_files_lainnya" style="cursor: pointer; transition: all 0.2s;">
+                                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-paperclip me-2"></i>Lainnya</span>
+                                    <span class="badge bg-white text-secondary rounded-pill" id="count-add_files_lainnya">0</span>
+                                </div>
+                                <div class="card-body p-2 d-flex flex-column">
+                                    <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-add_files_lainnya" style="min-height: 50px;">
+                                        <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                    </ul>
+                                    <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                        <i class="bi bi-cloud-arrow-up text-secondary fs-3"></i>
+                                        <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                    </div>
+                                    <input type="file" class="d-none" id="add_files_lainnya" name="files_lainnya[]" multiple>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Elemen untuk menampilkan pesan error ukuran file --}}
                     <div id="add-files-error" class="invalid-feedback" style="display: none;"></div>
-                    <small class="form-text text-muted">Bisa pilih lebih dari satu file (Ctrl+Klik). Tipe: jpg, png, pdf, doc, docx, ppt, pptx, txt. Maks 20MB/file.</small>
+                    <small class="form-text text-muted mt-2 d-block">Bisa pilih lebih dari satu file (Ctrl+Klik). Tipe: jpg, png, pdf, doc, docx, ppt, pptx, txt. Maks 20MB/file.</small>
                 </div>
             </div>
             <div class="modal-footer">
@@ -356,37 +415,91 @@
                 <div class="mb-3">
                     <label class="form-label fw-bold">Dokumen Pendukung</label>
                     
-                    <div class="mb-3 p-2 border rounded bg-light">
-                        <label for="edit_files_materi" class="form-label small fw-bold text-primary">Materi</label>
-                        <input class="form-control form-control-sm mb-1" type="file" id="edit_files_materi" name="files_materi[]" multiple>
-                        <ul class="list-group mb-2" id="edit-files-materi-list"></ul> <!-- Preview New -->
-                        <ul class="list-group" id="existing-files-materi-list"></ul> <!-- Existing -->
-                    </div>
+                    <div class="row g-3 mb-4">
+                        {{-- Kategori 1: Materi --}}
+                        <div class="col-md-6">
+                            <div class="card h-100 border-primary shadow-sm upload-zone position-relative" data-target="edit_files_materi" style="cursor: pointer; transition: all 0.2s;">
+                                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-file-earmark-text me-2"></i>Materi</span>
+                                    <span class="badge bg-white text-primary rounded-pill" id="count-edit_files_materi">0</span>
+                                </div>
+                                <div class="card-body p-2 d-flex flex-column">
+                                    <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-edit_files_materi" style="min-height: 50px;">
+                                        <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                    </ul>
+                                    <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                        <i class="bi bi-cloud-arrow-up text-primary fs-3"></i>
+                                        <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                    </div>
+                                    <input type="file" class="d-none" id="edit_files_materi" name="files_materi[]" multiple>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="mb-3 p-2 border rounded bg-light">
-                        <label for="edit_files_notulensi" class="form-label small fw-bold text-success">Notulensi</label>
-                        <input class="form-control form-control-sm mb-1" type="file" id="edit_files_notulensi" name="files_notulensi[]" multiple>
-                        <ul class="list-group mb-2" id="edit-files-notulensi-list"></ul> <!-- Preview New -->
-                        <ul class="list-group" id="existing-files-notulensi-list"></ul> <!-- Existing -->
-                    </div>
+                        {{-- Kategori 2: Notulensi --}}
+                        <div class="col-md-6">
+                            <div class="card h-100 border-success shadow-sm upload-zone position-relative" data-target="edit_files_notulensi" style="cursor: pointer; transition: all 0.2s;">
+                                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-journal-text me-2"></i>Notulensi</span>
+                                    <span class="badge bg-white text-success rounded-pill" id="count-edit_files_notulensi">0</span>
+                                </div>
+                                <div class="card-body p-2 d-flex flex-column">
+                                    <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-edit_files_notulensi" style="min-height: 50px;">
+                                        <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                    </ul>
+                                    <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                        <i class="bi bi-cloud-arrow-up text-success fs-3"></i>
+                                        <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                    </div>
+                                    <input type="file" class="d-none" id="edit_files_notulensi" name="files_notulensi[]" multiple>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="mb-3 p-2 border rounded bg-light">
-                        <label for="edit_files_dokumentasi" class="form-label small fw-bold text-info">Dokumentasi</label>
-                        <input class="form-control form-control-sm mb-1" type="file" id="edit_files_dokumentasi" name="files_dokumentasi[]" multiple>
-                        <ul class="list-group mb-2" id="edit-files-dokumentasi-list"></ul> <!-- Preview New -->
-                        <ul class="list-group" id="existing-files-dokumentasi-list"></ul> <!-- Existing -->
-                    </div>
+                        {{-- Kategori 3: Dokumentasi --}}
+                        <div class="col-md-6">
+                            <div class="card h-100 border-info shadow-sm upload-zone position-relative" data-target="edit_files_dokumentasi" style="cursor: pointer; transition: all 0.2s;">
+                                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-camera me-2"></i>Dokumentasi</span>
+                                    <span class="badge bg-white text-info rounded-pill" id="count-edit_files_dokumentasi">0</span>
+                                </div>
+                                <div class="card-body p-2 d-flex flex-column">
+                                    <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-edit_files_dokumentasi" style="min-height: 50px;">
+                                        <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                    </ul>
+                                    <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                        <i class="bi bi-cloud-arrow-up text-info fs-3"></i>
+                                        <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                    </div>
+                                    <input type="file" class="d-none" id="edit_files_dokumentasi" name="files_dokumentasi[]" multiple>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="mb-3 p-2 border rounded bg-light">
-                        <label for="edit_files_lainnya" class="form-label small fw-bold text-secondary">Dokumen Pendukung Lainnya</label>
-                        <input class="form-control form-control-sm mb-1" type="file" id="edit_files_lainnya" name="files_lainnya[]" multiple>
-                        <ul class="list-group mb-2" id="edit-files-lainnya-list"></ul> <!-- Preview New -->
-                        <ul class="list-group" id="existing-files-lainnya-list"></ul> <!-- Existing -->
+                        {{-- Kategori 4: Lainnya --}}
+                        <div class="col-md-6">
+                            <div class="card h-100 border-secondary shadow-sm upload-zone position-relative" data-target="edit_files_lainnya" style="cursor: pointer; transition: all 0.2s;">
+                                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                                    <span><i class="bi bi-paperclip me-2"></i>Lainnya</span>
+                                    <span class="badge bg-white text-secondary rounded-pill" id="count-edit_files_lainnya">0</span>
+                                </div>
+                                <div class="card-body p-2 d-flex flex-column">
+                                    <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-edit_files_lainnya" style="min-height: 50px;">
+                                        <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                    </ul>
+                                    <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                        <i class="bi bi-cloud-arrow-up text-secondary fs-3"></i>
+                                        <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                    </div>
+                                    <input type="file" class="d-none" id="edit_files_lainnya" name="files_lainnya[]" multiple>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {{-- Elemen untuk menampilkan pesan error ukuran file --}}
                     <div id="edit-files-error" class="invalid-feedback" style="display: none;"></div>
-                    <small class="form-text text-muted">File baru akan ditambahkan. Klik ikon sampah untuk menghapus file lama.</small>
+                    <small class="form-text text-muted mt-2 d-block">File baru akan ditambahkan. Klik ikon sampah untuk menghapus file lama.</small>
                 </div>
 
             </div>
@@ -458,6 +571,7 @@
 @endsection
 
 @push('styles')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <style>
     /* CSS Flatpickr dihapus */
     .status-indicator {
@@ -508,11 +622,128 @@
         0%, 50% { background-color: rgba(255, 193, 7, 0.4); } /* Mulai & tahan warna kuning */
         100% { background-color: transparent; } /* Pudar ke transparan */
     }
+
+    /* Drag & Drop Styles */
+    .drop-zone {
+        border: 2px dashed #ccc;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+        background-color: #f8f9fa;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .drop-zone:hover {
+        border-color: #0d6efd;
+        background-color: #e9ecef;
+    }
+
+    /* Color Modifiers */
+    .drop-zone--primary {
+        border-color: #0d6efd;
+        background-color: #f1f8ff; /* Very light blue */
+    }
+    .drop-zone--primary:hover, .drop-zone--primary.drop-zone--over {
+        background-color: #e7f1ff;
+    }
+    .drop-zone--primary .drop-zone__prompt i { color: #0d6efd; }
+
+    .drop-zone--success {
+        border-color: #198754;
+        background-color: #f0fff4; /* Very light green */
+    }
+    .drop-zone--success:hover, .drop-zone--success.drop-zone--over {
+        background-color: #e6fffa;
+    }
+    .drop-zone--success .drop-zone__prompt i { color: #198754; }
+
+    .drop-zone--info {
+        border-color: #0dcaf0;
+        background-color: #f0faff; /* Very light cyan */
+    }
+    .drop-zone--info:hover, .drop-zone--info.drop-zone--over {
+        background-color: #e0f7fa;
+    }
+    .drop-zone--info .drop-zone__prompt i { color: #0dcaf0; }
+
+    .drop-zone--secondary {
+        border-color: #6c757d;
+        background-color: #f8f9fa; /* Light grey */
+    }
+    .drop-zone--secondary:hover, .drop-zone--secondary.drop-zone--over {
+        background-color: #e9ecef;
+    }
+    .drop-zone--secondary .drop-zone__prompt i { color: #6c757d; }
+
+
+    .drop-zone--over {
+        border-color: #0d6efd;
+        background-color: #e9ecef;
+        transform: scale(1.02);
+    }
+
+    .drop-zone__input {
+        display: none;
+    }
+
+    .drop-zone__prompt {
+        font-size: 0.75rem;
+        color: #6c757d;
+        line-height: 1.2;
+    }
+    
+    .drop-zone__prompt i {
+        font-size: 1.5rem;
+        display: block;
+        margin-bottom: 5px;
+        color: #0d6efd;
+    }
+
+    .file-list-scrollable {
+        max-height: 100px;
+        overflow-y: auto;
+        margin-bottom: 0.5rem;
+    }
+    
+    .file-list-scrollable::-webkit-scrollbar {
+        width: 4px;
+    }
+    .file-list-scrollable::-webkit-scrollbar-track {
+        background: #f1f1f1; 
+    }
+    .file-list-scrollable::-webkit-scrollbar-thumb {
+        background: #ccc; 
+        border-radius: 2px;
+    }
+
+    .file-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 10px;
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        margin-top: 5px;
+        font-size: 0.85rem;
+    }
+
+    .file-list-item .btn-remove {
+        color: #dc3545;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        margin-left: 10px;
+    }
 </style>
 @endpush
 
 @push('scripts')
 {{-- JS Flatpickr dihapus --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
   // Inisialisasi semua tooltip di halaman
   var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -524,6 +755,25 @@
     const allRapats = @json($allRapats);
     const editModalEl = document.getElementById('editRapatModal');
     const addModalEl = document.getElementById('addRapatModal');
+
+    // --- SWEETALERT NOTIFICATION ---
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: "{{ session('success') }}",
+            timer: 3000,
+            showConfirmButton: false
+        });
+    @endif
+
+    @if(session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: "{{ session('error') }}",
+        });
+    @endif
 
     // --- FUNGSI UNTUK HIGHLIGHT BARIS BARU/EDIT ---
     const highlightedId = "{{ session('highlight_id') }}";
@@ -779,6 +1029,174 @@
         });
     });
 
+    // --- HELPER FUNCTION FOR FILE ICONS (GLOBAL SCOPE) ---
+    function getFileIcon(fileType) {
+        if (!fileType) return '<i class="bi bi-file-earmark-text text-secondary me-2"></i>';
+        if (fileType.includes('pdf')) return '<i class="bi bi-file-earmark-pdf text-danger me-2"></i>';
+        if (fileType.includes('word') || fileType.includes('doc')) return '<i class="bi bi-file-earmark-word text-primary me-2"></i>';
+        if (fileType.includes('presentation') || fileType.includes('powerpoint') || fileType.includes('ppt')) return '<i class="bi bi-file-earmark-ppt text-warning me-2"></i>';
+        if (fileType.includes('spreadsheet') || fileType.includes('excel') || fileType.includes('xls')) return '<i class="bi bi-file-earmark-excel text-success me-2"></i>';
+        if (fileType.includes('image')) return '<i class="bi bi-file-earmark-image text-info me-2"></i>';
+        if (fileType.includes('zip') || fileType.includes('compressed')) return '<i class="bi bi-file-earmark-zip text-dark me-2"></i>';
+        return '<i class="bi bi-file-earmark-text text-secondary me-2"></i>';
+    }
+
+    // --- DRAG AND DROP LOGIC (UPDATED FOR CARDS) ---
+    const uploadZones = document.querySelectorAll('.upload-zone');
+
+    uploadZones.forEach(zone => {
+        const inputId = zone.getAttribute('data-target');
+        const input = document.getElementById(inputId);
+        const list = document.getElementById(`list-${inputId}`);
+        const countBadge = document.getElementById(`count-${inputId}`);
+        
+        let dataTransfer = new DataTransfer();
+
+        // Click to upload (delegated)
+        zone.addEventListener('click', (e) => {
+            // Ignore clicks on links or delete buttons
+            if (e.target.closest('a') || e.target.closest('.btn-delete-file')) {
+                return;
+            }
+            input.click();
+        });
+
+        // Drag events
+        zone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            zone.classList.add('border-primary', 'bg-light'); // Highlight
+            zone.style.transform = 'scale(1.02)'; // Slight zoom
+            zone.style.boxShadow = '0 .5rem 1rem rgba(0,0,0,.15)'; // Stronger shadow
+        });
+
+        zone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            zone.classList.remove('border-primary', 'bg-light');
+            zone.style.transform = 'scale(1)';
+            zone.style.boxShadow = '';
+        });
+
+        zone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zone.classList.remove('border-primary', 'bg-light');
+            zone.style.transform = 'scale(1)';
+            zone.style.boxShadow = '';
+            
+            if (e.dataTransfer.files.length > 0) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
+
+        // Input change
+        input.addEventListener('change', (e) => {
+            if (input.files.length > 0) {
+                handleFiles(input.files);
+            }
+        });
+
+        function handleFiles(files) {
+            const maxFileSize = 20 * 1024 * 1024; // 20MB
+            const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt', 'xls', 'xlsx', 'zip', 'rar', '7z', 'mp4', 'mp3', 'wav'];
+            const oversizedFiles = [];
+            const invalidTypeFiles = [];
+
+            Array.from(files).forEach(file => {
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+
+                if (file.size > maxFileSize) {
+                    oversizedFiles.push(file.name);
+                } else if (!allowedExtensions.includes(fileExtension)) {
+                    invalidTypeFiles.push(file.name);
+                } else {
+                    dataTransfer.items.add(file);
+                }
+            });
+
+            // Update input files
+            input.files = dataTransfer.files;
+            renderList();
+
+            // Show errors if any
+            let errorMessage = '';
+            if (oversizedFiles.length > 0) {
+                errorMessage += `File terlalu besar (>20MB): ${oversizedFiles.join(', ')}. `;
+            }
+            if (invalidTypeFiles.length > 0) {
+                errorMessage += `Tipe file tidak didukung: ${invalidTypeFiles.join(', ')}. `;
+            }
+
+            if (errorMessage) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File Bermasalah',
+                    text: errorMessage
+                });
+            }
+        }
+
+        function renderList() {
+            // Clear only new files (keep existing files if any, but logic needs to be careful)
+            // Actually, for simplicity, we append new files to the list.
+            // But wait, the list might contain existing files (loaded from server).
+            // We need to distinguish between existing files and new files.
+            // The existing files are rendered by the 'show.bs.modal' event listener.
+            // So here we should only render the NEW files from dataTransfer.
+            
+            // Strategy: Clear the list, re-render existing files (if we stored them), then render new files.
+            // OR: Keep existing files in the DOM, and only manage new files.
+            // Let's try to keep existing files and append new ones.
+            
+            // First, remove all items that are NOT existing files (marked with data-existing="true")
+            const existingItems = Array.from(list.children).filter(li => li.dataset.existing === "true");
+            list.innerHTML = '';
+            existingItems.forEach(item => list.appendChild(item));
+
+            // Update badge count (existing + new)
+            countBadge.textContent = existingItems.length + dataTransfer.files.length;
+
+            if (existingItems.length === 0 && dataTransfer.files.length === 0) {
+                list.innerHTML = '<li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>';
+                return;
+            }
+
+            Array.from(dataTransfer.files).forEach((file, index) => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center small py-1';
+                
+                const fileInfo = document.createElement('span');
+                fileInfo.innerHTML = `<i class="bi bi-file-earmark me-2"></i> ${file.name} <small class="text-muted ms-1">(${Math.round(file.size/1024)} KB)</small> <span class="badge bg-info text-dark ms-1">Baru</span>`;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'btn btn-link text-danger p-0 btn-delete-file';
+                deleteBtn.title = 'Hapus';
+                deleteBtn.innerHTML = '<i class="bi bi-x-circle"></i>';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation(); // Prevent card click
+                    const newFiles = new DataTransfer();
+                    Array.from(dataTransfer.files).forEach((f, i) => {
+                        if (i !== index) newFiles.items.add(f);
+                    });
+                    dataTransfer = newFiles;
+                    input.files = newFiles.files;
+                    renderList();
+                };
+
+                li.appendChild(fileInfo);
+                li.appendChild(deleteBtn);
+                list.appendChild(li);
+            });
+        }
+        
+        // Expose renderList to be called externally (e.g. when clearing form)
+        input.renderList = renderList;
+        input.clearFiles = () => {
+            dataTransfer = new DataTransfer();
+            input.files = dataTransfer.files;
+            renderList();
+        };
+    });
+
     // Event listener untuk perubahan tanggal/waktu
     ['add_tanggal', 'add_waktu_start', 'add_waktu_end'].forEach(id => {
         document.getElementById(id).addEventListener('change', function() {
@@ -793,18 +1211,15 @@
     });
 
     // Event listener untuk modal edit
-    editModalEl.addEventListener('show.bs.modal', async function (event) { // Jadikan fungsi async
+    editModalEl.addEventListener('show.bs.modal', async function (event) {
         const button = event.relatedTarget;
         const rapat = JSON.parse(button.getAttribute('data-rapat'));
         const form = document.getElementById('editRapatForm');
         
-        // Restore missing logic
         const cabangSelect = document.getElementById('edit_id_cabang');
         const roomSelect = document.getElementById('edit_id_room');
 
-        console.log('Setting form action for rapat:', rapat.id_rapat); // DEBUG
         form.action = `{{ url('meetings') }}/${rapat.id_rapat}`;
-        console.log('Form action set to:', form.action); // DEBUG
         
         document.getElementById('edit_id_rapat').value = rapat.id_rapat;
         document.getElementById('edit_judul').value = rapat.judul;
@@ -821,92 +1236,129 @@
             checkRoomAvailability(editModalEl);
         });
 
-        // PERBAIKAN: Ambil dan tampilkan file secara dinamis berdasarkan kategori
-        // 1. Reset semua list file
-        const listMateri = document.getElementById('existing-files-materi-list');
-        const listNotulensi = document.getElementById('existing-files-notulensi-list');
-        const listDokumentasi = document.getElementById('existing-files-dokumentasi-list');
-        const listLainnya = document.getElementById('existing-files-lainnya-list');
+        // Ambil dan tampilkan file secara dinamis berdasarkan kategori
+        const listMateri = document.getElementById('list-edit_files_materi');
+        const listNotulensi = document.getElementById('list-edit_files_notulensi');
+        const listDokumentasi = document.getElementById('list-edit_files_dokumentasi');
+        const listLainnya = document.getElementById('list-edit_files_lainnya');
+        
+        const countMateri = document.getElementById('count-edit_files_materi');
+        const countNotulensi = document.getElementById('count-edit_files_notulensi');
+        const countDokumentasi = document.getElementById('count-edit_files_dokumentasi');
+        const countLainnya = document.getElementById('count-edit_files_lainnya');
 
-        [listMateri, listNotulensi, listDokumentasi, listLainnya].forEach(list => {
-            if(list) list.innerHTML = '<li class="list-group-item text-muted small py-1">Memuat...</li>';
-        });
+        // Helper to reset list
+        const resetList = (list, count) => {
+            if(list) list.innerHTML = '<li class="list-group-item text-muted small py-1 fst-italic text-center">Memuat...</li>';
+            if(count) count.textContent = '0';
+        };
 
-        try {
-            const response = await fetch(`{{ url('meetings') }}/${rapat.id_rapat}/files`);
-            if (!response.ok) throw new Error('Gagal memuat file.');
-            const files = await response.json();
+        resetList(listMateri, countMateri);
+        resetList(listNotulensi, countNotulensi);
+        resetList(listDokumentasi, countDokumentasi);
+        resetList(listLainnya, countLainnya);
 
-            // Kosongkan list sebelum mengisi
+        // Helper to add file to list
+        const addFileToUI = (file, list, countElement) => {
+            if (!list) return;
+            
+            // Remove "Belum ada file" or "Memuat..." message if it exists
+            if (list.querySelector('.text-muted.text-center')) {
+                list.innerHTML = '';
+            }
+
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center small py-1';
+            li.dataset.fileId = file.id_file;
+            li.dataset.existing = "true"; // Mark as existing file
+
+            // Link File
+            const fileLink = document.createElement('a');
+            const downloadUrl = `{{ route('meetings.downloadFile', ['file' => ':fileId']) }}`.replace(':fileId', file.id_file);
+            fileLink.href = downloadUrl;
+            fileLink.target = '_blank';
+            fileLink.rel = 'noopener noreferrer';
+            
+            const iconHTML = getFileIcon(file.file_type || '');
+            fileLink.innerHTML = `${iconHTML} ${file.file_name}`;
+            
+            li.appendChild(fileLink);
+
+            // Tombol Hapus
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'btn btn-link text-danger p-0 btn-delete-file';
+            deleteBtn.title = 'Hapus';
+            deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation(); // Prevent card click
+                deleteFile(file.id_file, li, countElement);
+            };
+
+            li.appendChild(deleteBtn);
+            list.appendChild(li);
+            
+            // Update count
+            if(countElement) {
+                countElement.textContent = parseInt(countElement.textContent || 0) + 1;
+            }
+        };
+
+        const renderFiles = (files) => {
+             // Kosongkan list sebelum mengisi
             [listMateri, listNotulensi, listDokumentasi, listLainnya].forEach(list => {
                 if(list) list.innerHTML = '';
             });
 
             if (files && files.length > 0) {
                 files.forEach(file => {
-                    const li = document.createElement('li');
-                    li.className = 'list-group-item d-flex justify-content-between align-items-center file-item-actions small py-1';
-                    li.dataset.fileId = file.id_file;
-
-                    // Link File
-                    const fileLink = document.createElement('a');
-                    const downloadUrl = `{{ route('meetings.downloadFile', ['file' => ':fileId']) }}`.replace(':fileId', file.id_file);
-                    fileLink.href = downloadUrl;
-                    fileLink.target = '_blank';
-                    fileLink.rel = 'noopener noreferrer';
-                    
-                    const iconHTML = getFileIcon(file.file_type || '');
-                    fileLink.innerHTML = `${iconHTML} ${file.file_name}`;
-                    
-                    li.appendChild(fileLink);
-
-                    // Tombol Hapus
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.type = 'button';
-                    deleteBtn.className = 'btn btn-outline-danger btn-sm py-0 px-1 border-0';
-                    deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
-                    deleteBtn.onclick = () => deleteFile(file.id_file, li);
-
-                    li.appendChild(deleteBtn);
-
-                    // Masukkan ke list yang sesuai berdasarkan id_categories
                     switch(parseInt(file.id_categories)) {
-                        case 1:
-                            if(listMateri) listMateri.appendChild(li);
-                            break;
-                        case 2:
-                            if(listNotulensi) listNotulensi.appendChild(li);
-                            break;
-                        case 3:
-                            if(listDokumentasi) listDokumentasi.appendChild(li);
-                            break;
-                        case 4:
-                            if(listLainnya) listLainnya.appendChild(li);
-                            break;
-                        default:
-                            // Jika tidak ada kategori (file lama), masukkan ke Lainnya atau buat list umum?
-                            // Untuk saat ini masukkan ke Lainnya sebagai fallback
-                            if(listLainnya) listLainnya.appendChild(li);
+                        case 1: addFileToUI(file, listMateri, countMateri); break;
+                        case 2: addFileToUI(file, listNotulensi, countNotulensi); break;
+                        case 3: addFileToUI(file, listDokumentasi, countDokumentasi); break;
+                        case 4: addFileToUI(file, listLainnya, countLainnya); break;
+                        default: addFileToUI(file, listLainnya, countLainnya);
                     }
                 });
-            } else {
-                // Opsional: Tampilkan pesan "Tidak ada file" jika kosong
-                // [listMateri, listNotulensi, listDokumentasi, listLainnya].forEach(list => {
-                //    if(list && list.children.length === 0) list.innerHTML = '<li class="list-group-item text-muted small py-1">Tidak ada file.</li>';
-                // });
             }
-        } catch (error) {
-            console.error('Error fetching files:', error);
-            [listMateri, listNotulensi, listDokumentasi, listLainnya].forEach(list => {
-                if(list) list.innerHTML = '<li class="list-group-item text-danger small py-1">Gagal memuat.</li>';
+            
+            // Restore "Belum ada file" if empty
+            [
+                {list: listMateri, count: countMateri}, 
+                {list: listNotulensi, count: countNotulensi}, 
+                {list: listDokumentasi, count: countDokumentasi}, 
+                {list: listLainnya, count: countLainnya}
+            ].forEach(({list, count}) => {
+                if(list && list.children.length === 0) {
+                    list.innerHTML = '<li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>';
+                }
             });
-        }
+        };
 
+        // Hybrid Loading Strategy:
+        // 1. Try to use eager-loaded files from data-rapat
+        // 2. If missing, fallback to AJAX fetch
+        if (rapat.files && Array.isArray(rapat.files)) {
+            console.log('Using pre-loaded files:', rapat.files);
+            renderFiles(rapat.files);
+        } else {
+            console.log('Pre-loaded files missing, fetching from server...');
+            try {
+                const response = await fetch(`{{ url('meetings') }}/${rapat.id_rapat}/files`);
+                if (!response.ok) throw new Error('Gagal memuat file.');
+                const files = await response.json();
+                renderFiles(files);
+            } catch (error) {
+                console.error('Error fetching files:', error);
+                [listMateri, listNotulensi, listDokumentasi, listLainnya].forEach(list => {
+                    if(list) list.innerHTML = '<li class="list-group-item text-danger small py-1 text-center">Gagal memuat file.</li>';
+                });
+            }
+        }
     });
 
-    // Fungsi untuk menghapus file via AJAX
     // Fungsi untuk menghapus file via AJAX (Updated with Modal)
-    window.deleteFile = function(fileId, listItemElement) {
+    window.deleteFile = function(fileId, listItemElement, countElement) {
         const deleteModalEl = document.getElementById('deleteFileConfirmModal');
         const deleteModal = new bootstrap.Modal(deleteModalEl);
         const confirmBtn = document.getElementById('confirmDeleteFileBtn');
@@ -927,8 +1379,16 @@
                 
                 if (result.success) {
                     listItemElement.remove(); // Hapus item dari list di UI
+                    
+                    // Update count if element provided
+                    if(countElement) {
+                        const currentCount = parseInt(countElement.textContent || 0);
+                        if(currentCount > 0) {
+                            countElement.textContent = currentCount - 1;
+                        }
+                    }
+
                     deleteModal.hide(); // Tutup modal
-                    // alert('File berhasil dihapus.'); // Opsional: bisa diganti dengan toast atau dihapus saja agar lebih seamless
                 } else { 
                     throw new Error(result.message); 
                 }
@@ -945,129 +1405,50 @@
         deleteModal.show();
     };
 
-
-
-
-
-    // Fungsi untuk mendapatkan ikon berdasarkan tipe file
-    function getFileIcon(fileType) {
-        if (fileType.includes('pdf')) return '<i class="bi bi-file-earmark-pdf text-danger me-2"></i>';
-        if (fileType.includes('word')) return '<i class="bi bi-file-earmark-word text-primary me-2"></i>';
-        if (fileType.includes('presentation') || fileType.includes('powerpoint')) return '<i class="bi bi-file-earmark-ppt text-warning me-2"></i>';
-        if (fileType.includes('image')) return '<i class="bi bi-file-earmark-image text-info me-2"></i>';
-        return '<i class="bi bi-file-earmark-text text-secondary me-2"></i>';
-    }
-
-    // Fungsi Generic untuk Preview File
-    function setupFilePreview(inputId, listId) {
-        const input = document.getElementById(inputId);
-        const list = document.getElementById(listId);
-        let dataTransfer = new DataTransfer();
-
-        if (!input || !list) return;
-
-        input.addEventListener('change', function() {
-            const maxFileSize = 20 * 1024 * 1024; // 20MB
-            const errorElement = input.closest('.mb-3').querySelector('.invalid-feedback'); // Cari error element terdekat
-
-            // Reset status error
-            if (errorElement) {
-                errorElement.textContent = '';
-                errorElement.style.display = 'none';
-            }
-            this.classList.remove('is-invalid');
-
-            const oversizedFiles = [];
-            const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt', 'xls', 'xlsx', 'zip', 'rar', '7z', 'mp4', 'mp3', 'wav'];
-            const invalidTypeFiles = [];
-
-            Array.from(this.files).forEach(file => {
-                const fileExtension = file.name.split('.').pop().toLowerCase();
-
-                if (file.size > maxFileSize) {
-                    oversizedFiles.push(file.name);
-                } else if (!allowedExtensions.includes(fileExtension)) {
-                    invalidTypeFiles.push(file.name);
-                } else {
-                    dataTransfer.items.add(file);
-                }
-            });
-
-            this.files = dataTransfer.files; // Update input dengan file gabungan
-            renderList();
-
-            let errorMessage = '';
-            if (oversizedFiles.length > 0) {
-                errorMessage += `File terlalu besar (>20MB): ${oversizedFiles.join(', ')}. `;
-            }
-            if (invalidTypeFiles.length > 0) {
-                errorMessage += `Tipe file tidak didukung: ${invalidTypeFiles.join(', ')}. `;
-            }
-
-            if (errorMessage && errorElement) {
-                this.classList.add('is-invalid');
-                errorElement.textContent = errorMessage;
-                errorElement.style.display = 'block';
-            }
-        });
-
-        function renderList() {
-            list.innerHTML = '';
-            if (dataTransfer.files.length === 0) return;
-
-            Array.from(dataTransfer.files).forEach((file, index) => {
-                const li = document.createElement('li');
-                li.className = 'list-group-item list-group-item-light d-flex justify-content-between align-items-center small py-1';
-
-                const fileInfo = document.createElement('span');
-                fileInfo.innerHTML = `${getFileIcon(file.type)} ${file.name}`;
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.type = 'button';
-                deleteBtn.className = 'btn btn-outline-danger btn-sm py-0 px-1';
-                deleteBtn.innerHTML = '<i class="bi bi-x"></i>';
-                deleteBtn.onclick = () => {
-                    const newFiles = new DataTransfer();
-                    Array.from(dataTransfer.files).forEach((f, i) => {
-                        if (i !== index) newFiles.items.add(f);
-                    });
-                    dataTransfer = newFiles;
-                    input.files = newFiles.files;
-                    renderList();
-                };
-
-                li.appendChild(fileInfo);
-                li.appendChild(deleteBtn);
-                list.appendChild(li);
-            });
-        }
+    // Reset forms when modal is closed
+    // Clear focus BEFORE modal closes to prevent aria-hidden warning
+    addModalEl.addEventListener('hide.bs.modal', function () {
+        // Remove focus from all focusable elements inside the modal
+        const focusableElements = addModalEl.querySelectorAll('input, button, select, textarea, a[href], [tabindex]:not([tabindex="-1"])');
+        focusableElements.forEach(el => el.blur());
         
-        // Return reset function to be used later
-        return () => {
-            dataTransfer = new DataTransfer();
-            input.value = '';
-            renderList();
-        };
-    }
+        // Move focus to body
+        document.body.focus();
+    });
+    
+    // Clean up AFTER modal is closed
+    addModalEl.addEventListener('hidden.bs.modal', function () {
+        document.getElementById('addRapatForm').reset();
+        // Clear file lists
+        ['add_files_materi', 'add_files_notulensi', 'add_files_dokumentasi', 'add_files_lainnya'].forEach(id => {
+            const input = document.getElementById(id);
+            if(input && input.clearFiles) input.clearFiles();
+        });
+    });
 
-    // Setup Preview untuk semua input file
-    const resetAddMateri = setupFilePreview('add_files_materi', 'add-files-materi-list');
-    const resetAddNotulensi = setupFilePreview('add_files_notulensi', 'add-files-notulensi-list');
-    const resetAddDokumentasi = setupFilePreview('add_files_dokumentasi', 'add-files-dokumentasi-list');
-    const resetAddLainnya = setupFilePreview('add_files_lainnya', 'add-files-lainnya-list');
+    // Clear focus BEFORE edit modal closes to prevent aria-hidden warning
+    editModalEl.addEventListener('hide.bs.modal', function () {
+        // Remove focus from all focusable elements inside the modal
+        const focusableElements = editModalEl.querySelectorAll('input, button, select, textarea, a[href], [tabindex]:not([tabindex="-1"])');
+        focusableElements.forEach(el => el.blur());
+        
+        // Move focus to body
+        document.body.focus();
+    });
 
-    const resetEditMateri = setupFilePreview('edit_files_materi', 'edit-files-materi-list');
-    const resetEditNotulensi = setupFilePreview('edit_files_notulensi', 'edit-files-notulensi-list');
-    const resetEditDokumentasi = setupFilePreview('edit_files_dokumentasi', 'edit-files-dokumentasi-list');
-    const resetEditLainnya = setupFilePreview('edit_files_lainnya', 'edit-files-lainnya-list');
-
-    // Reset daftar file saat modal ditutup atau dibuka
-    editModalEl.addEventListener('show.bs.modal', function() {
-        // Reset input file baru
-        resetEditMateri();
-        resetEditNotulensi();
-        resetEditDokumentasi();
-        resetEditLainnya();
+    // Clean up AFTER edit modal is closed
+    editModalEl.addEventListener('hidden.bs.modal', function () {
+        document.getElementById('editRapatForm').reset();
+        // Clear file lists
+         ['edit_files_materi', 'edit_files_notulensi', 'edit_files_dokumentasi', 'edit_files_lainnya'].forEach(id => {
+            const input = document.getElementById(id);
+            if(input && input.clearFiles) input.clearFiles();
+            // Also clear existing files from DOM
+            const list = document.getElementById(`list-${id}`);
+            if(list) list.innerHTML = '<li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>';
+            const badge = document.getElementById(`count-${id}`);
+            if(badge) badge.textContent = '0';
+        });
     });
 
 

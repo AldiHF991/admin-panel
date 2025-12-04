@@ -89,14 +89,89 @@
                         <!-- Section 3: Dokumen Pendukung -->
                         <h5 class="text-primary mb-3 border-bottom pb-2 mt-5"><i class="bi bi-paperclip me-2"></i> Dokumen Pendukung</h5>
                         
-                        <div class="mb-4">
-                            <label for="files" class="form-label fw-bold">Upload File (Opsional)</label>
-                            <input class="form-control" type="file" id="files" name="files[]" multiple>
-                            <div id="files-error" class="invalid-feedback" style="display: none;"></div>
-                            <div class="form-text text-muted">
-                                Format yang didukung: PDF, DOC, DOCX, PPT, PPTX, JPG, PNG. Maksimal 5MB per file.
+                        <div class="row g-3 mb-4">
+                            {{-- Kategori 1: Materi --}}
+                            <div class="col-md-6">
+                                <div class="card h-100 border-primary shadow-sm upload-zone position-relative" data-target="files_materi" style="cursor: pointer; transition: all 0.2s;">
+                                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-file-earmark-text me-2"></i>Materi</span>
+                                        <span class="badge bg-white text-primary rounded-pill" id="count-files_materi">0</span>
+                                    </div>
+                                    <div class="card-body p-2 d-flex flex-column">
+                                        <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-files_materi" style="min-height: 50px;">
+                                            <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                        </ul>
+                                        <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                            <i class="bi bi-cloud-arrow-up text-primary fs-3"></i>
+                                            <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                        </div>
+                                        <input type="file" class="d-none" id="files_materi" name="files_materi[]" multiple>
+                                    </div>
+                                </div>
                             </div>
-                            <div id="file-list" class="mt-3"></div>
+
+                            {{-- Kategori 2: Notulensi --}}
+                            <div class="col-md-6">
+                                <div class="card h-100 border-success shadow-sm upload-zone position-relative" data-target="files_notulensi" style="cursor: pointer; transition: all 0.2s;">
+                                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-journal-text me-2"></i>Notulensi</span>
+                                        <span class="badge bg-white text-success rounded-pill" id="count-files_notulensi">0</span>
+                                    </div>
+                                    <div class="card-body p-2 d-flex flex-column">
+                                        <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-files_notulensi" style="min-height: 50px;">
+                                            <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                        </ul>
+                                        <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                            <i class="bi bi-cloud-arrow-up text-success fs-3"></i>
+                                            <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                        </div>
+                                        <input type="file" class="d-none" id="files_notulensi" name="files_notulensi[]" multiple>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Kategori 3: Dokumentasi --}}
+                            <div class="col-md-6">
+                                <div class="card h-100 border-info shadow-sm upload-zone position-relative" data-target="files_dokumentasi" style="cursor: pointer; transition: all 0.2s;">
+                                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-camera me-2"></i>Dokumentasi</span>
+                                        <span class="badge bg-white text-info rounded-pill" id="count-files_dokumentasi">0</span>
+                                    </div>
+                                    <div class="card-body p-2 d-flex flex-column">
+                                        <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-files_dokumentasi" style="min-height: 50px;">
+                                            <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                        </ul>
+                                        <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                            <i class="bi bi-cloud-arrow-up text-info fs-3"></i>
+                                            <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                        </div>
+                                        <input type="file" class="d-none" id="files_dokumentasi" name="files_dokumentasi[]" multiple>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Kategori 4: Lainnya --}}
+                            <div class="col-md-6">
+                                <div class="card h-100 border-secondary shadow-sm upload-zone position-relative" data-target="files_lainnya" style="cursor: pointer; transition: all 0.2s;">
+                                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-paperclip me-2"></i>Lainnya</span>
+                                        <span class="badge bg-white text-secondary rounded-pill" id="count-files_lainnya">0</span>
+                                    </div>
+                                    <div class="card-body p-2 d-flex flex-column">
+                                        <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-files_lainnya" style="min-height: 50px;">
+                                            <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                        </ul>
+                                        <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                            <i class="bi bi-cloud-arrow-up text-secondary fs-3"></i>
+                                            <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                        </div>
+                                        <input type="file" class="d-none" id="files_lainnya" name="files_lainnya[]" multiple>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-text text-muted mb-4">
+                            Format yang didukung: PDF, DOC, DOCX, PPT, PPTX, JPG, PNG. Maksimal 20MB per file.
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-5">
@@ -278,85 +353,131 @@ document.addEventListener('DOMContentLoaded', function () {
     endTimeInput.addEventListener('change', checkRoomAvailability);
 
     // File Upload Preview
-    // File Upload Preview & Validation
-    const fileInput = document.getElementById('files');
-    const fileList = document.getElementById('file-list');
-    const filesError = document.getElementById('files-error');
-    let fileDataTransfer = new DataTransfer();
+    // File Upload Logic
+    const uploadZones = document.querySelectorAll('.upload-zone');
 
-    function renderFileList() {
-        fileList.innerHTML = '';
-        Array.from(fileDataTransfer.files).forEach((file, index) => {
-            const div = document.createElement('div');
-            div.className = 'badge bg-light text-dark border me-2 mb-2 p-2 d-inline-flex align-items-center';
-            div.innerHTML = `
-                <i class="bi bi-file-earmark me-2"></i> 
-                ${file.name} <small class="text-muted ms-1">(${Math.round(file.size/1024)} KB)</small>
-                <button type="button" class="btn-close ms-2" aria-label="Remove" style="font-size: 0.5em;"></button>
-            `;
-            
-            // Add remove functionality
-            div.querySelector('.btn-close').addEventListener('click', function() {
-                const newFiles = new DataTransfer();
-                Array.from(fileDataTransfer.files).forEach((f, i) => {
-                    if (i !== index) newFiles.items.add(f);
-                });
-                fileDataTransfer = newFiles;
-                fileInput.files = newFiles.files;
-                renderFileList();
-            });
+    uploadZones.forEach(zone => {
+        const inputId = zone.getAttribute('data-target');
+        const input = document.getElementById(inputId);
+        const list = document.getElementById(`list-${inputId}`);
+        const countBadge = document.getElementById(`count-${inputId}`);
+        
+        let dataTransfer = new DataTransfer();
 
-            fileList.appendChild(div);
+        // Click to upload (delegated)
+        zone.addEventListener('click', (e) => {
+            // Ignore clicks on links or delete buttons
+            if (e.target.closest('a') || e.target.closest('.btn-delete-file')) {
+                return;
+            }
+            input.click();
         });
-    }
 
-    fileInput.addEventListener('change', function() {
-        const maxFileSize = 20 * 1024 * 1024; // 20MB
-        const allowedExtensions = [
-        'jpg', 'jpeg', 'png', 'gif',
-        'pdf',
-        'doc', 'docx',
-        'ppt', 'pptx',
-        'xls', 'xlsx', 'csv',
-        'txt',
-        'zip', 'rar', '7z',
-        'mp4', 'mkv', 'mp3', 'wav',
-        'odt', 'ods'
-        ];
-        const oversizedFiles = [];
-        const invalidTypeFiles = [];
+        // Drag events
+        zone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            zone.classList.add('border-primary', 'bg-light'); // Highlight
+            zone.style.transform = 'scale(1.02)'; // Slight zoom
+            zone.style.boxShadow = '0 .5rem 1rem rgba(0,0,0,.15)'; // Stronger shadow
+        });
 
-        filesError.style.display = 'none';
-        filesError.textContent = '';
-        this.classList.remove('is-invalid');
+        zone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            zone.classList.remove('border-primary', 'bg-light');
+            zone.style.transform = 'scale(1)';
+            zone.style.boxShadow = '';
+        });
 
-        Array.from(this.files).forEach(file => {
-            const fileExtension = file.name.split('.').pop().toLowerCase();
-
-            if (file.size > maxFileSize) {
-                oversizedFiles.push(file.name);
-            } else if (!allowedExtensions.includes(fileExtension)) {
-                invalidTypeFiles.push(file.name);
-            } else {
-                fileDataTransfer.items.add(file);
+        zone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zone.classList.remove('border-primary', 'bg-light');
+            zone.style.transform = 'scale(1)';
+            zone.style.boxShadow = '';
+            
+            if (e.dataTransfer.files.length > 0) {
+                handleFiles(e.dataTransfer.files);
             }
         });
 
-        this.files = fileDataTransfer.files;
-        renderFileList();
+        // Input change
+        input.addEventListener('change', (e) => {
+            if (input.files.length > 0) {
+                handleFiles(input.files);
+            }
+        });
 
-        let errorMessage = '';
-        if (oversizedFiles.length > 0) {
-            errorMessage += `File terlalu besar (>5MB): ${oversizedFiles.join(', ')}. `;
-        }
-        if (invalidTypeFiles.length > 0) {
-            errorMessage += `Tipe file tidak didukung: ${invalidTypeFiles.join(', ')}. `;
+        function handleFiles(files) {
+            const maxFileSize = 20 * 1024 * 1024; // 20MB
+            const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'txt', 'xls', 'xlsx', 'zip', 'rar', '7z', 'mp4', 'mp3', 'wav'];
+            const oversizedFiles = [];
+            const invalidTypeFiles = [];
+
+            Array.from(files).forEach(file => {
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+
+                if (file.size > maxFileSize) {
+                    oversizedFiles.push(file.name);
+                } else if (!allowedExtensions.includes(fileExtension)) {
+                    invalidTypeFiles.push(file.name);
+                } else {
+                    dataTransfer.items.add(file);
+                }
+            });
+
+            // Update input files
+            input.files = dataTransfer.files;
+            renderList();
+
+            // Show errors if any
+            let errorMessage = '';
+            if (oversizedFiles.length > 0) {
+                errorMessage += `File terlalu besar (>20MB): ${oversizedFiles.join(', ')}. `;
+            }
+            if (invalidTypeFiles.length > 0) {
+                errorMessage += `Tipe file tidak didukung: ${invalidTypeFiles.join(', ')}. `;
+            }
+
+            if (errorMessage) {
+                alert(errorMessage);
+            }
         }
 
-        if (errorMessage) {
-            this.classList.add('is-invalid');
-            filesError.textContent = errorMessage;
-            filesError.style.display = 'block';
+        function renderList() {
+            list.innerHTML = '';
+            countBadge.textContent = dataTransfer.files.length;
+
+            if (dataTransfer.files.length === 0) {
+                list.innerHTML = '<li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>';
+                return;
+            }
+
+            Array.from(dataTransfer.files).forEach((file, index) => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center small py-1';
+                
+                const fileInfo = document.createElement('span');
+                fileInfo.innerHTML = `<i class="bi bi-file-earmark me-2"></i> ${file.name} <small class="text-muted ms-1">(${Math.round(file.size/1024)} KB)</small>`;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'btn btn-link text-danger p-0 btn-delete-file';
+                deleteBtn.title = 'Hapus';
+                deleteBtn.innerHTML = '<i class="bi bi-x-circle"></i>';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation(); // Prevent card click
+                    const newFiles = new DataTransfer();
+                    Array.from(dataTransfer.files).forEach((f, i) => {
+                        if (i !== index) newFiles.items.add(f);
+                    });
+                    dataTransfer = newFiles;
+                    input.files = newFiles.files;
+                    renderList();
+                };
+
+                li.appendChild(fileInfo);
+                li.appendChild(deleteBtn);
+                list.appendChild(li);
+            });
         }
     });
 

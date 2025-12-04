@@ -4,7 +4,7 @@
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Rapat Baru Dibuat (3 Hari Terakhir)</h5>
-                <a href="{{ route('reports.newlyCreated') }}" target="_blank" class="btn btn-sm btn-outline-success">
+                <a href="{{ route('pic.reports.newlyCreated') }}" target="_blank" class="btn btn-sm btn-outline-success">
                     <i class="bi bi-arrows-fullscreen me-1"></i> Layar Penuh
                 </a>
             </div>
@@ -71,7 +71,7 @@
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Aktivitas Rapat (Jadwal Terdekat)</h5>
-                <a href="{{ route('reports.recentActivity') }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <a href="{{ route('pic.reports.recentActivity') }}" target="_blank" class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-arrows-fullscreen me-1"></i> Layar Penuh
                 </a>
             </div>

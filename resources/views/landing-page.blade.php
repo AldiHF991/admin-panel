@@ -457,51 +457,62 @@
 
         /* SECTION DOWNLOAD BUTTON */
         .download-section {
-            padding: 0.2rem 0 0.5rem;
+            padding: 0.2rem 0 4rem; /* Tambah padding bawah biar naik */
+            position: relative;
+            z-index: 10;
         }
 
-        .btn-download-gradient {
+        /* STORE BUTTONS */
+        .btn-store {
             display: inline-flex;
             align-items: center;
-            gap: 0.55rem;
-            padding: 0.85rem 1.6rem;
-            border-radius: 999px;
-            border: none;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #0f172a;
+            gap: 0.75rem;
+            padding: 0.6rem 1.4rem;
+            background: rgba(15, 23, 42, 0.6); /* Lebih transparan */
+            border: 1px solid rgba(14, 165, 233, 0.5); /* Border biru terang */
+            border-radius: 0.8rem;
+            color: #fff;
             text-decoration: none;
-            cursor: pointer;
-
-            background-image: linear-gradient(120deg,
-                #facc15,
-                #fb923c,
-                #0ea5e9,
-                #22c55e,
-                #facc15);
-            background-size: 230% 230%;
-            animation: gradientFlow 8s ease-in-out infinite;
-            box-shadow: 0 10px 25px rgba(15,23,42,0.5);
+            transition: all 0.3s ease;
+            min-width: 180px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(14, 165, 233, 0.15); /* Glow biru halus */
         }
 
-        .btn-download-gradient i {
+        .btn-store:hover {
+            background: rgba(14, 165, 233, 0.15);
+            border-color: #facc15; /* Hover jadi kuning */
+            color: #fff;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(250, 204, 21, 0.25); /* Glow kuning */
+        }
+
+        .btn-store i {
+            font-size: 1.8rem;
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.3));
+        }
+
+        .btn-store-text {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            line-height: 1.1;
+        }
+
+        .btn-store-caption {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+            color: #e2e8f0;
+        }
+
+        .btn-store-title {
             font-size: 1.05rem;
-        }
-
-        .btn-download-gradient:hover {
-            box-shadow: 0 14px 32px rgba(15,23,42,0.7);
-        }
-
-        @keyframes gradientFlow {
-            0% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
-            }
-            100% {
-                background-position: 0% 50%;
-            }
+            font-weight: 600;
+            background: linear-gradient(to right, #fff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         @media (max-width: 768px) {
@@ -694,12 +705,25 @@
     <!-- DOWNLOAD BUTTON SECTION -->
     <section class="download-section reveal-on-scroll reveal-delay-1">
         <div class="container text-center">
-            {{-- Ganti href="#" dengan route() milikmu nanti --}}
-            <a href="#"
-               class="btn-download-gradient">
-                <i class="bi bi-download"></i>
-                <span>Download Aplikasi</span>
-            </a>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <!-- Play Store -->
+                <a href="#" class="btn-store">
+                    <i class="bi bi-google-play"></i>
+                    <div class="btn-store-text">
+                        <span class="btn-store-caption">GET IT ON</span>
+                        <span class="btn-store-title">Google Play</span>
+                    </div>
+                </a>
+
+                <!-- App Store -->
+                <a href="#" class="btn-store">
+                    <i class="bi bi-apple"></i>
+                    <div class="btn-store-text">
+                        <span class="btn-store-caption">Download on the</span>
+                        <span class="btn-store-title">App Store</span>
+                    </div>
+                </a>
+            </div>
         </div>
     </section>
 

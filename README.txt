@@ -10,6 +10,5 @@ NOTE:
 
 
 # NOTE 21 NOV 2025
-    - php artisan serve --host=0.0.0.0 --port=8000
-    - php artisan reverb:start
-    - npm run dev
+    - npm run start
+    - pastikan ip benar di .env dan vite.config.js

@@ -470,6 +470,12 @@
                     {{ session('success') }}
                 </div>
             @endif
+            
+            <!-- Greeting Section -->
+            <div class="mb-4">
+                <h4 class="fw-bold text-white mb-1">Halo, {{ $guest->nama }} 👋</h4>
+                <p class="text-white-50 small mb-0">Selamat datang di dashboard rapat.</p>
+            </div>
 
             <!-- Informasi Rapat -->
             <div class="card-custom">
@@ -542,45 +548,66 @@
                 @endif
             </div>
 
-            <!-- File Rapat -->
+            <!-- File Rapat Categorized -->
             <div class="card-custom">
                 <h2 class="card-title-custom">
                     <i class="bi bi-folder"></i>
                     File Rapat
                 </h2>
 
-                @if($rapat->files && $rapat->files->count() > 0)
-                    <div class="file-list">
-                        @foreach($rapat->files as $file)
-                            <a href="{{ route('meetings.downloadFile', ['file' => $file->id_file]) }}"
-                               target="_blank"
-                               class="file-item">
-                                <div class="file-icon">
-                                    @if(str_contains($file->file_type, 'pdf'))
-                                        <i class="bi bi-file-pdf"></i>
-                                    @elseif(str_contains($file->file_type, 'image'))
-                                        <i class="bi bi-file-image"></i>
-                                    @elseif(str_contains($file->file_type, 'word') || str_contains($file->file_type, 'document'))
-                                        <i class="bi bi-file-word"></i>
-                                    @elseif(str_contains($file->file_type, 'powerpoint') || str_contains($file->file_type, 'presentation'))
-                                        <i class="bi bi-file-ppt"></i>
-                                    @else
-                                        <i class="bi bi-file-earmark"></i>
-                                    @endif
-                                </div>
-                                <div class="file-info">
-                                    <div class="file-name">{{ $file->file_name }}</div>
-                                    <div class="file-size">
-                                        {{ number_format($file->file_size / 1024, 2) }} KB
-                                    </div>
-                                </div>
-                                <div class="file-download">
-                                    <i class="bi bi-download"></i>
-                                </div>
-                            </a>
-                        @endforeach
-                    </div>
-                @else
+                @php
+                    $categories = [
+                        ['id' => 'materi', 'name' => 'Materi', 'icon' => 'bi-file-earmark-text', 'color' => 'primary', 'bg' => 'alert-primary'],
+                        ['id' => 'notulensi', 'name' => 'Notulensi', 'icon' => 'bi-journal-text', 'color' => 'success', 'bg' => 'alert-success'],
+                        ['id' => 'dokumentasi', 'name' => 'Dokumentasi', 'icon' => 'bi-camera', 'color' => 'info', 'bg' => 'alert-info'],
+                        ['id' => 'lainnya', 'name' => 'Lainnya', 'icon' => 'bi-paperclip', 'color' => 'secondary', 'bg' => 'alert-secondary'],
+                    ];
+                    $hasFiles = false;
+                @endphp
+
+                @foreach($categories as $cat)
+                    @if(isset($groupedFiles[$cat['id']]) && $groupedFiles[$cat['id']]->count() > 0)
+                        @php $hasFiles = true; @endphp
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center mb-2 {{ $cat['bg'] }} px-3 py-2 rounded">
+                                <i class="bi {{ $cat['icon'] }} me-2 text-{{ $cat['color'] }}"></i>
+                                <span class="fw-bold text-{{ $cat['color'] }}">{{ $cat['name'] }}</span>
+                            </div>
+                            <div class="file-list ps-2">
+                                @foreach($groupedFiles[$cat['id']] as $file)
+                                    <a href="{{ route('meetings.downloadFile', ['file' => $file->id_file]) }}"
+                                       target="_blank"
+                                       class="file-item mb-2">
+                                        <div class="file-icon">
+                                            @if(str_contains($file->file_type, 'pdf'))
+                                                <i class="bi bi-file-pdf"></i>
+                                            @elseif(str_contains($file->file_type, 'image'))
+                                                <i class="bi bi-file-image"></i>
+                                            @elseif(str_contains($file->file_type, 'word') || str_contains($file->file_type, 'document'))
+                                                <i class="bi bi-file-word"></i>
+                                            @elseif(str_contains($file->file_type, 'powerpoint') || str_contains($file->file_type, 'presentation'))
+                                                <i class="bi bi-file-ppt"></i>
+                                            @else
+                                                <i class="bi bi-file-earmark"></i>
+                                            @endif
+                                        </div>
+                                        <div class="file-info">
+                                            <div class="file-name">{{ $file->file_name }}</div>
+                                            <div class="file-size">
+                                                {{ number_format($file->file_size / 1024, 2) }} KB
+                                            </div>
+                                        </div>
+                                        <div class="file-download">
+                                            <i class="bi bi-download"></i>
+                                        </div>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                @endforeach
+
+                @if(!$hasFiles)
                     <div class="no-files">
                         <i class="bi bi-folder-x"></i>
                         Tidak ada file yang diunggah untuk rapat ini.

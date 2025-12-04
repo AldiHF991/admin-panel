@@ -118,6 +118,7 @@
                                         <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton{{ $rapat->id_rapat }}" data-bs-toggle="dropdown" aria-expanded="false" data-bs-boundary="viewport" data-bs-popper-config='{"strategy":"fixed"}'>Aksi</button>
                                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ $rapat->id_rapat }}">
                                             <li><a class="dropdown-item btn-detail-meeting" href="#" data-id="{{ $rapat->id_rapat }}" data-bs-toggle="modal" data-bs-target="#detailRapatModal"><i class="bi bi-eye me-2"></i>Detail</a></li>
+                                            <li><a class="dropdown-item btn-upload-file-action" href="#" data-id="{{ $rapat->id_rapat }}" data-bs-toggle="modal" data-bs-target="#uploadFileModal"><i class="bi bi-upload me-2"></i>Upload File</a></li>
                                             <li><a class="dropdown-item" href="{{ route('pic.meetings.absensi', $rapat->id_rapat) }}"><i class="bi bi-person-check me-2"></i>Absensi</a></li>
                                             @if($rapat->id_status == 4)
                                                 <li><a class="dropdown-item" href="{{ route('pic.meetings.qr', $rapat->id_rapat) }}" target="_blank"><i class="bi bi-qr-code me-2"></i>QR Code Absensi</a></li>
@@ -162,6 +163,7 @@
     </div>
 </div>
 
+@push('modals')
 {{-- Add Rapat Modal --}}
 <div class="modal fade" id="addRapatModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
@@ -317,7 +319,118 @@
             </div>
         </div>
     </div>
+
 </div>
+
+{{-- Upload File Modal --}}
+<div class="modal fade" id="uploadFileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-cloud-upload me-2"></i>Upload File Rapat</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div class="mb-4 text-center">
+                    <h5 id="upload-modal-judul" class="fw-bold text-primary mb-1">Loading...</h5>
+                    <p class="text-muted small">Kelola dokumen rapat Anda di sini. Maksimal 20MB per file.</p>
+                </div>
+
+                <div class="row g-3">
+                    {{-- Kategori 1: Materi --}}
+                    <div class="col-md-6">
+                        <div class="card h-100 border-primary shadow-sm upload-zone position-relative" data-category="1" style="cursor: pointer; transition: all 0.2s;">
+                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-file-earmark-text me-2"></i>Materi</span>
+                                <span class="badge bg-white text-primary rounded-pill" id="count-materi">0</span>
+                            </div>
+                            <div class="card-body p-2 d-flex flex-column">
+                                <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-materi" style="min-height: 50px;">
+                                    <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                </ul>
+                                <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                    <i class="bi bi-cloud-arrow-up text-primary fs-3"></i>
+                                    <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                </div>
+                                <input type="file" class="d-none file-input" data-category="1" multiple>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Kategori 2: Notulensi --}}
+                    <div class="col-md-6">
+                        <div class="card h-100 border-success shadow-sm upload-zone position-relative" data-category="2" style="cursor: pointer; transition: all 0.2s;">
+                            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-journal-text me-2"></i>Notulensi</span>
+                                <span class="badge bg-white text-success rounded-pill" id="count-notulensi">0</span>
+                            </div>
+                            <div class="card-body p-2 d-flex flex-column">
+                                <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-notulensi" style="min-height: 50px;">
+                                    <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                </ul>
+                                <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                    <i class="bi bi-cloud-arrow-up text-success fs-3"></i>
+                                    <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                </div>
+                                <input type="file" class="d-none file-input" data-category="2" multiple>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Kategori 3: Dokumentasi --}}
+                    <div class="col-md-6">
+                        <div class="card h-100 border-info shadow-sm upload-zone position-relative" data-category="3" style="cursor: pointer; transition: all 0.2s;">
+                            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-camera me-2"></i>Dokumentasi</span>
+                                <span class="badge bg-white text-info rounded-pill" id="count-dokumentasi">0</span>
+                            </div>
+                            <div class="card-body p-2 d-flex flex-column">
+                                <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-dokumentasi" style="min-height: 50px;">
+                                    <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                </ul>
+                                <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                    <i class="bi bi-cloud-arrow-up text-info fs-3"></i>
+                                    <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                </div>
+                                <input type="file" class="d-none file-input" data-category="3" multiple>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Kategori 4: Lainnya --}}
+                    <div class="col-md-6">
+                        <div class="card h-100 border-secondary shadow-sm upload-zone position-relative" data-category="4" style="cursor: pointer; transition: all 0.2s;">
+                            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-paperclip me-2"></i>Lainnya</span>
+                                <span class="badge bg-white text-secondary rounded-pill" id="count-lainnya">0</span>
+                            </div>
+                            <div class="card-body p-2 d-flex flex-column">
+                                <ul class="list-group list-group-flush mb-2 flex-grow-1" id="list-lainnya" style="min-height: 50px;">
+                                    <li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>
+                                </ul>
+                                <div class="p-3 text-center border rounded bg-light dashed-border mt-auto">
+                                    <i class="bi bi-cloud-arrow-up text-secondary fs-3"></i>
+                                    <p class="small mb-0 text-muted">Drag & Drop atau Klik di sini</p>
+                                </div>
+                                <input type="file" class="d-none file-input" data-category="4" multiple>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <div class="w-100">
+                    <div id="upload-global-progress" class="progress mb-2" style="height: 5px; display: none;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div id="upload-global-error" class="alert alert-danger py-1 small mb-0" style="display: none;"></div>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 {{-- Finish Meeting Confirmation Modal --}}
 <div class="modal fade" id="finishMeetingModal" tabindex="-1" aria-hidden="true">
@@ -352,6 +465,7 @@
         </div>
     </div>
 </div>
+@endpush
 
 @push('scripts')
 <script>
@@ -804,150 +918,341 @@
 
                 document.getElementById('detail-cabang').textContent = data.cabang;
                 document.getElementById('detail-room').textContent = data.room;
-                document.getElementById('detail-tanggal').textContent = data.tanggal;
+                document.getElementById('detail-tanggal').textContent = data.tanggal_formatted;
                 document.getElementById('detail-waktu').textContent = data.waktu;
-                document.getElementById('detail-desc').textContent = data.desc;
+                document.getElementById('detail-desc').textContent = data.deskripsi || '-';
                 document.getElementById('detail-pengaju').textContent = data.pengaju;
 
-                document.getElementById('btn-lihat-absensi').href = data.urls.absensi;
-                document.getElementById('btn-lihat-qr').href = data.urls.qr;
-
-                // Handle Files
-                const filesList = document.getElementById('detail-files-list');
-                filesList.innerHTML = '';
-                
+                // Populate Files
+                const fileList = document.getElementById('detail-files-list');
+                fileList.innerHTML = '';
                 if (data.files && data.files.length > 0) {
                     data.files.forEach(file => {
                         const li = document.createElement('li');
-                        li.className = 'list-group-item d-flex justify-content-between align-items-center p-2';
+                        li.className = 'list-group-item d-flex justify-content-between align-items-center';
                         li.innerHTML = `
-                            <div>
-                                ${getFileIcon(file.file_type)}
-                                <a href="${file.download_url}" target="_blank" class="text-decoration-none text-dark">${file.file_name}</a>
-                            </div>
-                            <button class="btn btn-sm btn-outline-danger btn-delete-file" data-url="${file.delete_url}" title="Hapus File">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <a href="${file.download_url}" target="_blank" class="text-decoration-none text-truncate" style="max-width: 80%;">
+                                <i class="bi bi-file-earmark me-2"></i>${file.file_name}
+                            </a>
                         `;
-                        filesList.appendChild(li);
+                        fileList.appendChild(li);
                     });
                 } else {
-                    filesList.innerHTML = '<li class="list-group-item text-muted small fst-italic">Tidak ada file lampiran.</li>';
+                    fileList.innerHTML = '<li class="list-group-item text-muted">Tidak ada file lampiran.</li>';
                 }
 
-                // Setup Upload Button
-                const btnUpload = document.getElementById('btn-upload-file');
-                const fileInput = document.getElementById('upload-file-input');
-                const progressBar = document.getElementById('upload-progress').querySelector('.progress-bar');
-                const progressContainer = document.getElementById('upload-progress');
+                // Update Links
+                document.getElementById('btn-lihat-absensi').href = "{{ route('pic.meetings.absensi', ':id') }}".replace(':id', rapatId);
+                
+                const btnQr = document.getElementById('btn-lihat-qr');
+                if (data.status === 'Berlangsung') {
+                    btnQr.style.display = 'inline-block';
+                    btnQr.href = "{{ route('pic.meetings.qr', ':id') }}".replace(':id', rapatId);
+                } else {
+                    btnQr.style.display = 'none';
+                }
 
-                // Reset input
-                fileInput.value = '';
-                progressContainer.style.display = 'none';
-                progressBar.style.width = '0%';
+                // Show content
+                loading.style.display = 'none';
+                content.style.display = 'block';
 
-                // Remove old event listener (cloning node is a quick way to clear listeners)
-                const newBtnUpload = btnUpload.cloneNode(true);
-                btnUpload.parentNode.replaceChild(newBtnUpload, btnUpload);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                loading.innerHTML = `<div class="text-danger">Terjadi kesalahan: ${error.message}</div>`;
+            });
+        });
+    }
 
-                newBtnUpload.addEventListener('click', function() {
-                    const file = fileInput.files[0];
-                    if (!file) {
-                        alert('Pilih file terlebih dahulu.');
-                        return;
-                    }
+    // --- UPLOAD FILE MODAL LOGIC ---
+    const uploadFileModalEl = document.getElementById('uploadFileModal');
+    if (uploadFileModalEl) {
+        let currentRapatId = null;
 
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    formData.append('_token', '{{ csrf_token() }}');
+        uploadFileModalEl.addEventListener('show.bs.modal', function (event) {
+            try {
+                const button = event.relatedTarget;
+                if (!button) {
+                    console.warn('Upload modal triggered without relatedTarget');
+                    return;
+                }
+                currentRapatId = button.getAttribute('data-id');
+                console.log('Opening upload modal for meeting ID:', currentRapatId);
 
-                    progressContainer.style.display = 'flex';
-                    progressBar.style.width = '0%';
-                    newBtnUpload.disabled = true;
-                    fileInput.disabled = true;
+                const modalTitle = document.getElementById('upload-modal-judul');
+                
+                // Reset UI
+                modalTitle.textContent = 'Loading...';
+                resetUploadModal();
 
-                    axios.post(data.urls.upload_file, formData, {
-                        onUploadProgress: function(progressEvent) {
-                            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                            progressBar.style.width = percentCompleted + '%';
-                        }
+                // Fetch Meeting Data
+                const url = "{{ route('pic.meetings.show', ':id') }}".replace(':id', currentRapatId);
+                
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(res => {
+                        if (!res.ok) throw new Error('Network response was not ok');
+                        return res.json();
                     })
-                    .then(response => {
-                        if (response.data.success) {
-                            // Refresh modal content (re-fetch)
-                            // Or just append the new file to the list manually
-                            const newFile = response.data.file;
-                            const li = document.createElement('li');
-                            li.className = 'list-group-item d-flex justify-content-between align-items-center p-2';
-                            li.innerHTML = `
-                                <div>
-                                    ${getFileIcon(newFile.file_type)}
-                                    <a href="${newFile.download_url}" target="_blank" class="text-decoration-none text-dark">${newFile.file_name}</a>
-                                </div>
-                                <button class="btn btn-sm btn-outline-danger btn-delete-file" data-url="${newFile.delete_url}" title="Hapus File">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            `;
-                            
-                            // Remove "No files" message if exists
-                            if (filesList.querySelector('.text-muted')) {
-                                filesList.innerHTML = '';
-                            }
-                            
-                            filesList.appendChild(li);
-                            fileInput.value = '';
-                            alert('File berhasil diunggah.');
-                        } else {
-                            alert('Gagal mengunggah file: ' + response.data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Upload error:', error);
-                        alert('Terjadi kesalahan saat mengunggah file.');
-                    })
-                    .finally(() => {
-                        progressContainer.style.display = 'none';
-                        newBtnUpload.disabled = false;
-                        fileInput.disabled = false;
-                    });
-                });
-
-                // Setup Delete Buttons (Delegation)
-                filesList.onclick = function(e) {
-                    const btn = e.target.closest('.btn-delete-file');
-                    if (btn) {
-                        if (!confirm('Apakah Anda yakin ingin menghapus file ini?')) return;
+                    .then(data => {
+                        if (data.error) throw new Error(data.error);
                         
-                        const url = btn.getAttribute('data-url');
-                        axios.delete(url, {
-                            data: { _token: '{{ csrf_token() }}' }
-                        })
-                        .then(response => {
-                            if (response.data.success) {
-                                btn.closest('li').remove();
-                                if (filesList.children.length === 0) {
-                                    filesList.innerHTML = '<li class="list-group-item text-muted small fst-italic">Tidak ada file lampiran.</li>';
-                                }
-                            } else {
-                                alert('Gagal menghapus file.');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Delete error:', error);
-                            alert('Terjadi kesalahan saat menghapus file.');
-                        });
+                        modalTitle.textContent = data.judul;
+                        renderAllCategories(data.files);
+                    })
+                    .catch(err => {
+                        console.error('Error fetching meeting details:', err);
+                        modalTitle.textContent = 'Error';
+                        alert('Gagal memuat data: ' + err.message);
+                    });
+            } catch (e) {
+                console.error('Error in show.bs.modal handler:', e);
+            }
+        });
+
+        function resetUploadModal() {
+            ['materi', 'notulensi', 'dokumentasi', 'lainnya'].forEach(cat => {
+                document.getElementById(`list-${cat}`).innerHTML = '<li class="list-group-item text-center text-muted small fst-italic py-3">Memuat...</li>';
+                document.getElementById(`count-${cat}`).textContent = '0';
+            });
+            document.getElementById('upload-global-error').style.display = 'none';
+            document.getElementById('upload-global-progress').style.display = 'none';
+        }
+
+        function renderAllCategories(files) {
+            const categories = {
+                1: { id: 'materi', list: [], el: document.getElementById('list-materi'), countEl: document.getElementById('count-materi') },
+                2: { id: 'notulensi', list: [], el: document.getElementById('list-notulensi'), countEl: document.getElementById('count-notulensi') },
+                3: { id: 'dokumentasi', list: [], el: document.getElementById('list-dokumentasi'), countEl: document.getElementById('count-dokumentasi') },
+                4: { id: 'lainnya', list: [], el: document.getElementById('list-lainnya'), countEl: document.getElementById('count-lainnya') }
+            };
+
+            // Group files
+            if (files) {
+                files.forEach(file => {
+                    if (categories[file.id_categories]) {
+                        categories[file.id_categories].list.push(file);
+                    } else {
+                        // Fallback to 'lainnya' if category unknown
+                        categories[4].list.push(file);
+                    }
+                });
+            }
+
+            // Render each category
+            Object.values(categories).forEach(cat => {
+                cat.el.innerHTML = '';
+                cat.countEl.textContent = cat.list.length;
+
+                if (cat.list.length > 0) {
+                    cat.list.forEach(file => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item d-flex justify-content-between align-items-center px-2 py-1';
+                        li.innerHTML = `
+                            <a href="${file.download_url}" target="_blank" class="text-decoration-none text-truncate small" style="max-width: 85%;" title="${file.file_name}">
+                                <i class="bi bi-file-earmark me-1"></i>${file.file_name}
+                            </a>
+                            <button class="btn btn-link text-danger p-0 btn-delete-file" data-id="${file.id_file}" title="Hapus">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        `;
+                        cat.el.appendChild(li);
+                    });
+                } else {
+                    cat.el.innerHTML = '<li class="list-group-item text-center text-muted small fst-italic py-3">Belum ada file.</li>';
+                }
+            });
+
+            // Attach delete listeners
+            document.querySelectorAll('.btn-delete-file').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (confirm('Hapus file ini?')) {
+                        deleteFile(this.getAttribute('data-id'));
+                    }
+                });
+            });
+        }
+
+        function deleteFile(fileId) {
+            const url = "{{ route('pic.meetings.destroyFile', ':id') }}".replace(':id', fileId);
+            
+            fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    refreshFileList();
+                } else {
+                    alert(data.message || 'Gagal menghapus file');
+                }
+            })
+            .catch(err => alert('Terjadi kesalahan koneksi.'));
+        }
+
+        function refreshFileList() {
+            const url = "{{ route('pic.meetings.show', ':id') }}".replace(':id', currentRapatId);
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(res => res.json())
+                .then(data => renderAllCategories(data.files));
+        }
+
+        // --- DRAG AND DROP & UPLOAD LOGIC ---
+        const uploadZones = document.querySelectorAll('.upload-zone');
+
+        uploadZones.forEach(zone => {
+            const input = zone.querySelector('input[type="file"]');
+            const categoryId = zone.getAttribute('data-category');
+
+            // Click to upload (delegated)
+            zone.addEventListener('click', (e) => {
+                // Ignore clicks on links or delete buttons
+                if (e.target.closest('a') || e.target.closest('.btn-delete-file')) {
+                    return;
+                }
+                input.click();
+            });
+
+            // Input change
+            input.addEventListener('change', (e) => {
+                if (input.files.length > 0) {
+                    handleFiles(input.files, categoryId);
+                }
+            });
+
+            // Drag events
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('border-primary', 'bg-light'); // Highlight
+                zone.style.transform = 'scale(1.02)'; // Slight zoom
+                zone.style.boxShadow = '0 .5rem 1rem rgba(0,0,0,.15)'; // Stronger shadow
+            });
+
+            zone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                zone.classList.remove('border-primary', 'bg-light');
+                zone.style.transform = 'scale(1)';
+                zone.style.boxShadow = '';
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('border-primary', 'bg-light');
+                zone.style.transform = 'scale(1)';
+                zone.style.boxShadow = '';
+                
+                if (e.dataTransfer.files.length > 0) {
+                    handleFiles(e.dataTransfer.files, categoryId);
+                }
+            });
+        });
+
+        async function handleFiles(files, categoryId) {
+            const errorDiv = document.getElementById('upload-global-error');
+            const progressBar = document.getElementById('upload-global-progress');
+            const progressBarInner = progressBar.querySelector('.progress-bar');
+            
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = ''; // Clear previous errors
+            progressBar.style.display = 'flex';
+            progressBarInner.style.width = '0%';
+            progressBarInner.textContent = '';
+
+            const validFiles = [];
+            const maxFileSize = 20 * 1024 * 1024; // 20MB
+
+            Array.from(files).forEach(file => {
+                if (file.size > maxFileSize) {
+                    const msg = `File ${file.name} terlalu besar (>20MB). `;
+                    errorDiv.textContent += msg;
+                    errorDiv.style.display = 'block';
+                } else {
+                    validFiles.push(file);
+                }
+            });
+
+            if (validFiles.length === 0) {
+                progressBar.style.display = 'none';
+                return;
+            }
+
+            let successCount = 0;
+            for (let i = 0; i < validFiles.length; i++) {
+                const file = validFiles[i];
+                progressBarInner.textContent = `Mengupload ${i + 1}/${validFiles.length}: ${file.name}`;
+                
+                // Initial progress for this file
+                const startPercent = (i / validFiles.length) * 100;
+                progressBarInner.style.width = `${startPercent}%`;
+
+                try {
+                    await uploadSingleFile(file, categoryId, (percent) => {
+                        // Calculate overall progress: completed files + current file progress
+                        const overallPercent = ((i + (percent / 100)) / validFiles.length) * 100;
+                        progressBarInner.style.width = `${overallPercent}%`;
+                    });
+                    successCount++;
+                } catch (error) {
+                    console.error(error);
+                    errorDiv.textContent += `Gagal upload ${file.name}: ${error.message}. `;
+                    errorDiv.style.display = 'block';
+                }
+            }
+
+            progressBar.style.display = 'none';
+            progressBarInner.textContent = '';
+            
+            if (successCount > 0) {
+                refreshFileList();
+            }
+        }
+
+        function uploadSingleFile(file, categoryId, onProgress) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                formData.append('id_rapat', currentRapatId);
+                formData.append('id_categories', categoryId);
+                formData.append('file', file);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', "{{ route('pic.meetings.storeFile', ':id') }}".replace(':id', currentRapatId), true);
+                xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+                xhr.upload.onprogress = function(e) {
+                    if (e.lengthComputable && onProgress) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        onProgress(percentComplete);
                     }
                 };
 
-                loading.style.display = 'none';
-                content.style.display = 'block';
-            })
-            .catch(error => {
-                console.error('Error fetching meeting details:', error);
-                loading.style.display = 'none';
-                modalBody.innerHTML = '<div class="alert alert-danger">Gagal memuat detail rapat: ' + error.message + '</div>';
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.success) {
+                                resolve(response);
+                            } else {
+                                reject(new Error(response.message || 'Upload gagal.'));
+                            }
+                        } catch (e) {
+                            reject(new Error('Invalid response format.'));
+                        }
+                    } else {
+                        reject(new Error(`HTTP Error ${xhr.status}`));
+                    }
+                };
+
+                xhr.onerror = function() {
+                    reject(new Error('Terjadi kesalahan koneksi.'));
+                };
+
+                xhr.send(formData);
             });
-        });
+        }
     }
 
 

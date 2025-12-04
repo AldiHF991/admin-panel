@@ -125,7 +125,10 @@ class PicController extends Controller
             'waktu_start' => 'required',
             'waktu_end' => 'required|after:waktu_start',
             'desc' => 'nullable|string',
-            'files.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480', // Max 5MB per file
+            'files_materi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_notulensi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_dokumentasi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_lainnya.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
         ]);
 
         $rapat = new Rapat();
@@ -151,23 +154,27 @@ class PicController extends Controller
         \App\Events\DashboardUpdate::dispatch($rapat->id_rapat, $rapat->id_status);
 
         // Handle File Uploads
-        // Handle File Uploads
-        if ($request->hasFile('files')) {
-            foreach ($request->file('files') as $file) {
-                // Samakan logic penyimpanan dengan RapatController (Admin)
-                // Simpan ke 'storage/app/public/rapat_files/{id}'
-                // Path di DB akan tersimpan sebagai 'public/rapat_files/{id}/{filename}'
-                // Ini penting agar Storage::download() di RapatController (yang pakai default disk local) bisa menemukannya.
-                $path = $file->store('public/rapat_files/'.$rapat->id_rapat);
-                
-                $rapat->files()->create([
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_path' => $path,
-                    'file_type' => $file->getMimeType(), // atau getClientMimeType()
-                    'file_size' => $file->getSize(), // Tambahkan file_size agar konsisten
-                ]);
+        // Helper function untuk upload file (Sama seperti RapatController)
+        $uploadFiles = function ($files, $categoryId) use ($rapat) {
+            if ($files) {
+                foreach ($files as $file) {
+                    $path = $file->store('public/rapat_files/'.$rapat->id_rapat);
+                    $rapat->files()->create([
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => $path,
+                        'file_type' => $file->getMimeType(),
+                        'file_size' => $file->getSize(),
+                        'id_categories' => $categoryId,
+                    ]);
+                }
             }
-        }
+        };
+
+        // Proses upload untuk setiap kategori
+        $uploadFiles($request->file('files_materi'), 1);
+        $uploadFiles($request->file('files_notulensi'), 2);
+        $uploadFiles($request->file('files_dokumentasi'), 3);
+        $uploadFiles($request->file('files_lainnya'), 4);
 
         return redirect()->route('pic.meetings.index')->with('success', 'Rapat berhasil diajukan.')->with('highlight_id', $rapat->id_rapat);
     }
@@ -187,22 +194,34 @@ class PicController extends Controller
 
         if (request()->ajax()) {
             try {
+                // Determine status class based on status ID
+                $statusClass = 'bg-secondary'; // Default
+                switch ($rapat->id_status) {
+                    case 1: $statusClass = 'bg-success'; break;   // Diterima
+                    case 2: $statusClass = 'bg-danger'; break;    // Ditolak
+                    case 3: $statusClass = 'bg-warning text-dark'; break; // Menunggu
+                    case 4: $statusClass = 'bg-primary'; break;   // Berlangsung
+                    case 5: $statusClass = 'bg-dark'; break;      // Selesai
+                }
+
                 $response = [
                     'judul' => $rapat->judul ?? '-',
                     'status' => $rapat->status ? $rapat->status->status_rapat : '-',
-                    'status_class' => $rapat->id_status == 1 ? 'bg-success' : ($rapat->id_status == 2 ? 'bg-danger' : 'bg-warning'),
+                    'status_class' => $statusClass,
                     'rejection_note' => $rapat->rejection_note,
                     'cabang' => $rapat->cabang ? $rapat->cabang->cabang : '-',
                     'room' => $rapat->room ? $rapat->room->room : '-',
                     'tanggal' => $rapat->tanggal ?? '-',
-                    'waktu' => ($rapat->waktu_start ?? '') . ' - ' . ($rapat->waktu_end ?? ''),
-                    'desc' => $rapat->desc ?? '-',
+                    'tanggal_formatted' => $rapat->tanggal ? \Carbon\Carbon::parse($rapat->tanggal)->translatedFormat('d F Y') : '-',
+                    'waktu' => ($rapat->waktu_start ? substr($rapat->waktu_start, 0, 5) : '') . ' - ' . ($rapat->waktu_end ? substr($rapat->waktu_end, 0, 5) : ''),
+                    'deskripsi' => $rapat->desc ?? '-',
                     'pengaju' => $rapat->pengaju ? ($rapat->pengaju->nama ?? $rapat->pengaju->name ?? '-') : '-',
                     'files' => $rapat->files->map(function ($file) {
                         return [
                             'id_file' => $file->id_file,
                             'file_name' => $file->file_name,
                             'file_type' => $file->file_type,
+                            'id_categories' => $file->id_categories ?? 4, // Default to 'Lainnya' if not set
                             'download_url' => route('meetings.downloadFile', $file->id_file),
                             'delete_url' => route('pic.meetings.destroyFile', $file->id_file),
                         ];
@@ -352,15 +371,15 @@ class PicController extends Controller
 
     public function showRecentActivityReport()
     {
-        $title = 'Laporan Aktivitas Rapat (3 Hari Terakhir)';
+        $title = 'Laporan Aktivitas Rapat (7 Hari Kedepan)';
 
-        // Mengambil semua data rapat dari 3 hari terakhir
+        // Mengambil semua data rapat dari hari ini s.d 7 hari kedepan
         $rapatTigaHariTerakhir = Rapat::with(['pengaju', 'status', 'room'])
             ->where('id_user_pengaju', Auth::id()) // Filter by user
-            ->where('tanggal', '>=', \Carbon\Carbon::now()->subDays(3)->toDateString())
+            ->whereBetween('tanggal', [\Carbon\Carbon::now()->toDateString(), \Carbon\Carbon::now()->addDays(7)->toDateString()])
             ->whereIn('id_status', [1, 4, 5]) // Filter: Diterima (1), Berlangsung (4), Selesai (5)
-            ->orderBy('tanggal', 'desc')
-            ->orderBy('waktu_start', 'desc')
+            ->orderBy('tanggal', 'asc')
+            ->orderBy('waktu_start', 'asc')
             ->get();
 
         // Mengirim data ke view khusus laporan
@@ -391,6 +410,7 @@ class PicController extends Controller
 
         $request->validate([
             'file' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480', // Max 20MB
+            'id_categories' => 'required|integer|in:1,2,3,4', // Validate category
         ]);
 
         if ($request->hasFile('file')) {
@@ -402,6 +422,7 @@ class PicController extends Controller
                 'file_path' => $path,
                 'file_type' => $file->getMimeType(),
                 'file_size' => $file->getSize(),
+                'id_categories' => $request->id_categories, // Save category
             ]);
 
             return response()->json([
@@ -412,6 +433,7 @@ class PicController extends Controller
                     'file_name' => $rapatFile->file_name,
                     'file_path' => str_replace('public/', '', $rapatFile->file_path),
                     'file_type' => $rapatFile->file_type,
+                    'id_categories' => $rapatFile->id_categories,
                     'download_url' => route('meetings.downloadFile', $rapatFile->id_file),
                     'delete_url' => route('pic.meetings.destroyFile', $rapatFile->id_file),
                 ]

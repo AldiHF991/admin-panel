@@ -23,13 +23,29 @@ class User extends Authenticatable
         'id_role',
         'id_division',
         'username',
-        'nama', // Sesuai dengan migrasi database
+        'name', // Sesuai dengan migrasi database
         'email',
         'phone',
         'gender',
         'password',
         'photo',
     ];
+
+    /**
+     * Accessor untuk kompatibilitas 'nama' -> 'name'
+     */
+    public function getNamaAttribute()
+    {
+        return $this->attributes['name'];
+    }
+
+    /**
+     * Mutator untuk kompatibilitas 'nama' -> 'name'
+     */
+    public function setNamaAttribute($value)
+    {
+        $this->attributes['name'] = $value;
+    }
 
     /**
      * The attributes that should be hidden for serialization.
