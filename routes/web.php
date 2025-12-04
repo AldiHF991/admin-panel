@@ -140,6 +140,7 @@ Route::middleware(['auth', PicWebsiteMiddleware::class])->group(function () {
     Route::get('/pic/meetings/{rapat}/guest-qr', [\App\Http\Controllers\Website\PicController::class, 'showGuestQr'])->name('pic.meetings.guestQr');
     Route::get('/pic/meetings/{rapat}/qr-svg', [\App\Http\Controllers\Website\PicController::class, 'getQrCodeSvg'])->name('pic.meetings.getQrCodeSvg');
     Route::post('/pic/meetings/{rapat}/finish', [\App\Http\Controllers\Website\PicController::class, 'finishMeeting'])->name('pic.meetings.finish');
+    Route::get('/pic/meetings/{id}/export-absensi', [\App\Http\Controllers\Website\PicController::class, 'exportAbsensi'])->name('pic.meetings.exportAbsensi');
     
     // Reports
     Route::get('/pic/reports/recent-activity', [\App\Http\Controllers\Website\PicController::class, 'showRecentActivityReport'])->name('pic.reports.recentActivity');

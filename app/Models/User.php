@@ -29,6 +29,8 @@ class User extends Authenticatable
         'gender',
         'password',
         'photo',
+        'device_name',
+        'last_login_at',
     ];
 
     /**
@@ -70,6 +72,7 @@ class User extends Authenticatable
             // PERBAIKAN: Cast id_role dan id_division sebagai integer
             'id_role' => 'integer',
             'id_division' => 'integer',
+            'last_login_at' => 'datetime',
         ];
     }
 

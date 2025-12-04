@@ -44,6 +44,17 @@ class AuthController extends Controller
 
             // Cek role user
             $user = Auth::user();
+            
+            // Capture browser/device information
+            $userAgent = $request->header('User-Agent');
+            $deviceName = $this->getBrowserName($userAgent);
+            
+            // Update login tracking
+            $user->update([
+                'device_name' => $deviceName,
+                'last_login_at' => now(),
+            ]);
+            
             if ($user->id_role == 2) { // PIC
                 return redirect()->route('pic.dashboard');
             }
@@ -58,6 +69,26 @@ class AuthController extends Controller
         return back()->withErrors([
             'username' => 'Username atau password yang diberikan tidak cocok.',
         ])->onlyInput('username');
+    }
+
+    /**
+     * Extract browser name from User-Agent string
+     */
+    private function getBrowserName($userAgent)
+    {
+        if (strpos($userAgent, 'Edg') !== false) {
+            return 'Microsoft Edge';
+        } elseif (strpos($userAgent, 'Chrome') !== false) {
+            return 'Google Chrome';
+        } elseif (strpos($userAgent, 'Firefox') !== false) {
+            return 'Mozilla Firefox';
+        } elseif (strpos($userAgent, 'Safari') !== false) {
+            return 'Safari';
+        } elseif (strpos($userAgent, 'Opera') !== false || strpos($userAgent, 'OPR') !== false) {
+            return 'Opera';
+        } else {
+            return 'Unknown Browser';
+        }
     }
 
     // BUG, NEED FOR FIXED

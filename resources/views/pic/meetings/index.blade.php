@@ -119,7 +119,7 @@
                                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ $rapat->id_rapat }}">
                                             <li><a class="dropdown-item btn-detail-meeting" href="#" data-id="{{ $rapat->id_rapat }}" data-bs-toggle="modal" data-bs-target="#detailRapatModal"><i class="bi bi-eye me-2"></i>Detail</a></li>
                                             <li><a class="dropdown-item btn-upload-file-action" href="#" data-id="{{ $rapat->id_rapat }}" data-bs-toggle="modal" data-bs-target="#uploadFileModal"><i class="bi bi-upload me-2"></i>Upload File</a></li>
-                                            <li><a class="dropdown-item" href="{{ route('pic.meetings.absensi', $rapat->id_rapat) }}"><i class="bi bi-person-check me-2"></i>Absensi</a></li>
+                                            <li><a class="dropdown-item" href="{{ route('pic.meetings.absensi', $rapat->id_rapat) }}" target="_blank"><i class="bi bi-person-check me-2"></i>Absensi</a></li>
                                             @if($rapat->id_status == 4)
                                                 <li><a class="dropdown-item" href="{{ route('pic.meetings.qr', $rapat->id_rapat) }}" target="_blank"><i class="bi bi-qr-code me-2"></i>QR Code Absensi</a></li>
                                                 <li><a class="dropdown-item" href="{{ route('pic.meetings.guestQr', $rapat->id_rapat) }}" target="_blank"><i class="bi bi-person-square me-2"></i>QR Mode Tamu</a></li>
@@ -294,19 +294,6 @@
                                 <ul class="list-group mb-2" id="detail-files-list">
                                     <!-- Files will be populated here -->
                                 </ul>
-                                <div class="mt-2">
-                                    <label for="upload-file-input" class="form-label small fw-bold">Upload File Baru</label>
-                                    <div class="input-group input-group-sm">
-                                        <input type="file" class="form-control" id="upload-file-input">
-                                        <button class="btn btn-outline-primary" type="button" id="btn-upload-file">
-                                            <i class="bi bi-upload"></i> Upload
-                                        </button>
-                                    </div>
-                                    <div id="upload-progress" class="progress mt-1" style="height: 5px; display: none;">
-                                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-                                    </div>
-                                    <small class="text-muted" style="font-size: 0.75rem;">Maks 20MB. Format: pdf, doc, xls, ppt, jpg, png, dll.</small>
-                                </div>
                             </td>
                         </tr>
                     </table>

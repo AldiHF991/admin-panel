@@ -311,6 +311,36 @@ class PicController extends Controller
         return view('pic.meetings.absensi', compact('rapat', 'absensi'));
     }
 
+    /**
+     * Export attendance data to Excel for PIC users
+     */
+    public function exportAbsensi($id)
+    {
+        // Find the meeting
+        $rapat = Rapat::findOrFail($id);
+        
+        // Ensure the user owns this meeting
+        if ($rapat->id_user_pengaju != Auth::id()) {
+            abort(403);
+        }
+        
+        // Fetch attendance data with relationships
+        $absensi = \App\Models\Absensi::where('id_rapat', $id)
+            ->with('attendable')
+            ->orderBy('waktu_absen', 'asc')
+            ->get();
+            
+        // Load division for User attendables
+        $absensi->where('attendable_type', \App\Models\User::class)->load('attendable.division');
+        
+        // Generate filename
+        $fileName = 'laporan-absensi-'.\Illuminate\Support\Str::slug($rapat->judul).'-'.date('Y-m-d').'.xlsx';
+        
+        // Use the existing export class
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\AbsensiRapatExport($absensi), $fileName);
+    }
+
+
 
     public function showQrCode(Rapat $rapat)
     {
