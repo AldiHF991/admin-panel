@@ -78,10 +78,14 @@ class AuthController extends Controller
         }
 
         // Cek Device ID
-        if ($user->device_id && $user->device_id !== $request->device_id) {
-            return response()->json([
-                'message' => 'Akun ini sudah terhubung dengan perangkat lain. Silakan hubungi admin untuk reset perangkat.',
-            ], 403);
+        // PERBAIKAN: Bypass check untuk Admin (1) dan PIC (2)
+        // User biasa (3) tetap dicek
+        if (!in_array($user->id_role, [1, 2])) {
+            if ($user->device_id && $user->device_id !== $request->device_id) {
+                return response()->json([
+                    'message' => 'Akun ini sudah terhubung dengan perangkat lain. Silakan hubungi admin untuk reset perangkat.',
+                ], 403);
+            }
         }
 
         // Update Device Info jika belum ada atau jika login dari device yang sama
@@ -111,7 +115,6 @@ class AuthController extends Controller
                 'photo' => $user->photo,
                 'id_role' => $user->id_role,
                 'id_division' => $user->id_division,
-                // PERBAIKAN: Menggunakan relasi dan accessor yang benar
                 'role' => $user->role ? $user->role->role : null,
                 'division' => $user->division ? $user->division->division_name : null,
                 'created_at' => $user->created_at,

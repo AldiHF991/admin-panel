@@ -29,6 +29,7 @@ class User extends Authenticatable
         'gender',
         'password',
         'photo',
+        'device_id', // Ditambahkan agar konsisten
         'device_name',
         'last_login_at',
     ];

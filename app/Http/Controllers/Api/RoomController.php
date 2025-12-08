@@ -23,7 +23,7 @@ class RoomController extends Controller
 
         $rooms = $query->get();
 
-        // --- LOGIKA BARU: PENGECEKAN KETERSEDIAAN BERDASARKAN WAKTU ---
+        // --- LOGIKA BARU: PENGECEKAN KETERSEDIAAN YANG DIOPTIMALKAN ---
         // Jika request menyertakan tanggal dan waktu, kita cek ketersediaannya.
         if ($request->has('tanggal') && $request->has('waktu_start')) {
             $tanggal = $request->tanggal;
@@ -31,34 +31,54 @@ class RoomController extends Controller
             // Waktu selesai bersifat opsional, jika tidak ada, anggap rapat berlangsung 1 jam.
             $waktuEnd = $request->waktu_end ?? date('H:i:s', strtotime($waktuStart.' +1 hour'));
 
-            foreach ($rooms as $room) {
-                // Cek apakah ada rapat yang tumpang tindih di ruangan ini
-                $isBooked = \App\Models\Rapat::where('id_room', $room->id_room)
-                    ->where('tanggal', $tanggal)
-                    // Logika overlap: (start1 < end2) and (end1 > start2)
-                    // PERBAIKAN: Menambahkan logika untuk menangani rapat "selesai tidak menentu"
-                    ->where(function ($query) use ($waktuStart, $waktuEnd) {
-                        // Skenario 1: Rapat yang ada memiliki waktu selesai (waktu_end tidak null)
-                        // Cek tumpang tindih waktu secara normal.
-                        $query->where(function ($q) use ($waktuStart, $waktuEnd) {
-                            $q->whereNotNull('waktu_end')
-                                ->where('waktu_start', '<', $waktuEnd)
-                                ->where('waktu_end', '>', $waktuStart);
-                        })
-                        // Skenario 2: Rapat yang ada bersifat "tidak menentu" (waktu_end adalah null)
-                        // Ruangan dianggap terpakai jika waktu mulai rapat baru >= waktu mulai rapat tidak menentu.
-                            ->orWhere(function ($q) use ($waktuStart) {
-                                $q->whereNull('waktu_end')
-                                    ->where('waktu_start', '<=', $waktuStart);
-                            });
-                    })
-                    ->exists(); // Cukup cek apakah ada atau tidak
+            // Ambil semua ID ruangan yang ada
+            $roomIds = $rooms->pluck('id_room')->toArray();
 
-                // Set status_ruangan_id secara dinamis
-                // 2 = Tidak Tersedia, 1 = Tersedia
-                $room->status_ruangan_id = $isBooked ? 2 : 1;
+            // Ambil SEMUA rapat yang tumpang tindih untuk ruangan-ruangan ini dalam SATU query
+            // PERBAIKAN: Ambil detail rapat, bukan hanya ID
+            $conflictingMeetings = \App\Models\Rapat::whereIn('id_room', $roomIds)
+                ->where('tanggal', $tanggal)
+                // Filter status Rapat: Hanya anggap rapat yang AKTIF (misal: Menunggu, Disetujui, Berlangsung).
+                // Ditolak (2) dan Selesai (5) TIDAK MENGHALANGI ruangan.
+                ->whereNotIn('id_status', [2, 5]) 
+                ->where(function ($query) use ($waktuStart, $waktuEnd) {
+                    // Skenario 1: Rapat existing memiliki waktu selesai
+                    $query->where(function ($q) use ($waktuStart, $waktuEnd) {
+                        $q->whereNotNull('waktu_end')
+                            ->where('waktu_start', '<', $waktuEnd)
+                            ->where('waktu_end', '>', $waktuStart);
+                    })
+                    // Skenario 2: Rapat existing "tidak menentu" (waktu_end NULL)
+                    ->orWhere(function ($q) use ($waktuStart) {
+                         $q->whereNull('waktu_end')
+                           ->where('waktu_start', '<=', $waktuStart);
+                    });
+                })
+                ->get(['id_room', 'waktu_start', 'waktu_end', 'judul']);
+
+            // Buat mapping id_room => booking info
+            $bookingInfo = [];
+            foreach ($conflictingMeetings as $meeting) {
+                $bookingInfo[$meeting->id_room] = [
+                    'waktu_start' => $meeting->waktu_start,
+                    'waktu_end' => $meeting->waktu_end,
+                    'judul' => $meeting->judul,
+                ];
+            }
+
+            foreach ($rooms as $room) {
+                // Jika ruangan sudah status 2 (Tidak Tersedia/Maintenance) dari database, biarkan saja.
+                // Kita hanya ubah jika ruangan aslinya Tersedia (1) TAPI ada booking.
+                if ($room->status_ruangan_id == 1 && isset($bookingInfo[$room->id_room])) {
+                    $room->status_ruangan_id = 2; // Set jadi Tidak Tersedia untuk sesi ini
+                    // Tambahkan info booking
+                    $room->booking_info = $bookingInfo[$room->id_room];
+                }
             }
         }
+        
+        // Urutkan ruangan berdasarkan nama agar rapi di dropdown
+        $rooms = $rooms->sortBy('room')->values();
         // -----------------------------------------------------------
 
         return response()->json($rooms, 200);
