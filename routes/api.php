@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\GuestController;
 use App\Http\Controllers\Api\QrCodeController;
 use App\Http\Controllers\Api\RapatController;
 use App\Http\Controllers\Api\RoomController;
+use App\Http\Controllers\Api\Admin\DeviceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,7 +17,11 @@ Route::get('/user', function (Request $request) {
 
 Route::post('/login', [AuthController::class, 'login']);
 
-Route::middleware('auth:sanctum')->group(function () {
+// Apply 'device.valid' middleware to all protected routes
+Route::middleware(['auth:sanctum', 'device.valid'])->group(function () {
+    
+    // ADMIN ROUTES
+    Route::post('/admin/reset-device/{userId}', [DeviceController::class, 'resetDevice']);
 
     Route::get('/userPIC', [AuthController::class, 'getUsersWithRole']);
     Route::get('/pic/get-division', [AuthController::class, 'getDivision']);
@@ -29,7 +34,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('rapat', RapatController::class);
     Route::get('rapat/{id}/peserta', [RapatController::class, 'getPesertaRapat']);
     Route::post('rapat/{id}/peserta', [RapatController::class, 'addPesertaRapat']);
+    Route::get('rapat/{id}/peserta', [RapatController::class, 'getPesertaRapat']);
+    Route::post('rapat/{id}/peserta', [RapatController::class, 'addPesertaRapat']);
     Route::get('rapat/{id}/absensi', [RapatController::class, 'getAbsensiRapat']); // Endpoint untuk melihat daftar absensi dari rapat
+    
+    // Endpoint untuk mendapatkan Signed URL download file
+    Route::get('/rapat/files/{file}/download-url', [RapatController::class, 'getDownloadUrl']);
+    
+    // Endpoint untuk menghapus file
+    Route::delete('/rapat/files/{fileId}', [RapatController::class, 'deleteFile']);
 
     Route::post('rapat/{id}/setujui', [RapatController::class, 'setujuiRapat']);
     Route::post('rapat/{id}/tolak', [RapatController::class, 'tolakRapat']);
@@ -44,7 +57,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Endpoint untuk LAYAR DISPLAY
     Route::get('/rapat/{id}/qr-token', [QrCodeController::class, 'getQrToken']);
-    // Endpoint untuk APLIKASI SCANNER
+    // Endpoint untuk VALIDASI QR TOKEN (dipanggil saat scan QR, sebelum foto)
+    Route::post('/rapat/validate-qr', [QrCodeController::class, 'validateQrToken']);
+    // Endpoint untuk APLIKASI SCANNER (dipanggil setelah foto diambil)
     Route::post('/rapat/scan-absen', [QrCodeController::class, 'scanAbsen']);
 
     Route::get('/absensi/export/', [AbsensiController::class, 'export']);

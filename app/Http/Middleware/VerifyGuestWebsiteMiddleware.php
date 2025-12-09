@@ -25,9 +25,12 @@ class VerifyGuestWebsiteMiddleware
         $routeRapatId = $request->route('rapat')->id_rapat;
 
         // Validasi:
-        // 1. Pastikan ada data sesi.
-        // 2. Pastikan ID tamu dari sesi cocok dengan ID tamu di URL.
-        // 3. Pastikan ID rapat dari sesi cocok dengan ID rapat di URL.
+        // 1. Cek Login User: Jika user sedang login (misal admin/pic), izinkan akses (bypass sesi guest).
+        if (\Illuminate\Support\Facades\Auth::check()) {
+            return $next($request);
+        }
+
+        // 2. Cek Sesi Guest valid
         if (! $sessionGuestId || $sessionGuestId != $routeGuestId || $sessionRapatId != $routeRapatId) {
             // Jika tidak valid, batalkan permintaan dan beri respons 'Forbidden'.
             abort(403, 'Akses Ditolak. Sesi Anda tidak valid untuk halaman ini.');

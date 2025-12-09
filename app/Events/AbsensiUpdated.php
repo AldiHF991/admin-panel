@@ -18,14 +18,23 @@ class AbsensiUpdated implements ShouldBroadcast
      * @var array
      */
     public $absensi;
+    
+    /**
+     * ID Rapat untuk channel broadcasting.
+     *
+     * @var string
+     */
+    public $rapatId;
 
     /**
      * Create a new event instance.
      *
+     * @param  string  $rapatId
      * @param  mixed  $absensi
      */
-    public function __construct($absensi)
+    public function __construct($rapatId, $absensi)
     {
+        $this->rapatId = $rapatId;
         $this->absensi = $absensi;
     }
 
@@ -36,12 +45,8 @@ class AbsensiUpdated implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        // PERBAIKAN: Menggunakan Channel publik agar sesuai dengan channels.php dan frontend.
-        // Otorisasi sudah diatur di channels.php (return true).
-        // Mengambil id_rapat dari data absensi. Diasumsikan $this->absensi adalah collection.
-        $rapatId = $this->absensi->first()->id_rapat ?? 'default';
-
-        return new Channel('Absensi.Rapat.'.$rapatId);
+        // Menggunakan rapatId yang diterima dari constructor
+        return new Channel('meeting.' . $this->rapatId);
     }
 
     /**
@@ -51,13 +56,21 @@ class AbsensiUpdated implements ShouldBroadcast
      */
     public function broadcastWith()
     {
-        // 1. Eager load relasi 'attendable' untuk semua item.
-        $this->absensi->load('attendable');
+        // Data absensi sudah di-load dengan relasi dari controller
+        // Cukup konversi ke array untuk broadcasting
+        return [
+            'absensi' => is_array($this->absensi) ? $this->absensi : $this->absensi->toArray(),
+            'rapatId' => $this->rapatId,
+        ];
+    }
 
-        // 2. Muat relasi 'division' hanya untuk item yang merupakan User.
-        $this->absensi->where('attendable_type', \App\Models\User::class)
-            ->load('attendable.division');
-
-        return ['absensi' => $this->absensi->values()];
+    /**
+     * Get the event name for broadcasting.
+     *
+     * @return string
+     */
+    public function broadcastAs()
+    {
+        return 'attendance.marked';
     }
 }

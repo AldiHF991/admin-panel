@@ -32,13 +32,14 @@ class AttendanceRecorded implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new Channel('meeting.' . $this->absensi->id_rapat . '.attendance'),
+            new Channel('meeting.' . $this->absensi->id_rapat),
+            new Channel('meetings'), // Global channel
         ];
     }
 
     public function broadcastAs()
     {
-        return 'attendance.recorded';
+        return 'attendance.marked';
     }
 
     public function broadcastWith()

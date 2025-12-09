@@ -66,6 +66,9 @@ Route::middleware('auth')->group(function () {
 // Route untuk download file, bisa diakses oleh user auth maupun guest yang valid
 Route::get('/meetings/files/{file}', [RapatController::class, 'downloadFile'])->name('meetings.downloadFile');
 
+// Signed Download Route (Publicly accessible but requires valid signature)
+Route::get('/download/signed/{file}', [\App\Http\Controllers\Api\RapatController::class, 'signedDownload'])->name('download.signed')->middleware('signed');
+
 // Admin routes (perlu admin)
 Route::middleware([AdminWebsiteMiddleware::class])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'showDashboard'])->name('dashboard');
@@ -99,6 +102,7 @@ Route::middleware([AdminWebsiteMiddleware::class])->group(function () {
     Route::post('admin/users/add', [AdminController::class, 'storeUserAccount'])->name('users.add');
     Route::post('admin/users/edit', [AdminController::class, 'updateUserAccount'])->name('users.edit');
     Route::delete('admin/users/{id}/delete', [AdminController::class, 'deleteUserAccount'])->name('users.delete');
+    Route::post('admin/users/{id}/reset-device', [AdminController::class, 'resetUserDevice'])->name('users.resetDevice');
 
     Route::post('admin/branch/add', [AdminController::class, 'storeBranch'])->name('branch.add');
     Route::post('admin/room/add', [AdminController::class, 'storeRoom'])->name('room.add');
@@ -135,18 +139,18 @@ Route::middleware(['auth', PicWebsiteMiddleware::class])->group(function () {
     Route::delete('/pic/meetings/{id}', [PicController::class, 'destroy'])->name('pic.meetings.destroy');
     
     // Additional features requested
-    Route::get('/pic/meetings/{rapat}/absensi', [\App\Http\Controllers\Website\PicController::class, 'showAbsensi'])->name('pic.meetings.absensi');
-    Route::get('/pic/meetings/{rapat}/qr', [\App\Http\Controllers\Website\PicController::class, 'showQrCode'])->name('pic.meetings.qr');
-    Route::get('/pic/meetings/{rapat}/guest-qr', [\App\Http\Controllers\Website\PicController::class, 'showGuestQr'])->name('pic.meetings.guestQr');
-    Route::get('/pic/meetings/{rapat}/qr-svg', [\App\Http\Controllers\Website\PicController::class, 'getQrCodeSvg'])->name('pic.meetings.getQrCodeSvg');
-    Route::post('/pic/meetings/{rapat}/finish', [\App\Http\Controllers\Website\PicController::class, 'finishMeeting'])->name('pic.meetings.finish');
-    Route::get('/pic/meetings/{id}/export-absensi', [\App\Http\Controllers\Website\PicController::class, 'exportAbsensi'])->name('pic.meetings.exportAbsensi');
+    Route::get('/pic/meetings/{rapat}/absensi', [PicController::class, 'showAbsensi'])->name('pic.meetings.absensi');
+    Route::get('/pic/meetings/{rapat}/qr', [PicController::class, 'showQrCode'])->name('pic.meetings.qr');
+    Route::get('/pic/meetings/{rapat}/guest-qr', [PicController::class, 'showGuestQr'])->name('pic.meetings.guestQr');
+    Route::get('/pic/meetings/{rapat}/qr-svg', [PicController::class, 'getQrCodeSvg'])->name('pic.meetings.getQrCodeSvg');
+    Route::post('/pic/meetings/{rapat}/finish', [PicController::class, 'finishMeeting'])->name('pic.meetings.finish');
+    Route::get('/pic/meetings/{id}/export-absensi', [PicController::class, 'exportAbsensi'])->name('pic.meetings.exportAbsensi');
     
     // Reports
-    Route::get('/pic/reports/recent-activity', [\App\Http\Controllers\Website\PicController::class, 'showRecentActivityReport'])->name('pic.reports.recentActivity');
-    Route::get('/pic/reports/newly-created', [\App\Http\Controllers\Website\PicController::class, 'showNewlyCreatedReport'])->name('pic.reports.newlyCreated');
+    Route::get('/pic/reports/recent-activity', [PicController::class, 'showRecentActivityReport'])->name('pic.reports.recentActivity');
+    Route::get('/pic/reports/newly-created', [PicController::class, 'showNewlyCreatedReport'])->name('pic.reports.newlyCreated');
 
     // File Management
-    Route::post('/pic/meetings/{rapat}/files', [\App\Http\Controllers\Website\PicController::class, 'storeFile'])->name('pic.meetings.storeFile');
-    Route::delete('/pic/meetings/files/{file}', [\App\Http\Controllers\Website\PicController::class, 'destroyFile'])->name('pic.meetings.destroyFile');
+    Route::post('/pic/meetings/{rapat}/files', [PicController::class, 'storeFile'])->name('pic.meetings.storeFile');
+    Route::delete('/pic/meetings/files/{file}', [PicController::class, 'destroyFile'])->name('pic.meetings.destroyFile');
 });

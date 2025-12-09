@@ -21,6 +21,7 @@ class Absensi extends Model
         'attendable_type',
         'waktu_absen',
         'id_status_kehadiran',
+        'face_photo',
         'device_id_log',
         'device_token',
         'user_agent',

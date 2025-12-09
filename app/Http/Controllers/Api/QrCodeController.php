@@ -8,6 +8,8 @@ use App\Models\Rapat;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Events\AttendanceRecorded;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class QrCodeController extends Controller
 {
@@ -26,19 +28,20 @@ class QrCodeController extends Controller
     }
 
     /**
-     * Endpoint untuk APLIKASI SCANNER (validasi dan simpan absen)
+     * Endpoint untuk validasi QR token dan membuat session token.
+     * Ini dipanggil SEGERA setelah QR di-scan, sebelum foto diambil.
      */
-    public function scanAbsen(Request $request)
+    public function validateQrToken(Request $request)
     {
         $request->validate([
             'scanned_token' => 'required|string',
         ]);
 
         $scanned_token = $request->scanned_token;
-        $user = $request->user(); // Dapatkan user yang sedang login (via Sanctum)
+        $user = $request->user();
         $now = Carbon::now();
 
-        // Validasi 3 lapis
+        // Validasi QR token (sama seperti di scanAbsen)
         $rapat = Rapat::where(function ($query) use ($scanned_token) {
             $query->where('current_qr_token', $scanned_token)
                 ->orWhere('previous_qr_token', $scanned_token);
@@ -46,17 +49,16 @@ class QrCodeController extends Controller
             ->where('qr_token_expires_at', '>', $now)
             ->first();
 
-        // Jika rapat tidak ditemukan (token salah atau kadaluwarsa)
         if (! $rapat) {
             return response()->json([
                 'message' => 'QR Code tidak valid atau sudah kadaluwarsa.',
             ], 422);
         }
 
-        // --- Token VALID! ---
         // Cek apakah user sudah absen
         $sudahAbsen = Absensi::where('id_rapat', $rapat->id_rapat)
-            ->where('id_user', $user->id_user)
+            ->where('attendable_id', $user->id_user)
+            ->where('attendable_type', \App\Models\User::class)
             ->exists();
 
         if ($sudahAbsen) {
@@ -65,12 +67,120 @@ class QrCodeController extends Controller
             ], 409);
         }
 
+        // Buat session token yang valid selama 5 menit
+        $sessionToken = Str::uuid()->toString();
+        $cacheKey = "qr_session:{$user->id_user}:{$sessionToken}";
+        
+        // Simpan data rapat di cache
+        Cache::put($cacheKey, [
+            'id_rapat' => $rapat->id_rapat,
+            'user_id' => $user->id_user,
+            'validated_at' => $now->toIso8601String(),
+        ], now()->addMinutes(5));
+
+        return response()->json([
+            'message' => 'QR Code valid. Silakan ambil foto wajah Anda.',
+            'session_token' => $sessionToken,
+            'rapat' => [
+                'id_rapat' => $rapat->id_rapat,
+                'judul' => $rapat->judul,
+            ],
+            'expires_in_seconds' => 300, // 5 menit
+        ]);
+    }
+
+    /**
+     * Endpoint untuk APLIKASI SCANNER (validasi dan simpan absen)
+     */
+    public function scanAbsen(Request $request)
+    {
+        $request->validate([
+            'scanned_token' => 'nullable|string',
+            'session_token' => 'nullable|string',
+            'face_photo' => 'nullable|file|image|max:5120', // Validasi foto (opsional, max 5MB)
+        ]);
+
+        // Harus ada salah satu: scanned_token atau session_token
+        if (!$request->scanned_token && !$request->session_token) {
+            return response()->json([
+                'message' => 'Diperlukan scanned_token atau session_token.',
+            ], 422);
+        }
+
+        $user = $request->user(); // Dapatkan user yang sedang login (via Sanctum)
+        $now = Carbon::now();
+        $rapat = null;
+
+        // Cek apakah menggunakan session_token atau scanned_token
+        if ($request->session_token) {
+            // Validasi menggunakan session token
+            $cacheKey = "qr_session:{$user->id_user}:{$request->session_token}";
+            $sessionData = Cache::get($cacheKey);
+
+            if (!$sessionData) {
+                return response()->json([
+                    'message' => 'Session token tidak valid atau sudah kadaluwarsa. Silakan scan QR code lagi.',
+                ], 422);
+            }
+
+            // Ambil data rapat dari session
+            $rapat = Rapat::find($sessionData['id_rapat']);
+            
+            if (!$rapat) {
+                return response()->json([
+                    'message' => 'Rapat tidak ditemukan.',
+                ], 404);
+            }
+
+            // Hapus session token setelah digunakan
+            Cache::forget($cacheKey);
+        } else {
+            // Validasi menggunakan scanned_token (backward compatibility)
+            $scanned_token = $request->scanned_token;
+            
+            $rapat = Rapat::where(function ($query) use ($scanned_token) {
+                $query->where('current_qr_token', $scanned_token)
+                    ->orWhere('previous_qr_token', $scanned_token);
+            })
+                ->where('qr_token_expires_at', '>', $now)
+                ->first();
+
+            if (! $rapat) {
+                return response()->json([
+                    'message' => 'QR Code tidak valid atau sudah kadaluwarsa.',
+                ], 422);
+            }
+        }
+
+        // --- Token VALID! ---
+        // Cek apakah user sudah absen
+        $sudahAbsen = Absensi::where('id_rapat', $rapat->id_rapat)
+            ->where('attendable_id', $user->id_user)
+            ->where('attendable_type', \App\Models\User::class)
+            ->exists();
+
+        if ($sudahAbsen) {
+            return response()->json([
+                'message' => 'Anda sudah tercatat hadir di rapat ini.',
+            ], 409);
+        }
+
+        // Handle File Upload
+        $fotoPath = null;
+        if ($request->hasFile('face_photo')) {
+            $file = $request->file('face_photo');
+            // Simpan di storage/app/public/absensi_photos
+            $fotoPath = $file->store('absensi_photos', 'public'); 
+        }
+
         // Catat absensi baru
         $absensi = Absensi::create([
             'id_rapat' => $rapat->id_rapat,
-            'id_user' => $user->id_user,
+            'attendable_id' => $user->id_user,
+            'attendable_type' => \App\Models\User::class,
             'waktu_absen' => $now,
             'id_status_kehadiran' => 2, // Hadir
+            'face_photo' => $fotoPath, // PERBAIKAN: Gunakan 'face_photo' bukan 'foto_wajah'
         ]);
 
         AttendanceRecorded::dispatch($absensi);
@@ -78,6 +188,7 @@ class QrCodeController extends Controller
         return response()->json([
             'message' => 'Absensi berhasil! Selamat datang di rapat: '.$rapat->judul,
             'rapat' => $rapat->judul,
+            'id_rapat' => $rapat->id_rapat,
         ]);
     }
 

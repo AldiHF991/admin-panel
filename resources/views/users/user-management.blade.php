@@ -109,18 +109,42 @@
                                 @endif
                             </a>
                         </th>
+                        <th>Device Name</th>
+                        <th>Device ID</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($users as $u)
-                    <tr>
+                    <tr id="user-row-{{ $u->id_user }}">
                         <td>{{ $loop->iteration + ($users->currentPage() - 1) * $users->perPage() }}</td>
                         
                         <td>{{ $u->name }}</td>
                         <td>{{ $u->email }}</td>
                         <td>{{ $u->role->role ?? 'N/A' }}</td>
                         <td>{{ $u->division->division_name ?? 'N/A' }}</td>
+                        <td class="device-name-cell">
+                            @if($u->activeDevice)
+                                <span class="badge bg-success">{{ $u->activeDevice->manufacturer }} {{ $u->activeDevice->model }}</span>
+                            @elseif($u->latestDevice)
+                                <span class="badge bg-secondary">{{ $u->latestDevice->manufacturer }} {{ $u->latestDevice->model }} (Tidak Aktif)</span>
+                            @elseif($u->device_name)
+                                <span class="badge bg-success">{{ $u->device_name }}</span>
+                            @else
+                                <span class="text-muted">Tidak terhubung</span>
+                            @endif
+                        </td>
+                        <td class="device-id-cell">
+                            @if($u->activeDevice)
+                                <small class="text-muted" title="{{ $u->activeDevice->device_fingerprint }}">{{ Str::limit($u->activeDevice->device_fingerprint, 20) }}</small>
+                            @elseif($u->latestDevice)
+                                <small class="text-muted" title="{{ $u->latestDevice->device_fingerprint }}">{{ Str::limit($u->latestDevice->device_fingerprint, 20) }}</small>
+                            @elseif($u->device_id)
+                                <small class="text-muted" title="{{ $u->device_id }}">{{ Str::limit($u->device_id, 20) }}</small>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
                         <td>
                             <button class="btn btn-sm btn-warning" data-bs-toggle="modal"
                                     data-bs-target="#editUserModal"
@@ -133,6 +157,24 @@
                                 Edit
                             </button>
 
+                            @php
+                                $device = $u->activeDevice ?? $u->latestDevice;
+                            @endphp
+
+                            @if($u->device_id || $device)
+                                <button class="btn btn-sm btn-outline-danger reset-device-btn" 
+                                        data-user-id="{{ $u->id_user }}"
+                                        data-user-name="{{ $u->name }}"
+                                        data-device-name="{{ $u->device_name ?? ($device ? $device->model : '-') }}"
+                                        data-device-id="{{ $u->device_id ?? ($device ? $device->device_fingerprint : '-') }}"
+                                        data-manufacturer="{{ $device ? $device->manufacturer : '-' }}"
+                                        data-os-version="{{ $device ? $device->os_version : '-' }}"
+                                        data-app-version="{{ $device ? $device->build_id : '-' }}"
+                                        title="Reset Device">
+                                    <i class="bi bi-phone-x"></i> Reset
+                                </button>
+                            @endif
+
                             <form action="{{ route('users.delete', ['id' => $u->id_user]) }}" method="POST" class="d-inline delete-form">
                                 @csrf
                                 @method('DELETE') <button type="submit" class="btn btn-sm btn-danger"
@@ -142,7 +184,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center text-muted">
+                        <td colspan="8" class="text-center text-muted">
                             @if(request()->has('id_role') && request('id_role') != '')
                                 Tidak ada pengguna yang cocok dengan filter dan pencarian.
                             @elseif(request()->has('search') && request('search') != '')
@@ -537,8 +579,174 @@ document.addEventListener('DOMContentLoaded', function() {
             loadingOverlay.style.display = 'flex';
         });
     });
+
+    // SKRIP BARU: Reset Device Modal Handler
+    const resetDeviceModalEl = document.getElementById('resetDeviceModal');
+    let resetModal;
+    if (resetDeviceModalEl) {
+        resetModal = new bootstrap.Modal(resetDeviceModalEl);
+    }
+    
+    let currentResetUserId = null;
+
+    // 1. Handle tombol Reset di tabel -> Buka Modal
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.reset-device-btn')) {
+            const btn = e.target.closest('.reset-device-btn');
+            currentResetUserId = btn.getAttribute('data-user-id');
+            const userName = btn.getAttribute('data-user-name');
+            const deviceName = btn.getAttribute('data-device-name');
+            const deviceId = btn.getAttribute('data-device-id');
+            const manufacturer = btn.getAttribute('data-manufacturer');
+            const osVersion = btn.getAttribute('data-os-version');
+            const appVersion = btn.getAttribute('data-app-version');
+            
+            // Isi data ke modal
+            document.getElementById('modal-user-name').textContent = userName;
+            document.getElementById('modal-device-name').textContent = deviceName;
+            document.getElementById('modal-device-id').textContent = deviceId;
+
+            // Updated fields
+            const mfgEl = document.getElementById('modal-manufacturer');
+            if(mfgEl) mfgEl.textContent = manufacturer;
+            
+            const osEl = document.getElementById('modal-os-version');
+            if(osEl) osEl.textContent = osVersion;
+            
+            const appEl = document.getElementById('modal-app-version');
+            if(appEl) appEl.textContent = appVersion;
+            
+            // Buka modal
+            if (resetModal) resetModal.show();
+        }
+    });
+
+    // 2. Handle tombol Konfirmasi di Modal -> Eksekusi Reset
+    const confirmResetBtn = document.getElementById('confirmResetBtn');
+    if (confirmResetBtn) {
+        confirmResetBtn.addEventListener('click', function() {
+            if (!currentResetUserId) return;
+            
+            const btn = this;
+            const originalText = btn.innerHTML;
+            
+            // Set loading state
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+            
+            fetch(`/admin/users/${currentResetUserId}/reset-device`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Reset button state
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                
+                // Tutup modal
+                if (resetModal) resetModal.hide();
+                
+                if (data.success) {
+                    // Update the table row dynamically
+                    const row = document.getElementById(`user-row-${currentResetUserId}`);
+                    if (row) {
+                        // Update device name cell
+                        const deviceNameCell = row.querySelector('.device-name-cell');
+                        deviceNameCell.innerHTML = '<span class="text-muted">Tidak terhubung</span>';
+                        
+                        // Update device ID cell
+                        const deviceIdCell = row.querySelector('.device-id-cell');
+                        deviceIdCell.innerHTML = '<span class="text-muted">-</span>';
+                        
+                        // Remove the reset button
+                        const resetBtn = row.querySelector('.reset-device-btn');
+                        if (resetBtn) resetBtn.remove();
+                    }
+                    
+                    alert('Berhasil! ' + data.message);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                if (resetModal) resetModal.hide();
+                alert('Terjadi kesalahan: ' + error.message);
+            });
+        });
+    }
+
 });
 
 </script>
 @endpush
 @endsection
+
+{{-- MODAL RESET DEVICE DEVICE --}}
+<div class="modal fade" id="resetDeviceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Reset Device Link</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <div class="mb-4">
+                    <span class="d-inline-flex align-items-center justify-content-center bg-danger bg-opacity-10 rounded-circle p-3">
+                        <i class="bi bi-phone text-danger" style="font-size: 2.5rem;"></i>
+                    </span>
+                </div>
+                
+                <h4 class="mb-2 fw-bold text-dark">Konfirmasi Reset</h4>
+                <p class="text-muted mb-4">Anda akan melepas keterkaitan perangkat untuk akun ini.</p>
+                
+                <div class="card border-0 bg-light text-start mb-4">
+                    <div class="card-body p-3">
+                        <div class="row mb-2">
+                            <div class="col-4 text-muted small">User</div>
+                            <div class="col-8 fw-bold text-dark" id="modal-user-name">-</div>
+                        </div>
+                        <h6 class="text-muted small mt-3 mb-2 text-uppercase fw-bold">Device Information</h6>
+                        <hr class="mt-1 mb-2">
+                        <div class="row mb-1">
+                            <div class="col-4 text-muted small">Manufacturer</div>
+                            <div class="col-8 text-dark small" id="modal-manufacturer">-</div>
+                        </div>
+                        <div class="row mb-1">
+                            <div class="col-4 text-muted small">Model</div>
+                            <div class="col-8 text-dark small" id="modal-device-name">-</div>
+                        </div>
+                         <div class="row mb-1">
+                            <div class="col-4 text-muted small">OS Version</div>
+                            <div class="col-8 text-dark small" id="modal-os-version">-</div>
+                        </div>
+                        <div class="row mb-1">
+                            <div class="col-4 text-muted small">App Version</div>
+                            <div class="col-8 text-dark small" id="modal-app-version">-</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-4 text-muted small">Device ID</div>
+                            <div class="col-8 font-monospace small text-dark text-break" id="modal-device-id">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning d-flex align-items-center mb-0 p-2 small" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <div>User dapat login dari perangkat baru setelah ini.</div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pb-4">
+                <button type="button" class="btn btn-light px-4 me-2" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger px-4" id="confirmResetBtn">
+                    Ya, Reset Device
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

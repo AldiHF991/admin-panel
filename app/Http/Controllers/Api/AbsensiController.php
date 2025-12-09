@@ -26,14 +26,36 @@ class AbsensiController extends Controller
      */
     public function history()
     {
-        $user = Auth::user();
+        try {
+            $user = Auth::user();
+            
+            if (!$user) {
+                \Log::warning('History API: User not authenticated');
+                return response()->json(['error' => 'User not authenticated'], 401);
+            }
 
-        $history = Absensi::where('id_user', $user->id_user)
-            ->with('rapat:id_rapat,judul,tanggal') // Mengambil data rapat terkait
-            ->orderBy('waktu_absen', 'desc')
-            ->get();
+            \Log::info('History API: Fetching history for user', ['user_id' => $user->id_user]);
 
-        return response()->json(['data' => $history]);
+            $history = Absensi::where('attendable_id', $user->id_user)
+                ->where('attendable_type', \App\Models\User::class)
+                ->with(['rapat' => function($query) {
+                    $query->with('room:id_room,nama_ruangan');
+                }])
+                ->orderBy('waktu_absen', 'desc')
+                ->get();
+
+            \Log::info('History API: Success', ['count' => $history->count()]);
+
+            return response()->json(['data' => $history], 200);
+        } catch (\Exception $e) {
+            \Log::error('History API Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'error' => 'Failed to fetch history',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function export()

@@ -120,4 +120,20 @@ class User extends Authenticatable
         // Laravel akan otomatis menangani 'attendable_type' dan 'attendable_id'.
         return $this->morphMany(Absensi::class, 'attendable', 'attendable_type', 'attendable_id', 'id_user');
     }
+    // Relationship for new UserDevice system
+    public function activeDevice()
+    {
+        return $this->hasOne(UserDevice::class, 'user_id', 'id_user')->where('is_active', true);
+    }
+
+    // New relationship to get the latest device regardless of status
+    public function latestDevice()
+    {
+        return $this->hasOne(UserDevice::class, 'user_id', 'id_user')->latestOfMany();
+    }
+
+    public function devices()
+    {
+        return $this->hasMany(UserDevice::class, 'user_id', 'id_user');
+    }
 }

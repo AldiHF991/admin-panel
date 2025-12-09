@@ -63,8 +63,13 @@ class AuthController extends Controller
         $v = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string',
-            'device_id' => 'required|string',
-            'device_name' => 'required|string',
+            // Device Data Validation
+            'hardware_id' => 'required|string',
+            'app_instance_id' => 'required|string',
+            'manufacturer' => 'required|string',
+            'model' => 'required|string',
+            'os_version' => 'required|string',
+            'build_id' => 'nullable|string',
         ]);
 
         if ($v->fails()) {
@@ -77,32 +82,93 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        // Cek Device ID
-        // PERBAIKAN: Bypass check untuk Admin (1) dan PIC (2)
-        // User biasa (3) tetap dicek
-        if (!in_array($user->id_role, [1, 2])) {
-            if ($user->device_id && $user->device_id !== $request->device_id) {
+        // --- DEVICE BINDING LOGIC START ---
+
+        // 1. Calculate Fingerprint
+        $fingerprintSource = $request->hardware_id . '|' .
+                             $request->manufacturer . '|' .
+                             $request->model . '|' .
+                             $request->os_version . '|' .
+                             ($request->build_id ?? '');
+        
+        $deviceFingerprint = hash('sha256', $fingerprintSource);
+
+        // 2. Check Existing Binding for User
+        // Menggunakan UserDevice::where...
+        $existingDevice = \App\Models\UserDevice::where('user_id', $user->id_user)
+                                  ->where('is_active', true)
+                                  ->first();
+
+        if (!$existingDevice) {
+            // LOGIN PERTAMA KALI: Bind device ini ke user
+            \App\Models\UserDevice::create([
+                'user_id' => $user->id_user,
+                'device_fingerprint' => $deviceFingerprint,
+                'hardware_id' => $request->hardware_id,
+                'app_instance_id' => $request->app_instance_id,
+                'manufacturer' => $request->manufacturer,
+                'model' => $request->model,
+                'os_version' => $request->os_version,
+                'build_id' => $request->build_id,
+                'is_active' => true,
+                'locked_at' => now(),
+            ]);
+            
+            // Allow login
+        } else {
+            // SUDAH PERNAH LOGIN: Cek konsistensi device
+            if ($existingDevice->device_fingerprint === $deviceFingerprint) {
+                // Device SAMA.
+                // Cek apakah app_instance_id berubah (Reinstall?)
+                if ($existingDevice->app_instance_id !== $request->app_instance_id) {
+                    $existingDevice->update([
+                        'app_instance_id' => $request->app_instance_id
+                    ]);
+                }
+                // Allow login
+            } else {
+                // Device BEDA -> TOLAK
                 return response()->json([
-                    'message' => 'Akun ini sudah terhubung dengan perangkat lain. Silakan hubungi admin untuk reset perangkat.',
+                    'message' => "Akun ini hanya dapat digunakan pada perangkat yang telah terdaftar. Hubungi admin untuk reset perangkat.",
+                    'error_code' => 'DEVICE_MISMATCH'
                 ], 403);
             }
         }
 
+        // --- DEVICE BINDING LOGIC END ---
+
         // Update Device Info jika belum ada atau jika login dari device yang sama
         if (!$user->device_id) {
-            $user->device_id = $request->device_id;
-            $user->device_name = $request->device_name;
+            // For Legacy Support: Map hardware_id to device_id column
+            $user->device_id = $request->hardware_id; 
+            $user->device_name = $request->device_name; // from frontend payload
+        } elseif ($user->device_id !== $request->hardware_id) {
+             // If user logged in with new device via reset logic, update it?
+             // Or keep it in sync with active UserDevice?
+             // Since we allowed login (logic above passed), let's sync legacy column
+             $user->device_id = $request->hardware_id;
+             $user->device_name = $request->device_name;
         }
         
         $user->last_login_at = now();
         $user->save();
 
         // PERBAIKAN: Muat relasi dengan eager loading
-        $user->load(['role', 'division']);
+        $user->load(['role', 'division', 'activeDevice']);
 
-        $token = $user->createToken('api_token')->plainTextToken;
+        // Create Token with Ability or Metadata to store app_instance_id if needed
+        // Since Sanctum uses database, we can just use normal token. 
+        // Validation middleware will check DB UserDevice vs User vs Current Request header if we enforce valid requests.
+        // But user said "Middleware membaca token -> ambil app_instance_id".
+        // We will add a claim 'app_instance_id' to the token abilities or similar.
+        // Sanctum: $user->createToken('name', ['ability']);
+        // But better: Just rely on DB check in middleware using user->id.
+        // HOWEVER, user requirement #5: "Middleware... membaca token -> ambil app_instance_id di token"
+        // I will add it to the token NAME itself (hacky but works) OR just standard check.
+        // Let's use the token name to store metadata safely: "android_app:<uuid>"
+        $tokenName = 'device:' . $request->app_instance_id;
+        $token = $user->createToken($tokenName)->plainTextToken;
 
-        // PERBAIKAN: Response yang lebih aman dan konsisten
         return response()->json([
             'token' => $token,
             'user' => [
@@ -119,9 +185,8 @@ class AuthController extends Controller
                 'division' => $user->division ? $user->division->division_name : null,
                 'created_at' => $user->created_at,
                 'updated_at' => $user->updated_at,
-                'device_id' => $user->device_id,
-                'device_name' => $user->device_name,
                 'last_login_at' => $user->last_login_at,
+                // Return device info needed? Maybe not.
             ],
         ]);
     }

@@ -102,7 +102,7 @@ class AdminController extends Controller
     $usersQuery = User::select('users.*')
         ->leftJoin('role', 'users.id_role', '=', 'role.id_role')
         ->leftJoin('division', 'users.id_division', '=', 'division.id_division')
-        ->with(['role', 'division']);
+        ->with(['role', 'division', 'activeDevice', 'latestDevice']);
 
     // Terapkan pengurutan
     if ($sort === 'role') {
@@ -114,12 +114,12 @@ class AdminController extends Controller
     }
         // 4. Terapkan filter berdasarkan role jika ada
         if ($selectedRoleId) {
-            $usersQuery->where('id_role', $selectedRoleId);
+            $usersQuery->where('users.id_role', $selectedRoleId);
         }
 
         // 5. Terapkan filter pencarian berdasarkan nama jika ada
         if ($searchTerm) {
-            $usersQuery->where('name', 'like', '%'.$searchTerm.'%');
+            $usersQuery->where('users.name', 'like', '%'.$searchTerm.'%');
         }
 
         // 6. Lakukan paginasi dan tambahkan parameter query string ke link paginasi
@@ -291,6 +291,31 @@ class AdminController extends Controller
         User::find($id)->delete();
 
         return redirect()->back()->with('success', 'User berhasil dihapus!');
+    }
+
+    // Reset User Device
+    public function resetUserDevice($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            
+            // 1. Delete Strict 1 Account = 1 Device System records
+            // User requested identifying records in users_devices be deleted
+            \App\Models\UserDevice::where('user_id', $id)->delete();
+            
+            // 2. Legacy device information (Backward Compatibility) removed
+            // prevent SQLSTATE[42S22]: Column not found: 1054 Unknown column 'device_id'
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Device berhasil direset! User dapat login dari perangkat baru.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mereset device: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     // END ACCOUNT MANAGEMENT FUNCTIONS

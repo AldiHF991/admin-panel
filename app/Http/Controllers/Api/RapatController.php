@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Events\AbsensiUpdated;
+use App\Events\MeetingUpdated;
 use App\Exports\AbsensiRapatExport;
 use App\Http\Controllers\Controller;
 use App\Models\Absensi;
 use App\Models\Rapat;
+use App\Models\RapatFile;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -47,6 +50,11 @@ class RapatController extends Controller
             'division_ids.*' => 'nullable|exists:division,id_division', // Pastikan setiap ID ada di tabel divisions
             // PERBAIKAN: Tambahkan validasi untuk id_user_pengaju yang dikirim dari form
             'id_user_pengaju' => 'nullable|exists:users,id_user',
+            // TAMBAHAN: Validasi untuk file upload
+            'files_materi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_notulensi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_dokumentasi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_lainnya.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
         ]);
 
         // 2. Ambil data user yang sedang login
@@ -83,7 +91,13 @@ class RapatController extends Controller
             $rapat->divisions()->attach([null]);
         }
 
-        // 7. Kembalikan response
+        // 7. TAMBAHAN: Upload file untuk setiap kategori
+        $this->uploadFiles($request->file('files_materi'), $rapat, 1);
+        $this->uploadFiles($request->file('files_notulensi'), $rapat, 2);
+        $this->uploadFiles($request->file('files_dokumentasi'), $rapat, 3);
+        $this->uploadFiles($request->file('files_lainnya'), $rapat, 4);
+
+        // 8. Kembalikan response
         return response()->json([
             'message' => 'Rapat berhasil dibuat.',
             // PERBAIKAN: Memuat relasi yang benar dan konsisten, termasuk 'cabang'
@@ -95,7 +109,7 @@ class RapatController extends Controller
     public function show($id)
     {
         // PERBAIKAN: Memuat semua relasi yang dibutuhkan frontend, terutama 'cabang' dan 'divisions'.
-        $rapat = Rapat::with(['cabang', 'room', 'status', 'pengaju', 'divisions'])->findOrFail($id);
+        $rapat = Rapat::with(['cabang', 'room', 'status', 'pengaju', 'divisions', 'files'])->findOrFail($id);
 
         return response()->json($rapat);
     }
@@ -136,6 +150,11 @@ class RapatController extends Controller
             'division_ids' => 'sometimes|array', // Tidak perlu 'required' karena bisa jadi tidak diubah
             'division_ids.*' => 'exists:division,id_division', // Validasi ke tabel division
             'id_status' => 'sometimes|required|exists:status_rapat,id_status', // Tambahan validasi untuk status
+            // TAMBAHAN: Validasi untuk file upload
+            'files_materi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_notulensi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_dokumentasi.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
+            'files_lainnya.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,7z,mp4,mp3,wav|max:20480',
         ]);
 
         $rapat->update($validatedData);
@@ -145,6 +164,12 @@ class RapatController extends Controller
             // PERBAIKAN: Menggunakan sync() pada relasi 'divisions'
             $rapat->divisions()->sync($validatedData['division_ids']);
         }
+
+        // TAMBAHAN: Upload file baru jika ada
+        $this->uploadFiles($request->file('files_materi'), $rapat, 1);
+        $this->uploadFiles($request->file('files_notulensi'), $rapat, 2);
+        $this->uploadFiles($request->file('files_dokumentasi'), $rapat, 3);
+        $this->uploadFiles($request->file('files_lainnya'), $rapat, 4);
 
         return response()->json([
             'message' => 'Rapat berhasil diperbarui',
@@ -209,6 +234,9 @@ class RapatController extends Controller
         $rapat->waktu_end = now()->format('H:i:s');
         $rapat->id_status = 5;
         $rapat->save();
+
+        // Broadcast event
+        MeetingUpdated::dispatch($rapat->fresh(['cabang', 'room', 'status', 'pengaju', 'divisions']), 'finished');
 
         return response()->json([
             'message' => 'Rapat berhasil diselesaikan.',
@@ -276,9 +304,9 @@ class RapatController extends Controller
         // Pastikan rapat ada
         Rapat::findOrFail($id);
 
-        // Ambil data absensi untuk rapat ini, sertakan data user yang absen
+        // Ambil data absensi untuk rapat ini, sertakan data user yang absen via polymorphic
         $absensi = Absensi::where('id_rapat', $id)
-            ->with('user:id_user,id_division,name,email') // Eager load data user (hanya kolom yang perlu)
+            ->with('attendable') // Eager load data user via polymorphic
             ->orderBy('waktu_absen', 'asc')
             ->get();
 
@@ -301,7 +329,7 @@ class RapatController extends Controller
         // 2. Ambil data absensi untuk rapat ini, sertakan data user dan divisi.
         // Ini mirip dengan getAbsensiRapat, tapi dengan lebih banyak relasi.
         $absensi = Absensi::where('id_rapat', $id)
-            ->with('user:id_user,name,email,id_division', 'user.division:id_division,division_name')
+            ->with('attendable')
             ->orderBy('waktu_absen', 'asc')
             ->get();
 
@@ -312,5 +340,143 @@ class RapatController extends Controller
         // 4. Gunakan class AbsensiRapatExport yang baru untuk men-download file
         // Koleksi $absensi diteruskan ke constructor class export.
         return Excel::download(new AbsensiRapatExport($absensi), $fileName);
+    }
+
+    /**
+     * Helper function untuk upload file berdasarkan kategori.
+     * 
+     * @param array|null $files Array of uploaded files
+     * @param Rapat $rapat Rapat instance
+     * @param int $categoryId Category ID (1=Materi, 2=Notulensi, 3=Dokumentasi, 4=Lainnya)
+     * @return void
+     */
+    private function uploadFiles($files, Rapat $rapat, int $categoryId)
+    {
+        if ($files) {
+            foreach ($files as $file) {
+                $path = $file->store('public/rapat_files/' . $rapat->id_rapat);
+                RapatFile::create([
+                    'id_rapat' => $rapat->id_rapat,
+                    'file_path' => $path,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_type' => $file->getClientMimeType(),
+                    'file_size' => $file->getSize(),
+                    'id_categories' => $categoryId,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Menghasilkan Signed URL sementara untuk download file.
+     * Endpoint ini harus dilindungi auth:sanctum.
+     */
+    public function getDownloadUrl(Request $request, RapatFile $file)
+    {
+        // 1. Cek otorisasi dasar (apakah user berhak akses rapat ini)
+        $user = $request->user();
+        
+        // Logika otorisasi:
+        // - Admin/PIC boleh akses
+        // - Peserta yang sudah absen boleh akses (cek tabel absensi)
+        // - Atau jika user terdaftar sebagai peserta rapat (via divisi)
+        
+        $canAccess = false;
+        
+        if ($user->id_role == 1 || $user->id_role == 2) {
+            $canAccess = true;
+        } else {
+            // Cek apakah user sudah absen di rapat ini
+            $hasAttended = Absensi::where('id_rapat', $file->id_rapat)
+                ->where('attendable_id', $user->id_user)
+                ->where('attendable_type', User::class)
+                ->exists();
+                
+            if ($hasAttended) {
+                $canAccess = true;
+            }
+        }
+
+        if (!$canAccess) {
+            return response()->json(['message' => 'Anda tidak memiliki izin untuk mengunduh file ini.'], 403);
+        }
+
+        // 2. Generate Signed URL yang valid selama 5 menit
+        // URL ini akan mengarah ke route 'download.signed' di web.php
+        $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'download.signed', 
+            now()->addMinutes(15), 
+            ['file' => $file->id_file]
+        );
+
+        return response()->json([
+            'download_url' => $url,
+            'expires_in' => 15 * 60 // seconds
+        ]);
+    }
+
+    /**
+     * Melayani download file dari Signed URL.
+     * Route ini harus dilindungi middleware 'signed'.
+     */
+    public function signedDownload(Request $request, RapatFile $file)
+    {
+        // Karena sudah melewati middleware 'signed', URL-nya valid dan belum expired.
+        // Kita tinggal serve filenya.
+        
+        if (!Storage::exists($file->file_path)) {
+            abort(404, 'File tidak ditemukan di storage.');
+        }
+
+        return Storage::download($file->file_path, $file->file_name);
+    }
+
+    /**
+     * Delete a file from a meeting
+     * DELETE /api/rapat/files/{fileId}
+     */
+    public function deleteFile($fileId)
+    {
+        try {
+            // Find the file
+            $file = RapatFile::findOrFail($fileId);
+            
+            // Get the meeting
+            $rapat = Rapat::findOrFail($file->id_rapat);
+            
+            // Get current user
+            $user = Auth::user();
+            
+            // Authorization: Allow if user is Admin, PIC of the meeting, or the uploader
+            $isAdmin = $user->id_role == 1;
+            $isPIC = $rapat->id_user_pengaju == $user->id_user;
+            $isUploader = $file->uploaded_by == $user->id_user;
+            
+            if (!$isAdmin && !$isPIC && !$isUploader) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki izin untuk menghapus file ini.',
+                ], 403);
+            }
+            
+            // Delete file from storage
+            if (Storage::exists($file->file_path)) {
+                Storage::delete($file->file_path);
+            }
+            
+            // Delete record from database
+            $file->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'File berhasil dihapus.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus file.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }
